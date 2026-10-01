@@ -158,6 +158,67 @@ def list_members(project_id: int, current: User = Depends(get_current_user), ses
     return [MemberOut(project_id=r.project_id or 0, user_id=r.user_id or 0, role=r.role) for r in rows]
 
 
+@router.delete("/{project_id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_member(
+    project_id: int,
+    user_id: int,
+    current: User = Depends(require_writer),
+    session: Session = Depends(get_session),
+):
+    """Settings member removal (T8): admin always; manager on own Projects."""
+    require_project_access(project_id, current, session)
+    if current.role not in ("admin", "manager"):
+        raise HTTPException(status_code=403, detail="Settings requires manager+")
+    row = session.get(ProjectMember, (project_id, user_id))
+    if row is None:
+        raise HTTPException(status_code=404, detail="Member not found")
+    session.delete(row)
+    session.commit()
+    return None
+
+
+class ProjectFieldDefOut(BaseModel):
+    id: int
+    profile_id: int | None = None
+    project_id: int | None = None
+    key: str
+    type: str
+    label: str
+    required: bool
+    order: int
+
+
+@router.get("/{project_id}/custom-field-defs", response_model=list[ProjectFieldDefOut])
+def list_project_field_defs(
+    project_id: int,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Custom-field columns for the Table view (T8): defs copied on apply-profile."""
+    project = require_project_access(project_id, current, session)
+    from app.statuses.models import CustomFieldDef
+
+    rows = session.exec(
+        select(CustomFieldDef).where(
+            (CustomFieldDef.profile_id == project.status_profile_id)
+            | (CustomFieldDef.project_id == project.id)
+        ).order_by(CustomFieldDef.order)  # type: ignore[arg-type]
+    ).all()
+    return [
+        ProjectFieldDefOut(
+            id=r.id,  # type: ignore[arg-type]
+            profile_id=r.profile_id,
+            project_id=r.project_id,
+            key=r.key,
+            type=r.type,
+            label=r.label,
+            required=r.required,
+            order=r.order,
+        )
+        for r in rows
+    ]
+
+
 @router.post("/{project_id}/members", response_model=MemberOut, status_code=status.HTTP_201_CREATED)
 def add_member(
     project_id: int,

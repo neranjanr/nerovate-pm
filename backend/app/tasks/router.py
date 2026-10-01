@@ -1,9 +1,11 @@
 import os
+from datetime import date
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
+from app.access import can_access_view
 from app.auth.models import User
 from app.deps import get_current_user, get_session
 from app.events import publish
@@ -207,8 +209,11 @@ def _task_out(t: Task, session: Session) -> TaskOut:
 def list_tasks(
     project_id: int | None = None,
     status_id: int | None = None,
+    status: int | None = None,
     assignee_id: int | None = None,
+    assignee: int | None = None,
     watcher_id: int | None = None,
+    watcher: int | None = None,
     tag: str | None = None,
     blocked: bool | None = None,
     overdue: bool | None = None,
@@ -217,6 +222,42 @@ def list_tasks(
     current: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    return _filtered_task_outs(
+        session,
+        project_id=project_id,
+        status_id=status_id if status_id is not None else status,
+        assignee_id=assignee_id if assignee_id is not None else assignee,
+        watcher_id=watcher_id if watcher_id is not None else watcher,
+        tag=tag,
+        blocked=blocked,
+        overdue=overdue,
+        search=search,
+        depth=depth,
+        current=current,
+    )
+
+
+def _filtered_task_outs(
+    session: Session,
+    *,
+    project_id: int | None,
+    status_id: int | None = None,
+    assignee_id: int | None = None,
+    watcher_id: int | None = None,
+    tag: str | None = None,
+    blocked: bool | None = None,
+    overdue: bool | None = None,
+    search: str | None = None,
+    depth: int | None = None,
+    current: User,
+) -> list[TaskOut]:
+    """Single definition of List/Calendar/Table filters (SPEC-v0.2 4.5 + T8).
+
+    SQL-level: project (membership-gated), status, depth, search.
+    Python-level: assignee/watcher/tag/blocked/overdue (derived flags).
+    """
+    from app.tasks import service as tasks_service
+
     query = select(Task)
     if project_id is not None:
         require_project_access(project_id, current, session)
@@ -238,6 +279,7 @@ def list_tasks(
         query = query.where(Task.title.contains(search) | Task.description_md.contains(search))  # type: ignore[attr-defined]
 
     tasks = session.exec(query.order_by(Task.id)).all()  # type: ignore[arg-type]
+    today = date.today().isoformat()
     results = []
     for t in tasks:
         tout = _task_out(t, session)
@@ -249,6 +291,11 @@ def list_tasks(
             continue
         if blocked is not None and tout.is_blocked != blocked:
             continue
+        if overdue is not None:
+            assert t.id is not None
+            is_over = tasks_service.task_is_overdue(session, t, today)
+            if is_over != overdue:
+                continue
         results.append(tout)
     return results
 
@@ -375,7 +422,7 @@ def get_task_timeline(
     session: Session = Depends(get_session),
 ):
     require_project_access(project_id, current, session)
-    tasks = session.exec(select(Task).where(Task.project_id == project_id).order_by(Task.id)).all()
+    tasks = session.exec(select(Task).where(Task.project_id == project_id).order_by(Task.id)).all()  # type: ignore[arg-type]
     results = []
     for t in tasks:
         assert t.id is not None
@@ -398,6 +445,215 @@ def get_task_timeline(
             )
         )
     return results
+
+
+class CalendarEventOut(BaseModel):
+    task_id: int
+    title: str
+    date: str
+    kind: str  # task_due | period_due
+    status_id: int
+    status_name: str = ""
+    depth: int = 0
+    assignee_ids: list[int] = []
+
+
+class TableDefsOut(BaseModel):
+    id: int
+    key: str
+    label: str
+    type: str
+    required: bool
+    order: int
+
+
+class TableRowOut(BaseModel):
+    id: int
+    project_id: int
+    parent_id: int | None = None
+    depth: int
+    title: str
+    status_id: int
+    status_name: str = ""
+    start_date: str
+    due_date: str | None = None
+    assignee_ids: list[int] = []
+    watcher_ids: list[int] = []
+    tag_names: list[str] = []
+    blocked_by_ids: list[int] = []
+    is_blocked: bool = False
+    custom_fields: dict[str, str] = {}
+
+
+class TableOut(BaseModel):
+    project_id: int
+    defs: list[TableDefsOut] = []
+    rows: list[TableRowOut] = []
+
+
+def _project_field_defs(session: Session, project_id: int) -> list:
+    project = session.get(Project, project_id)
+    if project is None:
+        return []
+    return list(
+        session.exec(
+            select(CustomFieldDef).where(
+                (CustomFieldDef.profile_id == project.status_profile_id)
+                | (CustomFieldDef.project_id == project.id)
+            ).order_by(CustomFieldDef.order)  # type: ignore[arg-type]
+        ).all()
+    )
+
+
+@router.get("/calendar", response_model=list[CalendarEventOut])
+def get_task_calendar(
+    project_id: int,
+    status_id: int | None = None,
+    status: int | None = None,
+    assignee_id: int | None = None,
+    assignee: int | None = None,
+    watcher_id: int | None = None,
+    watcher: int | None = None,
+    tag: str | None = None,
+    blocked: bool | None = None,
+    overdue: bool | None = None,
+    search: str | None = None,
+    depth: int | None = None,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Calendar plots Task dues + Status Period planned dues (T8).
+
+    Reuses the exact List filter set; view-gated to calendar (guest 403),
+    membership-gated to 404 for non-members.
+    """
+    require_project_access(project_id, current, session)
+    if not can_access_view(current.role, "calendar"):
+        raise HTTPException(status_code=403, detail="Calendar view requires member+")
+    tasks = _filtered_task_outs(
+        session,
+        project_id=project_id,
+        status_id=status_id if status_id is not None else status,
+        assignee_id=assignee_id if assignee_id is not None else assignee,
+        watcher_id=watcher_id if watcher_id is not None else watcher,
+        tag=tag,
+        blocked=blocked,
+        overdue=overdue,
+        search=search,
+        depth=depth,
+        current=current,
+    )
+    events: list[CalendarEventOut] = []
+    for tout in tasks:
+        st = session.get(Status, tout.status_id)
+        st_name = st.name if st else ""
+        if tout.due_date:
+            events.append(
+                CalendarEventOut(
+                    task_id=tout.id,
+                    title=tout.title,
+                    date=tout.due_date,
+                    kind="task_due",
+                    status_id=tout.status_id,
+                    status_name=st_name,
+                    depth=tout.depth,
+                    assignee_ids=tout.assignee_ids,
+                )
+            )
+        for p in tout.status_periods:
+            if p.due_date:
+                pst = session.get(Status, p.status_id)
+                events.append(
+                    CalendarEventOut(
+                        task_id=tout.id,
+                        title=tout.title,
+                        date=p.due_date,
+                        kind="period_due",
+                        status_id=p.status_id,
+                        status_name=pst.name if pst else st_name,
+                        depth=tout.depth,
+                        assignee_ids=tout.assignee_ids,
+                    )
+                )
+    events.sort(key=lambda e: (e.date, e.task_id))
+    return events
+
+
+@router.get("/table", response_model=TableOut)
+def get_task_table(
+    project_id: int,
+    status_id: int | None = None,
+    status: int | None = None,
+    assignee_id: int | None = None,
+    assignee: int | None = None,
+    watcher_id: int | None = None,
+    watcher: int | None = None,
+    tag: str | None = None,
+    blocked: bool | None = None,
+    overdue: bool | None = None,
+    search: str | None = None,
+    depth: int | None = None,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Table columns: Task + Status+dates + start + assignees + custom fields (T8).
+
+    Reuses the exact List filter set; view-gated to table (guest 403).
+    """
+    require_project_access(project_id, current, session)
+    if not can_access_view(current.role, "table"):
+        raise HTTPException(status_code=403, detail="Table view requires member+")
+    tasks = _filtered_task_outs(
+        session,
+        project_id=project_id,
+        status_id=status_id if status_id is not None else status,
+        assignee_id=assignee_id if assignee_id is not None else assignee,
+        watcher_id=watcher_id if watcher_id is not None else watcher,
+        tag=tag,
+        blocked=blocked,
+        overdue=overdue,
+        search=search,
+        depth=depth,
+        current=current,
+    )
+    defs = _project_field_defs(session, project_id)
+    defs_out = [
+        TableDefsOut(id=d.id, key=d.key, label=d.label, type=d.type, required=d.required, order=d.order)  # type: ignore[arg-type]
+        for d in defs
+        if d.id is not None
+    ]
+    task_ids = [t.id for t in tasks]
+    val_map: dict[tuple[int, int], str] = {}
+    if task_ids:
+        for v in session.exec(select(CustomFieldValue).where(CustomFieldValue.task_id.in_(task_ids))).all():  # type: ignore[attr-defined]
+            val_map[(v.task_id, v.def_id)] = v.value
+    def_id_to_key = {d.id: d.key for d in defs if d.id is not None}
+    rows: list[TableRowOut] = []
+    for tout in tasks:
+        st = session.get(Status, tout.status_id)
+        custom: dict[str, str] = {}
+        for def_id, key in def_id_to_key.items():
+            custom[key] = val_map.get((tout.id, def_id), "")
+        rows.append(
+            TableRowOut(
+                id=tout.id,
+                project_id=tout.project_id,
+                parent_id=tout.parent_id,
+                depth=tout.depth,
+                title=tout.title,
+                status_id=tout.status_id,
+                status_name=st.name if st else "",
+                start_date=tout.start_date,
+                due_date=tout.due_date,
+                assignee_ids=tout.assignee_ids,
+                watcher_ids=tout.watcher_ids,
+                tag_names=tout.tag_names,
+                blocked_by_ids=tout.blocked_by_ids,
+                is_blocked=tout.is_blocked,
+                custom_fields=custom,
+            )
+        )
+    return TableOut(project_id=project_id, defs=defs_out, rows=rows)
 
 
 @router.get("/{task_id}", response_model=TaskOut)
