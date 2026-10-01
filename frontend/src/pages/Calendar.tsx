@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import TaskFilters, { EMPTY_FILTERS, buildTaskQuery, type TaskFilterState } from "../components/TaskFilters";
+import TelemetryBar from "../components/TelemetryBar";
 import { useAuth } from "../stores/auth";
 
 interface CalEvent {
@@ -25,6 +26,7 @@ export default function Calendar() {
   const [events, setEvents] = useState<CalEvent[]>([]);
   const [statuses, setStatuses] = useState<StatusInfo[]>([]);
   const [filters, setFilters] = useState<TaskFilterState>({ ...EMPTY_FILTERS });
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -45,11 +47,18 @@ export default function Calendar() {
 
   useEffect(() => {
     if (!auth.accessToken || !id) return;
+    setLoading(true);
     const q = buildTaskQuery(id, filters);
     fetch(`/api/v1/tasks/calendar?${q}`, { headers: { Authorization: `Bearer ${auth.accessToken}` } })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`Calendar failed: ${r.status}`))))
-      .then(setEvents)
-      .catch((e) => setError(e.message));
+      .then((rows) => {
+        setEvents(rows);
+        setLoading(false);
+      })
+      .catch((e) => {
+        setError(e.message);
+        setLoading(false);
+      });
   }, [auth.accessToken, id, filters]);
 
   const byDate = useMemo(() => {
@@ -63,7 +72,8 @@ export default function Calendar() {
       <h1 className="text-xl font-semibold mb-1">Calendar</h1>
       <p className="text-xs text-slate-400 mb-4">Task dues + Status planned dues from the same filters as List.</p>
       <TaskFilters filters={filters} onChange={setFilters} statuses={statuses} />
-      {error && <div className="mt-3 text-xs text-rose-300">{error}</div>}
+      {loading && <div role="status" className="mt-3 text-xs text-slate-400">Loading calendar…</div>}
+      {error && <div role="alert" className="mt-3 text-xs text-rose-300">{error}</div>}
       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {byDate.map(([d, evts]) => (
           <section key={d} className="bg-slate-900/40 border border-slate-800 rounded">
@@ -86,9 +96,10 @@ export default function Calendar() {
           </section>
         ))}
       </div>
-      {events.length === 0 && !error && (
+      {events.length === 0 && !error && !loading && (
         <div className="text-center text-slate-500 text-sm py-10">No due dates match the current filters.</div>
       )}
+      <div className="mt-4 border-t border-slate-800 pt-2">{id && <TelemetryBar projectId={id} />}</div>
     </main>
   );
 }

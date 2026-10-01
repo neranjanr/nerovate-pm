@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../stores/auth";
+import { buildDashboardExportUrl, downloadExport } from "../utils/exports";
 
 interface StatusInfo {
   id: number;
@@ -93,6 +94,7 @@ export default function Dashboard() {
   const [storage, setStorage] = useState<StorageInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [exportError, setExportError] = useState("");
 
   const canSeeWorkload = auth.role === "admin" || auth.role === "manager";
 
@@ -165,22 +167,26 @@ export default function Dashboard() {
       .map((s) => ({ ...s, count: summary.by_status[String(s.id)] || 0 }));
   }, [summary]);
 
-  const exportJson = () => {
-    const dataStr =
-      "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ summary, activity }, null, 2));
-    const a = document.createElement("a");
-    a.setAttribute("href", dataStr);
-    a.setAttribute("download", "dashboard_export.json");
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+  const exportServer = async (format: "json" | "csv") => {
+    if (!auth.accessToken || !id) return;
+    setExportError("");
+    try {
+      await downloadExport(
+        buildDashboardExportUrl(id, format),
+        auth.accessToken,
+        format === "json" ? `dashboard_project_${id}.json` : `workload_project_${id}.csv`
+      );
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : "Export failed");
+    }
   };
 
-  if (loading && !summary) return <div className="p-6 text-slate-400 text-sm">Loading dashboard…</div>;
+  if (loading && !summary) return <div role="status" className="p-6 text-slate-400 text-sm">Loading dashboard…</div>;
 
   return (
     <main className="flex-1 bg-slate-950 text-slate-100 p-6 space-y-6 overflow-y-auto">
-      {error && <div className="p-3 bg-rose-950 text-rose-300 text-xs rounded">{error}</div>}
+      {error && <div role="alert" className="p-3 bg-rose-950 text-rose-300 text-xs rounded">{error}</div>}
+      {exportError && <div role="alert" className="p-3 bg-rose-950 text-rose-300 text-xs rounded">{exportError}</div>}
 
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold">Metrics Dashboard &amp; Workload</h1>
@@ -192,13 +198,28 @@ export default function Dashboard() {
             Refresh
           </button>
           <button
-            onClick={exportJson}
+            onClick={() => void exportServer("json")}
             className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded text-xs font-medium text-white"
           >
-            Export
+            Export JSON
+          </button>
+          {canSeeWorkload && (
+            <button
+              onClick={() => void exportServer("csv")}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 text-xs font-medium"
+            >
+              Export CSV
+            </button>
+          )}
+          <button
+            onClick={() => window.print()}
+            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 text-xs font-medium"
+          >
+            Export PDF
           </button>
         </div>
       </div>
+      {loading && summary && <div role="status" className="text-xs text-slate-500">Refreshing…</div>}
 
       {/* KPI SUMMARY CARDS: 5 Columns Grid (GET /api/v1/dashboard/summary) */}
       <section className="grid grid-cols-2 md:grid-cols-5 gap-3">

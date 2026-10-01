@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import TaskFilters, { EMPTY_FILTERS, buildTaskQuery, type TaskFilterState } from "../components/TaskFilters";
+import TelemetryBar from "../components/TelemetryBar";
 import { useAuth } from "../stores/auth";
 
 interface TaskItem {
@@ -27,6 +28,7 @@ export default function List() {
   const [statuses, setStatuses] = useState<StatusInfo[]>([]);
   const [filters, setFilters] = useState<TaskFilterState>({ ...EMPTY_FILTERS });
   const [groupBy, setGroupBy] = useState<"status" | "assignee" | "none">("status");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -47,11 +49,18 @@ export default function List() {
 
   useEffect(() => {
     if (!auth.accessToken || !id) return;
+    setLoading(true);
     const q = buildTaskQuery(id, filters);
     fetch(`/api/v1/tasks?${q}`, { headers: { Authorization: `Bearer ${auth.accessToken}` } })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`List failed: ${r.status}`))))
-      .then(setTasks)
-      .catch((e) => setError(e.message));
+      .then((rows) => {
+        setTasks(rows);
+        setLoading(false);
+      })
+      .catch((e) => {
+        setError(e.message);
+        setLoading(false);
+      });
   }, [auth.accessToken, id, filters]);
 
   const groups = useMemo(() => {
@@ -89,7 +98,8 @@ export default function List() {
         </div>
       </div>
       <TaskFilters filters={filters} onChange={setFilters} statuses={statuses} />
-      {error && <div className="mt-3 text-xs text-rose-300">{error}</div>}
+      {loading && <div role="status" className="mt-3 text-xs text-slate-400">Loading list…</div>}
+      {error && <div role="alert" className="mt-3 text-xs text-rose-300">{error}</div>}
       <div className="mt-4 space-y-5">
         {[...groups.entries()].map(([name, rows]) => (
           <section key={name} className="bg-slate-900/40 border border-slate-800 rounded">
@@ -114,8 +124,9 @@ export default function List() {
             </ul>
           </section>
         ))}
-        {tasks.length === 0 && <div className="text-center text-slate-500 text-sm py-10">No tasks match the current filters.</div>}
+        {tasks.length === 0 && !loading && <div className="text-center text-slate-500 text-sm py-10">No tasks match the current filters.</div>}
       </div>
+      <div className="mt-4 border-t border-slate-800 pt-2">{id && <TelemetryBar projectId={id} />}</div>
     </main>
   );
 }

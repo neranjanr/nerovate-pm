@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import TaskFilters, { EMPTY_FILTERS, buildTaskQuery, type TaskFilterState } from "../components/TaskFilters";
+import TelemetryBar from "../components/TelemetryBar";
 import { useAuth } from "../stores/auth";
 
 interface FieldDef {
@@ -29,6 +30,7 @@ export default function Table() {
   const [defs, setDefs] = useState<FieldDef[]>([]);
   const [statuses, setStatuses] = useState<{ id: number; name: string }[]>([]);
   const [filters, setFilters] = useState<TaskFilterState>({ ...EMPTY_FILTERS });
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -49,14 +51,19 @@ export default function Table() {
 
   useEffect(() => {
     if (!auth.accessToken || !id) return;
+    setLoading(true);
     const q = buildTaskQuery(id, filters);
     fetch(`/api/v1/tasks/table?${q}`, { headers: { Authorization: `Bearer ${auth.accessToken}` } })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`Table failed: ${r.status}`))))
       .then((body) => {
         setDefs(body.defs ?? []);
         setRows(body.rows ?? []);
+        setLoading(false);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => {
+        setError(e.message);
+        setLoading(false);
+      });
   }, [auth.accessToken, id, filters]);
 
   return (
@@ -64,7 +71,8 @@ export default function Table() {
       <h1 className="text-xl font-semibold mb-1">Table</h1>
       <p className="text-xs text-slate-400 mb-4">Task, Status + dates, start, assignees and custom-field columns.</p>
       <TaskFilters filters={filters} onChange={setFilters} statuses={statuses} />
-      {error && <div className="mt-3 text-xs text-rose-300">{error}</div>}
+      {loading && <div role="status" className="mt-3 text-xs text-slate-400">Loading table…</div>}
+      {error && <div role="alert" className="mt-3 text-xs text-rose-300">{error}</div>}
       <table className="mt-4 w-full text-xs border border-slate-800 rounded overflow-hidden">
         <thead>
           <tr className="bg-slate-900 text-slate-400 text-left">
@@ -107,9 +115,10 @@ export default function Table() {
           ))}
         </tbody>
       </table>
-      {rows.length === 0 && !error && (
+      {rows.length === 0 && !error && !loading && (
         <div className="text-center text-slate-500 text-sm py-10">No tasks match the current filters.</div>
       )}
+      <div className="mt-4 border-t border-slate-800 pt-2">{id && <TelemetryBar projectId={id} />}</div>
     </main>
   );
 }

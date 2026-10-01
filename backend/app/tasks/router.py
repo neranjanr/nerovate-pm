@@ -1,7 +1,10 @@
+import csv
+import io
 import os
 from datetime import date
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
@@ -418,11 +421,31 @@ def get_blocked_map(
 @router.get("/timeline", response_model=list[TaskTimelineItem])
 def get_task_timeline(
     project_id: int,
+    depth: int | None = None,
     current: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     require_project_access(project_id, current, session)
-    tasks = session.exec(select(Task).where(Task.project_id == project_id).order_by(Task.id)).all()  # type: ignore[arg-type]
+    if not can_access_view(current.role, "timeline"):
+        raise HTTPException(status_code=403, detail="Timeline view requires member+")
+    return _timeline_items(session, project_id, depth=depth)
+
+
+def _timeline_items(
+    session: Session,
+    project_id: int,
+    depth: int | None = None,
+) -> list[TaskTimelineItem]:
+    """Single definition of timeline rows (T9 depth parity with List/Board).
+
+    Derived only from tasks.start_date + task_status_periods (SPEC-v0.2 P3).
+    """
+    query = select(Task).where(Task.project_id == project_id)
+    if depth is not None:
+        if depth not in (0, 1, 2):
+            raise HTTPException(status_code=400, detail="Invalid depth (0|1|2)")
+        query = query.where(Task.depth == depth)
+    tasks = session.exec(query.order_by(Task.id)).all()  # type: ignore[arg-type]
     results = []
     for t in tasks:
         assert t.id is not None
@@ -445,6 +468,81 @@ def get_task_timeline(
             )
         )
     return results
+
+
+def _timeline_export_csv(items: list[TaskTimelineItem]) -> str:
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(
+        [
+            "task_id",
+            "title",
+            "depth",
+            "parent_id",
+            "status_id",
+            "status_name",
+            "start_date",
+            "due_date",
+            "assignee_ids",
+            "is_blocked",
+            "periods",
+        ]
+    )
+    for it in items:
+        periods = "; ".join(
+            f"{p.status_id}:{p.start_date or ''}->{p.due_date or ''}/{p.actual_end_date or ''}"
+            for p in it.periods
+        )
+        w.writerow(
+            [
+                it.task_id,
+                it.title,
+                it.depth,
+                it.parent_id if it.parent_id is not None else "",
+                it.status_id,
+                it.status_name,
+                it.start_date,
+                it.due_date or "",
+                "|".join(str(a) for a in it.assignee_ids),
+                str(it.is_blocked),
+                periods,
+            ]
+        )
+    return buf.getvalue()
+
+
+@router.get("/timeline/export")
+def export_task_timeline(
+    project_id: int,
+    format: str = "json",
+    depth: int | None = None,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Review/archive export of the execution timeline (T9).
+
+    JSON mirrors GET /timeline; CSV flattens one row per task with periods
+    summarized. Membership-gated (404) + timeline view-gated (guest 403).
+    """
+    require_project_access(project_id, current, session)
+    if not can_access_view(current.role, "timeline"):
+        raise HTTPException(status_code=403, detail="Timeline view requires member+")
+    fmt = format.lower()
+    if fmt not in ("json", "csv"):
+        raise HTTPException(status_code=400, detail="Invalid format (json|csv)")
+    items = _timeline_items(session, project_id, depth=depth)
+    suffix = f"_depth{depth}" if depth is not None else ""
+    if fmt == "csv":
+        return Response(
+            content=_timeline_export_csv(items),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename=timeline_project_{project_id}{suffix}.csv"},
+        )
+    payload = [it.model_dump() for it in items]
+    return JSONResponse(
+        content=payload,
+        headers={"Content-Disposition": f"attachment; filename=timeline_project_{project_id}{suffix}.json"},
+    )
 
 
 class CalendarEventOut(BaseModel):

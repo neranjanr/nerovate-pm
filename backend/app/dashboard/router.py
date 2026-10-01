@@ -6,7 +6,10 @@ View gating mirrors frontend registry.ts:
 Membership gate (non-member 404) runs first to avoid enumeration.
 """
 
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 from sqlmodel import Session
 
@@ -116,3 +119,67 @@ def get_storage(
     require_project_access(project_id, current, session)
     _require_dashboard_view(current)
     return dashboard_service.storage_info(project_id)
+
+
+@router.get("/export")
+def export_report(
+    project_id: int,
+    format: str = "json",
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Review/archive export of the dashboard report (T9).
+
+    JSON bundles summary + workload + activity + storage. CSV exports the
+    workload capacity rows (manager+ only). Membership-gated (404) +
+    dashboard view-gated (guest 403).
+    """
+    import csv
+    import io
+
+    require_project_access(project_id, current, session)
+    _require_dashboard_view(current)
+    fmt = format.lower()
+    if fmt not in ("json", "csv"):
+        raise HTTPException(status_code=400, detail="Invalid format (json|csv)")
+    data = dashboard_service.summarize(session, project_id)
+    can_see_workload = can_access_view(current.role, "workload")
+    workload_rows = dashboard_service.workload(session, project_id) if can_see_workload else []
+    data["workload"] = workload_rows
+    activity = dashboard_service.activity(session, project_id, limit=200)
+    storage = dashboard_service.storage_info(project_id)
+    if fmt == "csv":
+        if not can_see_workload:
+            raise HTTPException(status_code=403, detail="Workload view requires manager+")
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        w.writerow(["user_id", "username", "name", "open", "overdue", "blocked", "total"])
+        for row in workload_rows:
+            w.writerow(
+                [
+                    row.get("user_id"),
+                    row.get("username", ""),
+                    row.get("name", ""),
+                    row.get("open", 0),
+                    row.get("overdue", 0),
+                    row.get("blocked", 0),
+                    row.get("total", 0),
+                ]
+            )
+        return Response(
+            content=buf.getvalue(),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename=workload_project_{project_id}.csv"},
+        )
+    payload = {
+        "project_id": project_id,
+        "summary": data,
+        "workload": workload_rows,
+        "activity": activity,
+        "storage": storage,
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+    }
+    return JSONResponse(
+        content=payload,
+        headers={"Content-Disposition": f"attachment; filename=dashboard_project_{project_id}.json"},
+    )

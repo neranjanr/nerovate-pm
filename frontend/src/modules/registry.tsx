@@ -31,7 +31,7 @@ const Placeholder = (label: string) =>
  * Backend enforces the same matrix; this file is the frontend mirror.
  */
 export const REGISTRY: RouteEntry[] = [
-  { id: "board", route: "board", navLabel: "Board", requiredRole: ["admin", "manager", "member", "guest"], component: Placeholder("Board") },
+  { id: "board", route: "board", navLabel: "Board", requiredRole: ["admin", "manager", "member", "guest"], component: lazy(() => import("../pages/Board")) },
   { id: "list", route: "list", navLabel: "List", requiredRole: ["admin", "manager", "member", "guest"], component: lazy(() => import("../pages/List")) },
   { id: "calendar", route: "calendar", navLabel: "Calendar", requiredRole: ["admin", "manager", "member"], component: lazy(() => import("../pages/Calendar")) },
   { id: "table", route: "table", navLabel: "Table", requiredRole: ["admin", "manager", "member"], component: lazy(() => import("../pages/Table")) },
