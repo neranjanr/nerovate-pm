@@ -54,7 +54,7 @@ def _out(p: Project, session: Session) -> ProjectOut:
     try:
         from app.tasks.models import Task
         from sqlalchemy import func
-        task_count = session.exec(select(func.count(Task.id)).where(Task.project_id == p.id)).one()
+        task_count = session.exec(select(func.count(Task.id)).where(Task.project_id == p.id)).one()  # type: ignore[arg-type]
     except Exception:
         pass
     return ProjectOut(
