@@ -1,11 +1,13 @@
+import os
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app.auth.models import User
 from app.deps import get_current_user, get_session
-from app.projects.models import ProjectMember
+from app.events import publish
+from app.projects.models import ProjectMember, Project
 from app.projects.router import require_project_access, is_member
 from app.tasks.models import (
     Task,
@@ -16,8 +18,11 @@ from app.tasks.models import (
     TaskBlockedBy,
     TaskHistory,
     TaskStatusPeriod,
+    TaskComment,
+    TaskCommentMention,
+    TaskAttachment,
 )
-from app.statuses.models import Status, StatusProfile
+from app.statuses.models import Status, StatusProfile, CustomFieldDef, CustomFieldValue
 
 router = APIRouter(prefix="/api/v1/tasks", tags=["tasks"])
 
@@ -47,6 +52,43 @@ class TaskUpdate(BaseModel):
     due_date: str | None = None
     estimate_mins: int | None = None
     time_spent_mins: int | None = None
+    assignee_ids: list[int] | None = None
+    watcher_ids: list[int] | None = None
+    tag_names: list[str] | None = None
+    blocked_by_ids: list[int] | None = None
+
+
+def _validate_blocked_by(task_id: int | None, blocked_by_ids: list[int], session: Session) -> None:
+    """Reject self-refs, duplicates, and circular chains of any length (SPEC 4.4)."""
+    if task_id is not None and task_id in blocked_by_ids:
+        raise HTTPException(status_code=400, detail="Task cannot block itself")
+    if len(set(blocked_by_ids)) != len(blocked_by_ids):
+        raise HTTPException(status_code=400, detail="Duplicate blocked_by ids")
+    if task_id is None:
+        return
+    # DFS from each proposed dependency: if we can reach task_id, it closes a cycle.
+    for start in blocked_by_ids:
+        seen: set[int] = set()
+        stack = [start]
+        while stack:
+            cur = stack.pop()
+            if cur == task_id:
+                raise HTTPException(status_code=400, detail="Circular blocked-by refs")
+            if cur in seen:
+                continue
+            seen.add(cur)
+            for link in session.exec(
+                select(TaskBlockedBy).where(TaskBlockedBy.task_id == cur)
+            ).all():
+                if link.blocked_by_task_id is not None and link.blocked_by_task_id not in seen:
+                    stack.append(link.blocked_by_task_id)
+
+
+def _mention_ids_for_comment(comment_id: int, session: Session) -> list[int]:
+    rows = session.exec(
+        select(TaskCommentMention).where(TaskCommentMention.comment_id == comment_id)
+    ).all()
+    return [r.user_id for r in rows]
 
 
 class TaskStatusChange(BaseModel):
@@ -270,7 +312,8 @@ def create_task(
             session.refresh(tag_obj)
         assert tag_obj.id is not None
         session.add(TaskTag(task_id=task.id, tag_id=tag_obj.id))
-    # Blocked by
+    # Blocked by (validate self/circular refs)
+    _validate_blocked_by(task.id, body.blocked_by_ids, session)
     for bvid in body.blocked_by_ids:
         session.add(TaskBlockedBy(task_id=task.id, blocked_by_task_id=bvid))
 
@@ -415,6 +458,40 @@ def update_task(
             period = TaskStatusPeriod(task_id=task.id, status_id=task.status_id, start_date=task.start_date, actor_id=current.id)
             session.add(period)
 
+    assert task.id is not None
+    task_id_int: int = task.id
+    if body.assignee_ids is not None:
+        for a in session.exec(select(TaskAssignee).where(TaskAssignee.task_id == task.id)).all():  # type: ignore[arg-type]
+            session.delete(a)
+        for uid in body.assignee_ids:
+            session.add(TaskAssignee(task_id=task_id_int, user_id=uid))
+
+    if body.watcher_ids is not None:
+        for w in session.exec(select(TaskWatcher).where(TaskWatcher.task_id == task.id)).all():  # type: ignore[arg-type]
+            session.delete(w)
+        for uid in body.watcher_ids:
+            session.add(TaskWatcher(task_id=task_id_int, user_id=uid))
+
+    if body.blocked_by_ids is not None:
+        _validate_blocked_by(task_id_int, body.blocked_by_ids, session)
+        for b in session.exec(select(TaskBlockedBy).where(TaskBlockedBy.task_id == task.id)).all():  # type: ignore[arg-type]
+            session.delete(b)
+        for bvid in body.blocked_by_ids:
+            session.add(TaskBlockedBy(task_id=task_id_int, blocked_by_task_id=bvid))
+
+    if body.tag_names is not None:
+        for tt in session.exec(select(TaskTag).where(TaskTag.task_id == task.id)).all():  # type: ignore[arg-type]
+            session.delete(tt)
+        for tname in body.tag_names:
+            tag_obj = session.exec(select(Tag).where(Tag.name == tname)).first()
+            if not tag_obj:
+                tag_obj = Tag(name=tname)
+                session.add(tag_obj)
+                session.commit()
+                session.refresh(tag_obj)
+            assert tag_obj.id is not None
+            session.add(TaskTag(task_id=task_id_int, tag_id=tag_obj.id))
+
     task.updated_at = datetime.now(timezone.utc).isoformat()
     session.add(task)
     session.commit()
@@ -500,3 +577,299 @@ def get_task_history(
         )
         for h in history
     ]
+
+
+class CommentCreate(BaseModel):
+    body_md: str
+    parent_id: int | None = None
+    mentions: list[int] = []
+
+
+class CommentOut(BaseModel):
+    id: int
+    task_id: int
+    parent_id: int | None = None
+    author_id: int
+    body_md: str
+    mentions: list[int] = []
+    created_at: str
+
+
+class AttachmentOut(BaseModel):
+    id: int
+    task_id: int
+    filename: str
+    path: str
+    size: int
+    uploaded_by: int
+    created_at: str
+
+
+class CustomFieldValueOut(BaseModel):
+    def_id: int
+    key: str
+    label: str
+    type: str
+    required: bool
+    value: str
+
+
+@router.get("/{task_id}/comments", response_model=list[CommentOut])
+def list_comments(
+    task_id: int,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    task = session.get(Task, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    require_project_access(task.project_id, current, session)
+    comments = session.exec(select(TaskComment).where(TaskComment.task_id == task_id).order_by(TaskComment.id)).all()  # type: ignore[arg-type]
+    return [
+        CommentOut(
+            id=c.id,  # type: ignore[arg-type]
+            task_id=c.task_id,
+            parent_id=c.parent_id,
+            author_id=c.author_id,
+            body_md=c.body_md,
+            mentions=_mention_ids_for_comment(c.id, session) if c.id is not None else [],  # type: ignore[arg-type]
+            created_at=c.created_at,
+        )
+        for c in comments
+    ]
+
+
+@router.post("/{task_id}/comments", response_model=CommentOut, status_code=status.HTTP_201_CREATED)
+def create_comment(
+    task_id: int,
+    body: CommentCreate,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    task = session.get(Task, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    require_project_access(task.project_id, current, session)
+    if body.parent_id is not None:
+        parent = session.get(TaskComment, body.parent_id)
+        if not parent or parent.task_id != task_id:
+            raise HTTPException(status_code=400, detail="Invalid parent comment")
+    for uid in body.mentions:
+        if session.get(User, uid) is None:
+            raise HTTPException(status_code=400, detail=f"Invalid mention user_id {uid}")
+    assert current.id is not None
+    comment = TaskComment(
+        task_id=task_id,
+        parent_id=body.parent_id,
+        author_id=current.id,
+        body_md=body.body_md,
+    )
+    session.add(comment)
+    session.commit()
+    session.refresh(comment)
+    assert comment.id is not None
+    for uid in body.mentions:
+        session.add(TaskCommentMention(comment_id=comment.id, user_id=uid))
+    session.commit()
+    publish("task.comment_added", {"task_id": task_id, "comment_id": comment.id, "author_id": current.id})
+    return CommentOut(
+        id=comment.id,
+        task_id=comment.task_id,
+        parent_id=comment.parent_id,
+        author_id=comment.author_id,
+        body_md=comment.body_md,
+        mentions=list(body.mentions),
+        created_at=comment.created_at,
+    )
+
+
+@router.get("/{task_id}/attachments", response_model=list[AttachmentOut])
+def list_attachments(
+    task_id: int,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    task = session.get(Task, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    require_project_access(task.project_id, current, session)
+    atts = session.exec(select(TaskAttachment).where(TaskAttachment.task_id == task_id).order_by(TaskAttachment.id)).all()  # type: ignore[arg-type]
+    return [
+        AttachmentOut(
+            id=a.id,  # type: ignore[arg-type]
+            task_id=a.task_id,
+            filename=a.filename,
+            path=a.path,
+            size=a.size,
+            uploaded_by=a.uploaded_by,
+            created_at=a.created_at,
+        )
+        for a in atts
+    ]
+
+
+@router.post("/{task_id}/attachments", response_model=AttachmentOut, status_code=status.HTTP_201_CREATED)
+def upload_attachment(
+    task_id: int,
+    file: UploadFile = File(...),
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    task = session.get(Task, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    require_project_access(task.project_id, current, session)
+    if current.role == "guest":
+        raise HTTPException(status_code=403, detail="Guest cannot upload attachments")
+
+    contents = file.file.read()
+    size = len(contents)
+    if size > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File size exceeds 10MB limit")
+
+    upload_dir = os.environ.get("UPLOAD_DIR", "./data/uploads")
+    os.makedirs(upload_dir, exist_ok=True)
+    filename = os.path.basename(file.filename or "file")
+    file_path = os.path.join(upload_dir, f"{task_id}_{int(datetime.now().timestamp())}_{filename}")
+    with open(file_path, "wb") as f:
+        f.write(contents)
+
+    assert current.id is not None
+    att = TaskAttachment(
+        task_id=task_id,
+        filename=filename,
+        path=file_path,
+        size=size,
+        uploaded_by=current.id,
+    )
+    session.add(att)
+    session.commit()
+    session.refresh(att)
+    assert att.id is not None
+    return AttachmentOut(
+        id=att.id,
+        task_id=att.task_id,
+        filename=att.filename,
+        path=att.path,
+        size=att.size,
+        uploaded_by=att.uploaded_by,
+        created_at=att.created_at,
+    )
+
+
+@router.delete("/{task_id}/attachments/{att_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_attachment(
+    task_id: int,
+    att_id: int,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    task = session.get(Task, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    require_project_access(task.project_id, current, session)
+    if current.role == "guest":
+        raise HTTPException(status_code=403, detail="Guest cannot delete attachments")
+    att = session.get(TaskAttachment, att_id)
+    if not att or att.task_id != task_id:
+        raise HTTPException(status_code=404, detail="Attachment not found")
+    session.delete(att)
+    session.commit()
+    try:
+        if att.path and os.path.isfile(att.path):
+            os.remove(att.path)
+    except OSError:
+        pass
+    return None
+
+
+@router.get("/{task_id}/custom-fields", response_model=list[CustomFieldValueOut])
+def get_task_custom_fields(
+    task_id: int,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    task = session.get(Task, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    require_project_access(task.project_id, current, session)
+    project = session.get(Project, task.project_id)
+    if not project:
+        return []
+    defs = session.exec(
+        select(CustomFieldDef).where(
+            (CustomFieldDef.profile_id == project.status_profile_id) | (CustomFieldDef.project_id == project.id)
+        ).order_by(CustomFieldDef.order)  # type: ignore[arg-type]
+    ).all()
+    values = session.exec(select(CustomFieldValue).where(CustomFieldValue.task_id == task_id)).all()
+    val_map = {v.def_id: v.value for v in values}
+    results = []
+    for d in defs:
+        assert d.id is not None
+        results.append(
+            CustomFieldValueOut(
+                def_id=d.id,
+                key=d.key,
+                label=d.label,
+                type=d.type,
+                required=d.required,
+                value=val_map.get(d.id, ""),
+            )
+        )
+    return results
+
+
+@router.put("/{task_id}/custom-fields", response_model=list[CustomFieldValueOut])
+def update_task_custom_fields(
+    task_id: int,
+    field_values: dict[int, str],
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    task = session.get(Task, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    require_project_access(task.project_id, current, session)
+    if current.role == "guest":
+        raise HTTPException(status_code=403, detail="Guest cannot update custom fields")
+    project = session.get(Project, task.project_id)
+    if project is not None:
+        allowed_def_ids = {
+            d.id
+            for d in session.exec(
+                select(CustomFieldDef).where(
+                    (CustomFieldDef.profile_id == project.status_profile_id)
+                    | (CustomFieldDef.project_id == project.id)
+                )
+            ).all()
+            if d.id is not None
+        }
+        for def_id in field_values:
+            if def_id not in allowed_def_ids:
+                raise HTTPException(status_code=400, detail=f"Invalid custom field def_id {def_id}")
+
+    for def_id, val in field_values.items():
+        v_obj = session.exec(
+            select(CustomFieldValue).where(CustomFieldValue.task_id == task_id, CustomFieldValue.def_id == def_id)
+        ).first()
+        if v_obj:
+            v_obj.value = val
+            session.add(v_obj)
+        else:
+            session.add(CustomFieldValue(task_id=task_id, def_id=def_id, value=val))
+    session.commit()
+    return get_task_custom_fields(task_id, current, session)
+
+
+@router.get("/{task_id}/subtasks", response_model=list[TaskOut])
+def list_subtasks(
+    task_id: int,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    task = session.get(Task, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    require_project_access(task.project_id, current, session)
+    subtasks = session.exec(select(Task).where(Task.parent_id == task_id).order_by(Task.id)).all()  # type: ignore[arg-type]
+    return [_task_out(st, session) for st in subtasks]

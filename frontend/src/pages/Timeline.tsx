@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../stores/auth";
+import TaskDrawer from "../components/TaskDrawer";
 
 interface StatusPeriod {
   id: number;
@@ -48,6 +49,7 @@ export default function Timeline() {
   const [statuses, setStatuses] = useState<ProjectStatus[]>([]);
   const [, setMembers] = useState<ProjectMemberInfo[]>([]);
   const [selectedTask, setSelectedTask] = useState<TimelineItem | null>(null);
+  const [drawerTaskId, setDrawerTaskId] = useState<number | null>(null);
   const [depthFilter, setDepthFilter] = useState<string>("all");
   const [granularity, setGranularity] = useState<string>("week");
   const [loading, setLoading] = useState<boolean>(true);
@@ -369,6 +371,12 @@ export default function Timeline() {
                 </div>
               </div>
               <button
+                onClick={() => setDrawerTaskId(selectedTask.task_id)}
+                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded text-xs font-semibold text-white mr-2"
+              >
+                Open Task Drawer
+              </button>
+              <button
                 onClick={() => setSelectedTask(null)}
                 className="text-slate-400 hover:text-white text-lg font-bold px-2 py-1"
                 title="Close Inspector"
@@ -378,6 +386,14 @@ export default function Timeline() {
             </div>
           </div>
         </div>
+      )}
+      {drawerTaskId && (
+        <TaskDrawer
+          taskId={drawerTaskId}
+          projectId={id!}
+          onClose={() => setDrawerTaskId(null)}
+          onUpdated={fetchData}
+        />
       )}
     </main>
   );

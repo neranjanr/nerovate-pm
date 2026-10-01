@@ -79,3 +79,33 @@ class TaskStatusPeriod(SQLModel, table=True):
     actor_id: int | None = Field(default=None, foreign_key="users.id")
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class TaskComment(SQLModel, table=True):
+    __tablename__ = "task_comments"  # type: ignore[assignment]
+
+    id: int | None = Field(default=None, primary_key=True)
+    task_id: int = Field(foreign_key="tasks.id", index=True)
+    parent_id: int | None = Field(default=None, foreign_key="task_comments.id")
+    author_id: int = Field(foreign_key="users.id")
+    body_md: str = Field(default="", max_length=10000)
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class TaskAttachment(SQLModel, table=True):
+    __tablename__ = "task_attachments"  # type: ignore[assignment]
+
+    id: int | None = Field(default=None, primary_key=True)
+    task_id: int = Field(foreign_key="tasks.id", index=True)
+    filename: str = Field(max_length=256)
+    path: str = Field(max_length=512)
+    size: int = Field(default=0)
+    uploaded_by: int = Field(foreign_key="users.id")
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class TaskCommentMention(SQLModel, table=True):
+    __tablename__ = "task_comment_mentions"  # type: ignore[assignment]
+
+    comment_id: int = Field(foreign_key="task_comments.id", primary_key=True)
+    user_id: int = Field(foreign_key="users.id", primary_key=True)
