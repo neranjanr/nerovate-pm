@@ -15,10 +15,11 @@ CODE_RE = re.compile(r"^[A-Z0-9-]{2,12}$")
 
 class ProjectCreate(BaseModel):
     name: str
-    code: str
+    code: str | None = None
     description: str = ""
     start_date: str | None = None
     target_date: str | None = None
+    status_profile_id: int | None = None
 
 
 class ProjectOut(BaseModel):
@@ -26,6 +27,12 @@ class ProjectOut(BaseModel):
     name: str
     code: str
     description: str
+    start_date: str | None = None
+    target_date: str | None = None
+    task_count: int = 0
+    owner_id: int | None = None
+    owner_name: str | None = None
+    status_profile_id: int | None = None
 
 
 class MemberAdd(BaseModel):
@@ -39,9 +46,29 @@ class MemberOut(BaseModel):
     role: str
 
 
-def _out(p: Project) -> ProjectOut:
+def _out(p: Project, session: Session) -> ProjectOut:
     assert p.id is not None
-    return ProjectOut(id=p.id, name=p.name, code=p.code, description=p.description)
+    owner = session.get(User, p.owner_id) if p.owner_id else None
+    owner_name = owner.name if owner else (owner.username if owner else None)
+    task_count = 0
+    try:
+        from app.tasks.models import Task
+        from sqlalchemy import func
+        task_count = session.exec(select(func.count(Task.id)).where(Task.project_id == p.id)).one()
+    except Exception:
+        pass
+    return ProjectOut(
+        id=p.id,
+        name=p.name,
+        code=p.code,
+        description=p.description,
+        start_date=p.start_date,
+        target_date=p.target_date,
+        task_count=task_count,
+        owner_id=p.owner_id,
+        owner_name=owner_name,
+        status_profile_id=p.status_profile_id,
+    )
 
 
 def is_member(session: Session, project_id: int, user_id: int) -> ProjectMember | None:
@@ -70,13 +97,13 @@ def list_projects(current: User = Depends(get_current_user), session: Session = 
     assert current.id is not None
     if current.role == "admin":
         rows = session.exec(select(Project).order_by(Project.id)).all()  # type: ignore[arg-type]
-        return [_out(p) for p in rows]
+        return [_out(p, session) for p in rows]
     mrows = session.exec(select(ProjectMember).where(ProjectMember.user_id == current.id)).all()
     ids = [m.project_id for m in mrows if m.project_id is not None]
     if not ids:
         return []
     rows = session.exec(select(Project).where(Project.id.in_(ids)).order_by(Project.id)).all()  # type: ignore[arg-type,union-attr]
-    return [_out(p) for p in rows]
+    return [_out(p, session) for p in rows]
 
 
 @router.post("", response_model=ProjectOut, status_code=status.HTTP_201_CREATED)
@@ -87,13 +114,27 @@ def create_project(
 ):
     if current.role not in ("admin", "manager"):
         raise HTTPException(status_code=403, detail="Manager or admin only")
+    if not body.code:
+        base = "".join(c for c in body.name.upper() if c.isalnum())[:6] or "PRJ"
+        code = f"{base}-{abs(hash(body.name)) % 900 + 100}"
+        if not CODE_RE.match(code):
+            code = f"PRJ-{abs(hash(body.name)) % 9000 + 1000}"
+        body.code = code
+    assert body.code is not None
     if not CODE_RE.match(body.code):
         raise HTTPException(status_code=400, detail="Invalid code (A-Z0-9-, 2-12 chars)")
     if session.exec(select(Project).where(Project.code == body.code)).first():
         raise HTTPException(status_code=409, detail="Code exists")
     assert current.id is not None
-    project = Project(name=body.name, code=body.code, description=body.description, owner_id=current.id,
-                      start_date=body.start_date, target_date=body.target_date)
+    project = Project(
+        name=body.name,
+        code=body.code,
+        description=body.description,
+        owner_id=current.id,
+        start_date=body.start_date,
+        target_date=body.target_date,
+        status_profile_id=body.status_profile_id,
+    )
     session.add(project)
     session.commit()
     session.refresh(project)
@@ -101,12 +142,12 @@ def create_project(
     # auto-membership for creator (unless admin bypass already covers it)
     session.add(ProjectMember(project_id=project.id, user_id=current.id, role=current.role))
     session.commit()
-    return _out(project)
+    return _out(project, session)
 
 
 @router.get("/{project_id}", response_model=ProjectOut)
 def get_project(project_id: int, current: User = Depends(get_current_user), session: Session = Depends(get_session)):
-    return _out(require_project_access(project_id, current, session))
+    return _out(require_project_access(project_id, current, session), session)
 
 
 @router.get("/{project_id}/members", response_model=list[MemberOut])
