@@ -35,7 +35,7 @@ export const REGISTRY: RouteEntry[] = [
   { id: "list", route: "list", navLabel: "List", requiredRole: ["admin", "manager", "member", "guest"], component: Placeholder("List") },
   { id: "calendar", route: "calendar", navLabel: "Calendar", requiredRole: ["admin", "manager", "member"], component: Placeholder("Calendar") },
   { id: "table", route: "table", navLabel: "Table", requiredRole: ["admin", "manager", "member"], component: Placeholder("Table") },
-  { id: "timeline", route: "timeline", navLabel: "Execution Timeline", requiredRole: ["admin", "manager", "member"], component: Placeholder("Timeline") },
+  { id: "timeline", route: "timeline", navLabel: "Execution Timeline", requiredRole: ["admin", "manager", "member"], component: lazy(() => import("../pages/Timeline")) },
   { id: "dashboard", route: "dashboard", navLabel: "Dashboard", requiredRole: ["admin", "manager", "member"], component: Placeholder("Dashboard") },
   { id: "workload", route: "workload", navLabel: "Workload", requiredRole: ["admin", "manager"], component: Placeholder("Workload") },
   { id: "settings", route: "settings", navLabel: "Settings", requiredRole: ["admin", "manager"], component: Placeholder("Settings") },

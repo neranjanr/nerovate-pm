@@ -289,6 +289,20 @@ def create_task(
     return _task_out(task, session)
 
 
+class TaskTimelineItem(BaseModel):
+    task_id: int
+    title: str
+    depth: int
+    parent_id: int | None = None
+    status_id: int
+    status_name: str
+    start_date: str
+    due_date: str | None = None
+    assignee_ids: list[int] = []
+    is_blocked: bool = False
+    periods: list[StatusPeriodOut] = []
+
+
 class BlockedMapItem(BaseModel):
     task_id: int
     title: str
@@ -309,6 +323,38 @@ def get_blocked_map(
         bblocks = [b.blocked_by_task_id for b in session.exec(select(TaskBlockedBy).where(TaskBlockedBy.task_id == t.id)).all() if b.blocked_by_task_id is not None]
         result.append(BlockedMapItem(task_id=t.id, title=t.title, blocked_by=bblocks))
     return result
+
+
+@router.get("/timeline", response_model=list[TaskTimelineItem])
+def get_task_timeline(
+    project_id: int,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    require_project_access(project_id, current, session)
+    tasks = session.exec(select(Task).where(Task.project_id == project_id).order_by(Task.id)).all()
+    results = []
+    for t in tasks:
+        assert t.id is not None
+        tout = _task_out(t, session)
+        st = session.get(Status, t.status_id)
+        st_name = st.name if st else ""
+        results.append(
+            TaskTimelineItem(
+                task_id=t.id,
+                title=t.title,
+                depth=t.depth,
+                parent_id=t.parent_id,
+                status_id=t.status_id,
+                status_name=st_name,
+                start_date=t.start_date,
+                due_date=t.due_date,
+                assignee_ids=tout.assignee_ids,
+                is_blocked=tout.is_blocked,
+                periods=tout.status_periods,
+            )
+        )
+    return results
 
 
 @router.get("/{task_id}", response_model=TaskOut)
