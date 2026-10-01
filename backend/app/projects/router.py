@@ -184,3 +184,61 @@ def add_member(
     session.commit()
     assert row.project_id is not None and row.user_id is not None
     return MemberOut(project_id=row.project_id, user_id=row.user_id, role=row.role)
+
+
+@router.post("/{project_id}/apply-profile/{profile_id}", response_model=ProjectOut)
+def apply_profile(
+    project_id: int,
+    profile_id: int,
+    current: User = Depends(require_writer),
+    session: Session = Depends(get_session),
+):
+    project = require_project_access(project_id, current, session)
+    if current.role not in ("admin", "manager"):
+        raise HTTPException(status_code=403, detail="Manager or admin only")
+
+    from app.statuses.models import StatusProfile, Status, CustomFieldDef
+
+    template = session.get(StatusProfile, profile_id)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template status profile not found")
+
+    assert current.id is not None
+    proj_profile = StatusProfile(
+        name=f"{project.name} Profile",
+        is_template=False,
+        created_by=current.id,
+    )
+    session.add(proj_profile)
+    session.commit()
+    session.refresh(proj_profile)
+    assert proj_profile.id is not None
+
+    for s in session.exec(select(Status).where(Status.profile_id == template.id)).all():
+        new_s = Status(
+            profile_id=proj_profile.id,
+            name=s.name,
+            color=s.color,
+            order=s.order,
+            is_done=s.is_done,
+            is_blocked=s.is_blocked,
+        )
+        session.add(new_s)
+
+    for c in session.exec(select(CustomFieldDef).where(CustomFieldDef.profile_id == template.id)).all():
+        new_c = CustomFieldDef(
+            profile_id=proj_profile.id,
+            project_id=project.id,
+            key=c.key,
+            type=c.type,
+            label=c.label,
+            required=c.required,
+            order=c.order,
+        )
+        session.add(new_c)
+
+    project.status_profile_id = proj_profile.id
+    session.add(project)
+    session.commit()
+    session.refresh(project)
+    return _out(project, session)

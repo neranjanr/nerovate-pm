@@ -27,11 +27,7 @@ def client(monkeypatch):
     )
     monkeypatch.setattr(db_module, "engine", engine)
 
-    # import models so tables exist
-    from app.auth import models as _auth_models  # noqa: F401
-    from app.projects import models as _proj_models  # noqa: F401
-
-    SQLModel.metadata.create_all(engine)
+    db_module.init_db()
 
     # seed base admin user (bcrypt12)
     import bcrypt
