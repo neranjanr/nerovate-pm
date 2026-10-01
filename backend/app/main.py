@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from app.auth.router import router as auth_router
+from app.dashboard.router import router as dashboard_router
 from app.projects.router import router as projects_router
 from app.statuses.router import router as status_router
 from app.tasks.router import router as tasks_router
@@ -12,6 +13,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(users_router)
     app.include_router(projects_router)
+    app.include_router(dashboard_router)
     app.include_router(status_router)
     app.include_router(tasks_router)
 

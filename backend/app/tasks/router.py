@@ -451,6 +451,7 @@ def update_task(
         assert current.id is not None
         assert task.id is not None
         session.add(TaskHistory(task_id=task.id, from_status_id=old_status_id, to_status_id=task.status_id, actor_id=current.id))
+        publish("task.status_changed", {"task_id": task.id, "from_status_id": old_status_id, "to_status_id": task.status_id, "actor_id": current.id})
         
         # Upsert period
         period = session.exec(select(TaskStatusPeriod).where(TaskStatusPeriod.task_id == task.id, TaskStatusPeriod.status_id == task.status_id)).first()
@@ -526,6 +527,7 @@ def change_task_status(
     assert task.id is not None
     # Record history
     session.add(TaskHistory(task_id=task.id, from_status_id=old_status_id, to_status_id=body.status_id, actor_id=current.id))
+    publish("task.status_changed", {"task_id": task.id, "from_status_id": old_status_id, "to_status_id": body.status_id, "actor_id": current.id})
 
     # Upsert Status Period for new status
     period = session.exec(select(TaskStatusPeriod).where(TaskStatusPeriod.task_id == task.id, TaskStatusPeriod.status_id == body.status_id)).first()
