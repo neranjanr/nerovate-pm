@@ -76,10 +76,12 @@ def is_member(session: Session, project_id: int, user_id: int) -> ProjectMember 
 
 
 def require_project_access(project_id: int, current: User, session: Session) -> Project:
-    """Membership gate: non-members get 404 (not 403) to avoid enumeration.
+    """Hybrid membership gate (SPEC-v0.3 section 3, U1).
 
-    Admin bypasses so a fresh admin can bootstrap Projects; all other
-    roles require a row in project_members.
+    Effective visibility = union (category ∪ project). Non-members get 404
+    (not 403) to avoid enumeration. Admin bypasses so a fresh admin can
+    bootstrap Projects; all other roles require a row in project_members
+    or category_members for the parent Category (once U2 adds category_id).
     """
     project = session.get(Project, project_id)
     if project is None:
@@ -87,9 +89,13 @@ def require_project_access(project_id: int, current: User, session: Session) -> 
     assert current.id is not None
     if current.role == "admin":
         return project
-    if is_member(session, project_id, current.id) is None:
-        raise HTTPException(status_code=404, detail="Not found")
-    return project
+    if is_member(session, project_id, current.id) is not None:
+        return project
+    from app.categories.access import effective_role_for_project
+
+    if effective_role_for_project(session, project, current.id) is not None:
+        return project
+    raise HTTPException(status_code=404, detail="Not found")
 
 
 @router.get("", response_model=list[ProjectOut])
@@ -98,8 +104,9 @@ def list_projects(current: User = Depends(get_current_user), session: Session = 
     if current.role == "admin":
         rows = session.exec(select(Project).order_by(Project.id)).all()  # type: ignore[arg-type]
         return [_out(p, session) for p in rows]
-    mrows = session.exec(select(ProjectMember).where(ProjectMember.user_id == current.id)).all()
-    ids = [m.project_id for m in mrows if m.project_id is not None]
+    from app.categories.access import visible_project_ids
+
+    ids = visible_project_ids(session, current.id)
     if not ids:
         return []
     rows = session.exec(select(Project).where(Project.id.in_(ids)).order_by(Project.id)).all()  # type: ignore[arg-type,union-attr]

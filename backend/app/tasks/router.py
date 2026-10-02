@@ -266,10 +266,12 @@ def _filtered_task_outs(
         require_project_access(project_id, current, session)
         query = query.where(Task.project_id == project_id)
     else:
-        # if no project_id, filter by projects user has access to
+        # if no project_id, filter by projects user has access to (hybrid union, U1)
         if current.role != "admin":
-            mrows = session.exec(select(ProjectMember).where(ProjectMember.user_id == current.id)).all()
-            pids = [m.project_id for m in mrows if m.project_id is not None]
+            assert current.id is not None
+            from app.categories.access import visible_project_ids
+
+            pids = visible_project_ids(session, current.id)
             if not pids:
                 return []
             query = query.where(Task.project_id.in_(pids))  # type: ignore[attr-defined, union-attr]
