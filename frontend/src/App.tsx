@@ -12,6 +12,8 @@ interface ProjectDetails {
   id: number;
   code: string;
   name: string;
+  category_id?: number | null;
+  category_name?: string | null;
   description: string;
   start_date?: string | null;
   target_date?: string | null;
@@ -84,7 +86,15 @@ function ProjectShell() {
               : "flex items-center gap-2 text-sm text-slate-400"
           }
         >
-          <Link to="/projects" className="hover:text-white transition-colors">Projects Directory</Link>
+          <Link to="/categories" className="hover:text-white transition-colors">Categories</Link>
+          <span>/</span>
+          {project?.category_id ? (
+            <Link to={`/projects?category_id=${project.category_id}`} className="hover:text-white transition-colors">
+              {project?.category_name || `Category ${project.category_id}`}
+            </Link>
+          ) : (
+            <Link to="/projects" className="hover:text-white transition-colors">Projects Directory</Link>
+          )}
           <span>/</span>
           <span
             className={

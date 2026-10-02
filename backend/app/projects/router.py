@@ -16,6 +16,7 @@ CODE_RE = re.compile(r"^[A-Z0-9-]{2,12}$")
 class ProjectCreate(BaseModel):
     name: str
     code: str | None = None
+    category_id: int | None = None
     description: str = ""
     start_date: str | None = None
     target_date: str | None = None
@@ -26,6 +27,8 @@ class ProjectOut(BaseModel):
     id: int
     name: str
     code: str
+    category_id: int | None = None
+    category_name: str | None = None
     description: str
     start_date: str | None = None
     target_date: str | None = None
@@ -50,6 +53,16 @@ def _out(p: Project, session: Session) -> ProjectOut:
     assert p.id is not None
     owner = session.get(User, p.owner_id) if p.owner_id else None
     owner_name = owner.name if owner else (owner.username if owner else None)
+    category_name: str | None = None
+    cat_id = getattr(p, "category_id", None)
+    if cat_id is not None:
+        try:
+            from app.categories.models import Category
+
+            cat = session.get(Category, cat_id)
+            category_name = cat.name if cat else None
+        except Exception:
+            category_name = None
     task_count = 0
     try:
         from app.tasks.models import Task
@@ -61,6 +74,8 @@ def _out(p: Project, session: Session) -> ProjectOut:
         id=p.id,
         name=p.name,
         code=p.code,
+        category_id=cat_id,
+        category_name=category_name,
         description=p.description,
         start_date=p.start_date,
         target_date=p.target_date,
@@ -99,17 +114,27 @@ def require_project_access(project_id: int, current: User, session: Session) -> 
 
 
 @router.get("", response_model=list[ProjectOut])
-def list_projects(current: User = Depends(get_current_user), session: Session = Depends(get_session)):
+def list_projects(
+    category_id: int | None = None,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
     assert current.id is not None
     if current.role == "admin":
-        rows = session.exec(select(Project).order_by(Project.id)).all()  # type: ignore[arg-type]
+        q = select(Project).order_by(Project.id)  # type: ignore[arg-type]
+        if category_id is not None:
+            q = q.where(Project.category_id == category_id)
+        rows = session.exec(q).all()
         return [_out(p, session) for p in rows]
     from app.categories.access import visible_project_ids
 
     ids = visible_project_ids(session, current.id)
     if not ids:
         return []
-    rows = session.exec(select(Project).where(Project.id.in_(ids)).order_by(Project.id)).all()  # type: ignore[arg-type,union-attr]
+    q = select(Project).where(Project.id.in_(ids)).order_by(Project.id)  # type: ignore[arg-type,union-attr]
+    if category_id is not None:
+        q = q.where(Project.category_id == category_id)
+    rows = session.exec(q).all()
     return [_out(p, session) for p in rows]
 
 
@@ -119,22 +144,80 @@ def create_project(
     current: User = Depends(require_writer),
     session: Session = Depends(get_session),
 ):
-    if current.role not in ("admin", "manager"):
-        raise HTTPException(status_code=403, detail="Manager or admin only")
+    from app.categories.models import Category, CategoryMember
+
+    assert current.id is not None
+    name = (body.name or "").strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="Name required")
+
+    # Resolve parent Category. Backwards-compat: pre-U2 callers without
+    # category_id get an auto-provisioned Category (CAT-<CODE>) so old
+    # data flows keep working; new UI always sends category_id.
+    category_id = body.category_id
+    if category_id is None:
+        base_code = (body.code or "").strip().upper()
+        if not base_code or not CODE_RE.match(base_code):
+            base = "".join(c for c in name.upper() if c.isalnum())[:6] or "PRJ"
+            base_code = f"{base}-{abs(hash(name)) % 900 + 100}"
+            if not CODE_RE.match(base_code):
+                base_code = f"PRJ-{abs(hash(name)) % 9000 + 1000}"
+        key_candidate = f"CAT-{base_code}"[:16]
+        key = key_candidate
+        suffix = 2
+        while session.exec(select(Category).where(Category.key == key)).first():
+            tail = f"-{suffix}"
+            key = (key_candidate[: 16 - len(tail)] + tail) if len(key_candidate + tail) > 16 else (key_candidate + tail)
+            suffix += 1
+        cat_name = name
+        n = 2
+        probe = cat_name
+        while session.exec(select(Category).where(Category.name == probe)).first():
+            probe = f"{name} {base_code}" if n == 2 else f"{name} {base_code} {n}"
+            n += 1
+        cat_name = probe
+        new_category = Category(key=key, name=cat_name, color="#6b7280", created_by=current.id)
+        session.add(new_category)
+        session.commit()
+        session.refresh(new_category)
+        assert new_category.id is not None
+        category_id = new_category.id
+        session.add(CategoryMember(category_id=new_category.id, user_id=current.id, role=current.role))
+        session.commit()
+    else:
+        existing = session.get(Category, category_id)
+        if existing is None:
+            raise HTTPException(status_code=404, detail="Not found")
+        # SPEC-v0.3 section 3: membership in parent Category, or global
+        # admin/manager. Non-members get 404 (no enumeration).
+        if current.role not in ("admin", "manager"):
+            if session.get(CategoryMember, (category_id, current.id)) is None:
+                raise HTTPException(status_code=404, detail="Not found")
+
+    assert category_id is not None
     if not body.code:
-        base = "".join(c for c in body.name.upper() if c.isalnum())[:6] or "PRJ"
-        code = f"{base}-{abs(hash(body.name)) % 900 + 100}"
+        base = "".join(c for c in name.upper() if c.isalnum())[:6] or "PRJ"
+        code = f"{base}-{abs(hash(name)) % 900 + 100}"
         if not CODE_RE.match(code):
-            code = f"PRJ-{abs(hash(body.name)) % 9000 + 1000}"
+            code = f"PRJ-{abs(hash(name)) % 9000 + 1000}"
         body.code = code
     assert body.code is not None
     if not CODE_RE.match(body.code):
         raise HTTPException(status_code=400, detail="Invalid code (A-Z0-9-, 2-12 chars)")
-    if session.exec(select(Project).where(Project.code == body.code)).first():
-        raise HTTPException(status_code=409, detail="Code exists")
-    assert current.id is not None
+    # Scoped uniques: UNIQUE(category_id, code) + UNIQUE(category_id, name).
+    # Duplicate within one Category is 422 per ticket acceptance; same
+    # code/name across Categories is fine.
+    if session.exec(
+        select(Project).where(Project.category_id == category_id, Project.code == body.code)
+    ).first():
+        raise HTTPException(status_code=422, detail="Code exists in this Category")
+    if session.exec(
+        select(Project).where(Project.category_id == category_id, Project.name == name)
+    ).first():
+        raise HTTPException(status_code=422, detail="Name exists in this Category")
     project = Project(
-        name=body.name,
+        category_id=category_id,
+        name=name,
         code=body.code,
         description=body.description,
         owner_id=current.id,
@@ -143,11 +226,25 @@ def create_project(
         status_profile_id=body.status_profile_id,
     )
     session.add(project)
-    session.commit()
+    try:
+        session.commit()
+    except Exception as exc:
+        session.rollback()
+        msg = str(exc).lower()
+        if "unique" in msg or "uq_projects_category" in msg:
+            raise HTTPException(status_code=422, detail="Code or name exists in this Category")
+        raise
     session.refresh(project)
     assert project.id is not None
     # auto-membership for creator (unless admin bypass already covers it)
-    session.add(ProjectMember(project_id=project.id, user_id=current.id, role=current.role))
+    if session.get(ProjectMember, (project.id, current.id)) is None:
+        session.add(ProjectMember(project_id=project.id, user_id=current.id, role=current.role))
+    # Ensure category membership so the union gate keeps working.
+    if session.get(CategoryMember, (category_id, current.id)) is None:
+        try:
+            session.add(CategoryMember(category_id=category_id, user_id=current.id, role=current.role))
+        except Exception:
+            pass
     session.commit()
     return _out(project, session)
 

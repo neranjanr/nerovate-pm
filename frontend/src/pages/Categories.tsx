@@ -33,6 +33,10 @@ export default function Categories() {
   const [members, setMembers] = useState<Member[]>([]);
   const [memberUserId, setMemberUserId] = useState("");
   const [rename, setRename] = useState("");
+  const [catProjects, setCatProjects] = useState<{ id: number; code: string; name: string }[]>([]);
+  const [showAddProject, setShowAddProject] = useState(false);
+  const [projName, setProjName] = useState("");
+  const [projCode, setProjCode] = useState("");
 
   const fetchCategories = () => {
     if (!auth.accessToken) return;
@@ -57,10 +61,20 @@ export default function Categories() {
       .catch(() => setMembers([]));
   };
 
+  const fetchCatProjects = (id: number) => {
+    fetch(`/api/v1/categories/${id}/projects`, {
+      headers: { Authorization: `Bearer ${auth.accessToken}` },
+    })
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setCatProjects)
+      .catch(() => setCatProjects([]));
+  };
+
   const handleSelect = (c: Category) => {
     setSelected(c);
     setRename(c.name);
     fetchMembers(c.id);
+    fetchCatProjects(c.id);
   };
 
   const handleCreate = (e: React.FormEvent) => {
@@ -111,6 +125,35 @@ export default function Categories() {
       })
       .then((updated: Category) => {
         setSelected(updated);
+        fetchCategories();
+      })
+      .catch((err) => setError(err.message));
+  };
+
+  const handleAddProject = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selected) return;
+    setError("");
+    fetch("/api/v1/projects", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${auth.accessToken}`,
+      },
+      body: JSON.stringify({ name: projName, code: projCode.trim() || undefined, category_id: selected.id }),
+    })
+      .then(async (r) => {
+        if (!r.ok) {
+          const body = await r.json().catch(() => ({}));
+          throw new Error(body.detail || "Failed to create project");
+        }
+        return r.json();
+      })
+      .then(() => {
+        setProjName("");
+        setProjCode("");
+        setShowAddProject(false);
+        fetchCatProjects(selected.id);
         fetchCategories();
       })
       .catch((err) => setError(err.message));
@@ -296,8 +339,59 @@ export default function Categories() {
               </button>
             </form>
           )}
-          <h3 className="text-sm font-semibold mb-2">Members</h3>
-          <ul className="text-sm text-slate-300 mb-3 space-y-1">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold">Projects ({catProjects.length})</h3>
+            <div className="flex items-center gap-2">
+              <Link to={`/projects?category_id=${selected.id}`} className="text-xs text-indigo-300 underline">
+                Open Project list
+              </Link>
+              {canCreate && (
+                <button
+                  onClick={() => setShowAddProject(!showAddProject)}
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded text-xs font-medium text-white"
+                >
+                  {showAddProject ? "Cancel" : "+Add Project"}
+                </button>
+              )}
+            </div>
+          </div>
+          {showAddProject && canCreate && (
+            <form onSubmit={handleAddProject} className="flex flex-wrap gap-2 mb-3">
+              <input
+                required
+                aria-label="project name"
+                placeholder="Project name"
+                className="flex-1 min-w-40 px-3 py-2 rounded bg-slate-800 text-sm border border-slate-700"
+                value={projName}
+                onChange={(e) => setProjName(e.target.value)}
+              />
+              <input
+                aria-label="project code"
+                placeholder="Code (optional)"
+                className="w-32 px-3 py-2 rounded bg-slate-800 text-sm border border-slate-700 uppercase"
+                value={projCode}
+                onChange={(e) => setProjCode(e.target.value)}
+              />
+              <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-medium text-white">
+                Create
+              </button>
+            </form>
+          )}
+          <ul className="text-sm text-slate-300 mb-4 space-y-1">
+            {catProjects.map((p) => (
+              <li key={p.id} className="flex items-center justify-between bg-slate-800 px-3 py-1.5 rounded">
+                <span>
+                  <span className="font-mono text-xs text-indigo-300 font-semibold mr-2">{p.code}</span>
+                  {p.name}
+                </span>
+                <Link to={`/projects/${p.id}/timeline`} className="text-xs text-indigo-300 underline">
+                  Open
+                </Link>
+              </li>
+            ))}
+            {catProjects.length === 0 && <li className="text-slate-500">No projects yet.</li>}
+          </ul>
+          <h3 className="text-sm font-semibold mb-2">Members</h3>          <ul className="text-sm text-slate-300 mb-3 space-y-1">
             {members.map((m) => (
               <li key={m.user_id} className="flex items-center justify-between bg-slate-800 px-3 py-1.5 rounded">
                 <span>User #{m.user_id} ({m.role})</span>
