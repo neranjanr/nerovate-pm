@@ -9,6 +9,7 @@ import {
   getVisibleTreeTasks,
   getDescendantStats,
   getSubtreeDateRange,
+  getWbsNumber,
   type TreeTask as TimelineItem,
   type StatusPeriod,
 } from "../utils/wbsTree";
@@ -263,43 +264,6 @@ export default function Timeline() {
     } catch (e) {
       setExportError(e instanceof Error ? e.message : "Export failed");
     }
-  };
-
-  const getWbsNumber = (index: number, taskList: TimelineItem[]): string => {
-    const task = taskList[index];
-    if (!task) return `${index + 1}`;
-    if (task.depth === 0) {
-      let count = 0;
-      for (let i = 0; i <= index; i++) {
-        if (taskList[i].depth === 0) count++;
-      }
-      return `${count}`;
-    }
-    if (task.depth === 1) {
-      const parent = taskList.slice(0, index).reverse().find((t) => t.depth === 0);
-      const parentIdx = parent ? taskList.indexOf(parent) : 0;
-      const parentWbs: string = getWbsNumber(parentIdx, taskList);
-      let subCount = 0;
-      for (let i = 0; i <= index; i++) {
-        if (taskList[i].depth === 1 && taskList[i].parent_id === task.parent_id) {
-          subCount++;
-        }
-      }
-      return `${parentWbs}.${subCount}`;
-    }
-    if (task.depth === 2) {
-      const parent = taskList.slice(0, index).reverse().find((t) => t.depth === 1);
-      const parentIdx = parent ? taskList.indexOf(parent) : 0;
-      const parentWbs: string = parent ? getWbsNumber(parentIdx, taskList) : "1.1";
-      let microCount = 0;
-      for (let i = 0; i <= index; i++) {
-        if (taskList[i].depth === 2 && taskList[i].parent_id === task.parent_id) {
-          microCount++;
-        }
-      }
-      return `${parentWbs}.${microCount}`;
-    }
-    return `${index + 1}`;
   };
 
   const totalTasks = tasks.length;

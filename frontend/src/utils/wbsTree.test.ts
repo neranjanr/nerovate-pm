@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildChildrenMap, getVisibleTreeTasks, getDescendantStats, getSubtreeDateRange, TreeTask } from "./wbsTree";
+import { buildChildrenMap, getVisibleTreeTasks, getDescendantStats, getSubtreeDateRange, getWbsNumber, TreeTask } from "./wbsTree";
 
 describe("wbsTree utils", () => {
   const sampleTasks: TreeTask[] = [
@@ -48,5 +48,12 @@ describe("wbsTree utils", () => {
     const range = getSubtreeDateRange(1, sampleTasks[0], map);
     expect(range.start).toBe("2026-03-01");
     expect(range.due).toBe("2026-03-05");
+  });
+
+  it("computes WBS numbers correctly", () => {
+    expect(getWbsNumber(0, sampleTasks)).toBe("1");
+    expect(getWbsNumber(1, sampleTasks)).toBe("1.1");
+    expect(getWbsNumber(2, sampleTasks)).toBe("1.1.1");
+    expect(getWbsNumber(3, sampleTasks)).toBe("2");
   });
 });
