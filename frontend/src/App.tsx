@@ -5,6 +5,7 @@ import { REGISTRY } from "./modules/registry";
 import Login from "./pages/Login";
 import Categories from "./pages/Categories";
 import Projects from "./pages/Projects";
+import LinkedProjects from "./components/LinkedProjects";
 import { useAuth } from "./stores/auth";
 import { useTheme, type VisualTheme } from "./stores/theme";
 
@@ -157,6 +158,17 @@ function ProjectShell() {
         </div>
       </div>
       <TabBar role={auth.role} />
+      {id && (
+        <div
+          className={
+            isSample
+              ? "px-space-xl py-space-xs bg-surface-container-lowest border-b border-subtle"
+              : "px-6 py-2 bg-slate-900/60 border-b border-slate-800"
+          }
+        >
+          <LinkedProjects projectId={id} />
+        </div>
+      )}
       <div className="flex-1">
         <Suspense fallback={<div className="p-6">Loading…</div>}>
           <Routes>

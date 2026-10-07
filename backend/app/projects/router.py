@@ -6,11 +6,13 @@ from sqlmodel import Session, select
 
 from app.auth.models import User
 from app.deps import get_current_user, get_session, require_writer
-from app.projects.models import Project, ProjectMember
+from app.projects.models import Project, ProjectLink, ProjectMember
 
 router = APIRouter(prefix="/api/v1/projects", tags=["projects"])
 
 CODE_RE = re.compile(r"^[A-Z0-9-]{2,12}$")
+
+LINK_KINDS = ("relates-to", "continues-as")
 
 
 class ProjectCreate(BaseModel):
@@ -47,6 +49,82 @@ class MemberOut(BaseModel):
     project_id: int
     user_id: int
     role: str
+
+
+class LinkCreate(BaseModel):
+    to_project_id: int
+    kind: str = "relates-to"
+    note: str = ""
+
+
+class LinkOut(BaseModel):
+    id: int
+    from_project_id: int
+    to_project_id: int
+    kind: str
+    note: str
+    created_by: int | None = None
+    created_at: str
+    from_project_name: str | None = None
+    from_project_code: str | None = None
+    from_category_id: int | None = None
+    from_category_name: str | None = None
+    to_project_name: str | None = None
+    to_project_code: str | None = None
+    to_category_id: int | None = None
+    to_category_name: str | None = None
+
+
+def _link_out(link: ProjectLink, session: Session) -> LinkOut:
+    assert link.id is not None
+    from_name: str | None = None
+    from_code: str | None = None
+    from_cat_id: int | None = None
+    from_cat_name: str | None = None
+    to_name: str | None = None
+    to_code: str | None = None
+    to_cat_id: int | None = None
+    to_cat_name: str | None = None
+    try:
+        from app.categories.models import Category
+
+        if link.from_project_id is not None:
+            fp = session.get(Project, link.from_project_id)
+            if fp is not None:
+                from_name = fp.name
+                from_code = fp.code
+                from_cat_id = getattr(fp, "category_id", None)
+                if from_cat_id is not None:
+                    cat = session.get(Category, from_cat_id)
+                    from_cat_name = cat.name if cat else None
+        if link.to_project_id is not None:
+            tp = session.get(Project, link.to_project_id)
+            if tp is not None:
+                to_name = tp.name
+                to_code = tp.code
+                to_cat_id = getattr(tp, "category_id", None)
+                if to_cat_id is not None:
+                    cat = session.get(Category, to_cat_id)
+                    to_cat_name = cat.name if cat else None
+    except Exception:
+        pass
+    return LinkOut(
+        id=link.id,
+        from_project_id=link.from_project_id or 0,
+        to_project_id=link.to_project_id or 0,
+        kind=link.kind,
+        note=link.note,
+        created_by=link.created_by,
+        created_at=link.created_at,
+        from_project_name=from_name,
+        from_project_code=from_code,
+        from_category_id=from_cat_id,
+        from_category_name=from_cat_name,
+        to_project_name=to_name,
+        to_project_code=to_code,
+        to_category_id=to_cat_id,
+        to_category_name=to_cat_name,
+    )
 
 
 def _out(p: Project, session: Session) -> ProjectOut:
@@ -425,3 +503,78 @@ def apply_profile(
     session.commit()
     session.refresh(project)
     return _out(project, session)
+
+
+@router.get("/{project_id}/links", response_model=list[LinkOut])
+def list_links(
+    project_id: int,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Outgoing plain links for the Project header chips (U6, ADR-0006)."""
+    require_project_access(project_id, current, session)
+    rows = session.exec(
+        select(ProjectLink).where(ProjectLink.from_project_id == project_id).order_by(ProjectLink.id)  # type: ignore[arg-type]
+    ).all()
+    return [_link_out(r, session) for r in rows]
+
+
+@router.post("/{project_id}/links", response_model=LinkOut, status_code=status.HTTP_201_CREATED)
+def create_link(
+    project_id: int,
+    body: LinkCreate,
+    current: User = Depends(require_writer),
+    session: Session = Depends(get_session),
+):
+    """Create a plain cross-Category ref (no rollup, no cross-Project blocking)."""
+    require_project_access(project_id, current, session)
+    kind = (body.kind or "").strip()
+    if kind not in LINK_KINDS:
+        raise HTTPException(status_code=422, detail="Invalid kind (relates-to|continues-as)")
+    if body.to_project_id == project_id:
+        raise HTTPException(status_code=422, detail="Self-link not allowed")
+    # Target must exist and be visible to the caller (404 avoids enumeration).
+    require_project_access(body.to_project_id, current, session)
+    if session.exec(
+        select(ProjectLink).where(
+            ProjectLink.from_project_id == project_id,
+            ProjectLink.to_project_id == body.to_project_id,
+            ProjectLink.kind == kind,
+        )
+    ).first():
+        raise HTTPException(status_code=422, detail="Link already exists for this pair+kind")
+    assert current.id is not None
+    link = ProjectLink(
+        from_project_id=project_id,
+        to_project_id=body.to_project_id,
+        kind=kind,
+        note=(body.note or "")[:2000],
+        created_by=current.id,
+    )
+    session.add(link)
+    try:
+        session.commit()
+    except Exception as exc:
+        session.rollback()
+        msg = str(exc).lower()
+        if "unique" in msg or "uq_project_links_pair_kind" in msg:
+            raise HTTPException(status_code=422, detail="Link already exists for this pair+kind")
+        raise
+    session.refresh(link)
+    return _link_out(link, session)
+
+
+@router.delete("/{project_id}/links/{link_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_link(
+    project_id: int,
+    link_id: int,
+    current: User = Depends(require_writer),
+    session: Session = Depends(get_session),
+):
+    require_project_access(project_id, current, session)
+    link = session.get(ProjectLink, link_id)
+    if link is None or link.from_project_id != project_id:
+        raise HTTPException(status_code=404, detail="Not found")
+    session.delete(link)
+    session.commit()
+    return None
