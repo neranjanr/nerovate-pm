@@ -44,6 +44,11 @@ class Task(SQLModel, table=True):
     project_id: int = Field(foreign_key="projects.id", index=True)
     parent_id: int | None = Field(default=None, foreign_key="tasks.id", index=True)
     depth: int = Field(default=0)  # 0=Task, 1=Subtask, 2=Microtask
+    # V1 (Phase 4): persistent sibling rank per parent scope (per-Project for
+    # Tasks, per-Task for Subtasks, per-Subtask for Microtasks). Nullable at
+    # the column level so pre-V1 rows survive; backfilled in id order by
+    # init_db migration, then assigned max+1 on create.
+    position: int | None = Field(default=None, index=True)
     title: str = Field(max_length=256)
     description_md: str = Field(default="", max_length=10000)
     status_id: int = Field(foreign_key="statuses.id", index=True)
@@ -65,6 +70,9 @@ class TaskHistory(SQLModel, table=True):
     to_status_id: int = Field(foreign_key="statuses.id")
     actor_id: int | None = Field(default=None, foreign_key="users.id")
     at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    # V1 (Phase 4): lightweight reorder audit, e.g. "reordered 1.2 -> 1.4 by X".
+    # Status-change rows leave this empty; reorder rows keep from==to status.
+    note: str | None = Field(default=None, max_length=512)
 
 
 class TaskStatusPeriod(SQLModel, table=True):

@@ -18,12 +18,20 @@ class Project(SQLModel, table=True):
     name: str = Field(max_length=128)
     code: str = Field(index=True, max_length=12, min_length=2)
     description: str = Field(default="", max_length=2000)
+    color: str = Field(default="#6b7280", max_length=32)
     owner_id: int | None = Field(default=None, foreign_key="users.id")
     # Retained nullable unused for back-compat (SPEC-v0.3 4.2); Status Profile
     # is resolved via parent Category.
     status_profile_id: int | None = Field(default=None)
     start_date: str | None = Field(default=None)
     target_date: str | None = Field(default=None)
+    # High-level lifecycle state, independent of Task Statuses (CONTEXT.md:
+    # Project Status). Fixed set: Not Started | Active | Complete. Default
+    # Active per grill decision; free transitions, label only.
+    project_status: str = Field(default="Active", max_length=16)
+    # V1 (Phase 4): per-Project default tree depth. Fixed set:
+    # tasks-only | tasks-subtasks | all. Default all.
+    tree_default: str = Field(default="all", max_length=16)
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 

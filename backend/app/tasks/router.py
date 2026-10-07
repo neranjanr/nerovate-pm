@@ -212,6 +212,8 @@ class TaskOut(BaseModel):
     time_spent_mins: int
     created_by: int | None = None
     updated_at: str
+    position: int = 0
+    wbs: str = ""
     assignee_ids: list[int] = []
     watcher_ids: list[int] = []
     tag_names: list[str] = []
@@ -220,8 +222,17 @@ class TaskOut(BaseModel):
     status_periods: list[StatusPeriodOut] = []
 
 
-def _task_out(t: Task, session: Session) -> TaskOut:
+def _task_out(t: Task, session: Session, wbs_map: dict[int, str] | None = None) -> TaskOut:
     assert t.id is not None
+    from app.tasks import service as _svc
+
+    if wbs_map is None:
+        try:
+            wbs = _svc.wbs_for_task(session, t)
+        except Exception:
+            wbs = ""
+    else:
+        wbs = wbs_map.get(t.id, "")
     assignees = [a.user_id for a in session.exec(select(TaskAssignee).where(TaskAssignee.task_id == t.id)).all() if a.user_id is not None]
     watchers = [w.user_id for w in session.exec(select(TaskWatcher).where(TaskWatcher.task_id == t.id)).all() if w.user_id is not None]
     tag_ids = [tt.tag_id for tt in session.exec(select(TaskTag).where(TaskTag.task_id == t.id)).all()]
@@ -272,6 +283,8 @@ def _task_out(t: Task, session: Session) -> TaskOut:
         time_spent_mins=t.time_spent_mins,
         created_by=t.created_by,
         updated_at=t.updated_at,
+        position=t.position if t.position is not None else 0,
+        wbs=wbs,
         assignee_ids=assignees,
         watcher_ids=watchers,
         tag_names=tag_names,
@@ -409,11 +422,29 @@ def _filtered_task_outs(
     if search:
         query = query.where(Task.title.contains(search) | Task.description_md.contains(search))  # type: ignore[attr-defined]
 
-    tasks = session.exec(query.order_by(Task.id)).all()  # type: ignore[arg-type]
+    tasks = session.exec(query).all()
+    # V1: sibling order is (position, id); NULL positions sort last.
+    tasks = sorted(
+        tasks,
+        key=lambda t: (
+            t.project_id,
+            t.parent_id if t.parent_id is not None else -1,
+            (t.position is None, t.position if t.position is not None else 0, t.id or 0),
+        ),
+    )
     today = date.today().isoformat()
+    # Precompute WBS per project for the returned rows.
+    wbs_by_project: dict[int, dict[int, str]] = {}
+    for t in tasks:
+        if t.project_id not in wbs_by_project:
+            try:
+                wbs_by_project[t.project_id] = tasks_service.wbs_map_for_project(session, t.project_id)
+            except Exception:
+                wbs_by_project[t.project_id] = {}
     results = []
     for t in tasks:
-        tout = _task_out(t, session)
+        assert t.id is not None
+        tout = _task_out(t, session, wbs_map=wbs_by_project.get(t.project_id, {}))
         if assignee_id is not None and assignee_id not in tout.assignee_ids:
             continue
         if watcher_id is not None and watcher_id not in tout.watcher_ids:
@@ -429,6 +460,68 @@ def _filtered_task_outs(
                 continue
         results.append(tout)
     return results
+
+
+class TaskReorder(BaseModel):
+    item_id: int
+    to_position: int
+    parent_id: int | None = None
+
+
+@router.post("/reorder", response_model=list[TaskOut])
+def reorder_tasks(
+    body: TaskReorder,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    item = session.get(Task, body.item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Task not found")
+    require_project_access(item.project_id, current, session)
+    if current.role == "guest":
+        raise HTTPException(status_code=403, detail="Guest cannot reorder tasks")
+
+    if body.parent_id is not None and body.parent_id != item.parent_id:
+        raise HTTPException(status_code=400, detail="Cross-parent reorder not allowed")
+
+    parent_id = item.parent_id
+    project_id = item.project_id
+
+    from app.tasks import service as _svc
+
+    siblings = _svc.ordered_siblings(session, project_id, parent_id)
+    siblings = [s for s in siblings if s.id != item.id]
+
+    to_pos = max(1, min(body.to_position, len(siblings) + 1))
+    siblings.insert(to_pos - 1, item)
+
+    assert item.id is not None
+    old_wbs_map = _svc.wbs_map_for_project(session, project_id)
+    old_wbs = old_wbs_map.get(item.id, "")
+
+    for idx, sib in enumerate(siblings, start=1):
+        assert sib.id is not None
+        sib.position = idx
+        session.add(sib)
+    session.commit()
+
+    new_wbs_map = _svc.wbs_map_for_project(session, project_id)
+    new_wbs = new_wbs_map.get(item.id, "")
+
+    assert current.id is not None
+    history_note = f"reordered {old_wbs} → {new_wbs} by {current.name or current.username}"
+    session.add(
+        TaskHistory(
+            task_id=item.id,
+            from_status_id=item.status_id,
+            to_status_id=item.status_id,
+            actor_id=current.id,
+            note=history_note,
+        )
+    )
+    session.commit()
+
+    return [_task_out(s, session, wbs_map=new_wbs_map) for s in siblings]
 
 
 @router.get("/defaults", response_model=TaskDefaultsOut)
@@ -498,6 +591,8 @@ def create_task(
     _validate_blocked_by(None, body.blocked_by_ids, session, project_id=body.project_id)
 
     assert current.id is not None
+    from app.tasks import service as _svc
+
     task = Task(
         project_id=body.project_id,
         parent_id=body.parent_id,
@@ -510,6 +605,7 @@ def create_task(
         due_date=body.due_date,
         estimate_mins=body.estimate_mins,
         created_by=current.id,
+        position=_svc.next_position(session, body.project_id, body.parent_id),
     )
     session.add(task)
     session.commit()
@@ -563,6 +659,8 @@ class TaskTimelineItem(BaseModel):
     due_date: str | None = None
     assignee_ids: list[int] = []
     is_blocked: bool = False
+    position: int = 0
+    wbs: str = ""
     periods: list[StatusPeriodOut] = []
 
 
@@ -631,11 +729,25 @@ def _timeline_items(
         if not stage_ids:
             return []
         query = query.where(Task.status_id.in_(stage_ids))  # type: ignore[attr-defined, union-attr]
-    tasks = session.exec(query.order_by(Task.id)).all()  # type: ignore[arg-type]
+    tasks = session.exec(query).all()
+    # V1: order by sibling position so Timeline WBS pane matches List.
+    from app.tasks import service as _tl_svc
+
+    tasks = sorted(
+        tasks,
+        key=lambda t: (
+            t.parent_id if t.parent_id is not None else -1,
+            (t.position is None, t.position if t.position is not None else 0, t.id or 0),
+        ),
+    )
+    try:
+        wbs_map = _tl_svc.wbs_map_for_project(session, project_id)
+    except Exception:
+        wbs_map = {}
     results = []
     for t in tasks:
         assert t.id is not None
-        tout = _task_out(t, session)
+        tout = _task_out(t, session, wbs_map=wbs_map)
         st = session.get(Status, t.status_id)
         st_name = st.name if st else ""
         results.append(
@@ -650,6 +762,8 @@ def _timeline_items(
                 due_date=t.due_date,
                 assignee_ids=tout.assignee_ids,
                 is_blocked=tout.is_blocked,
+                position=t.position if t.position is not None else 0,
+                wbs=wbs_map.get(t.id, ""),
                 periods=tout.status_periods,
             )
         )

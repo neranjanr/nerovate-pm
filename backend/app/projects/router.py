@@ -11,8 +11,28 @@ from app.projects.models import Project, ProjectLink, ProjectMember
 router = APIRouter(prefix="/api/v1/projects", tags=["projects"])
 
 CODE_RE = re.compile(r"^[A-Z0-9-]{2,12}$")
+COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 LINK_KINDS = ("relates-to", "continues-as")
+
+PROJECT_STATUSES = ("Not Started", "Active", "Complete")
+
+
+def _validate_color(color: str | None) -> str:
+    color = (color or "#6b7280").strip()
+    if not COLOR_RE.match(color):
+        raise HTTPException(status_code=422, detail="Invalid color (hex #rrggbb)")
+    return color.lower()
+
+
+def _normalize_project_status(value: str | None) -> str | None:
+    if value is None:
+        return None
+    v = value.strip()
+    for allowed in PROJECT_STATUSES:
+        if v.lower() == allowed.lower():
+            return allowed
+    raise HTTPException(status_code=422, detail="Invalid project_status (Not Started|Active|Complete)")
 
 
 class ProjectCreate(BaseModel):
@@ -20,9 +40,11 @@ class ProjectCreate(BaseModel):
     code: str | None = None
     category_id: int | None = None
     description: str = ""
+    color: str = "#6b7280"
     start_date: str | None = None
     target_date: str | None = None
     status_profile_id: int | None = None
+    project_status: str | None = None
 
 
 class ProjectOut(BaseModel):
@@ -32,12 +54,25 @@ class ProjectOut(BaseModel):
     category_id: int | None = None
     category_name: str | None = None
     description: str
+    color: str = "#6b7280"
     start_date: str | None = None
     target_date: str | None = None
     task_count: int = 0
     owner_id: int | None = None
     owner_name: str | None = None
     status_profile_id: int | None = None
+    project_status: str = "Active"
+    tree_default: str = "all"
+
+
+class ProjectUpdate(BaseModel):
+    name: str | None = None
+    code: str | None = None
+    description: str | None = None
+    color: str | None = None
+    start_date: str | None = None
+    target_date: str | None = None
+    project_status: str | None = None
 
 
 class MemberAdd(BaseModel):
@@ -155,12 +190,15 @@ def _out(p: Project, session: Session) -> ProjectOut:
         category_id=cat_id,
         category_name=category_name,
         description=p.description,
+        color=getattr(p, "color", None) or "#6b7280",
         start_date=p.start_date,
         target_date=p.target_date,
         task_count=task_count,
         owner_id=p.owner_id,
         owner_name=owner_name,
         status_profile_id=p.status_profile_id,
+        project_status=getattr(p, "project_status", None) or "Active",
+        tree_default=getattr(p, "tree_default", None) or "all",
     )
 
 
@@ -194,14 +232,18 @@ def require_project_access(project_id: int, current: User, session: Session) -> 
 @router.get("", response_model=list[ProjectOut])
 def list_projects(
     category_id: int | None = None,
+    project_status: str | None = None,
     current: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     assert current.id is not None
+    status_filter = _normalize_project_status(project_status) if project_status else None
     if current.role == "admin":
-        q = select(Project).order_by(Project.id)  # type: ignore[arg-type]
+        q = select(Project).order_by(Project.code)  # type: ignore[arg-type]
         if category_id is not None:
             q = q.where(Project.category_id == category_id)
+        if status_filter is not None:
+            q = q.where(Project.project_status == status_filter)
         rows = session.exec(q).all()
         return [_out(p, session) for p in rows]
     from app.categories.access import visible_project_ids
@@ -209,9 +251,11 @@ def list_projects(
     ids = visible_project_ids(session, current.id)
     if not ids:
         return []
-    q = select(Project).where(Project.id.in_(ids)).order_by(Project.id)  # type: ignore[arg-type,union-attr]
+    q = select(Project).where(Project.id.in_(ids)).order_by(Project.code)  # type: ignore[arg-type,union-attr]
     if category_id is not None:
         q = q.where(Project.category_id == category_id)
+    if status_filter is not None:
+        q = q.where(Project.project_status == status_filter)
     rows = session.exec(q).all()
     return [_out(p, session) for p in rows]
 
@@ -298,10 +342,12 @@ def create_project(
         name=name,
         code=body.code,
         description=body.description,
+        color=_validate_color(body.color),
         owner_id=current.id,
         start_date=body.start_date,
         target_date=body.target_date,
         status_profile_id=body.status_profile_id,
+        project_status=_normalize_project_status(body.project_status) or "Active",
     )
     session.add(project)
     try:
@@ -330,6 +376,61 @@ def create_project(
 @router.get("/{project_id}", response_model=ProjectOut)
 def get_project(project_id: int, current: User = Depends(get_current_user), session: Session = Depends(get_session)):
     return _out(require_project_access(project_id, current, session), session)
+
+
+@router.patch("/{project_id}", response_model=ProjectOut)
+def update_project(
+    project_id: int,
+    body: ProjectUpdate,
+    current: User = Depends(require_writer),
+    session: Session = Depends(get_session),
+):
+    """Project Settings: name, code, dates, project_status (label only, free transitions)."""
+    project = require_project_access(project_id, current, session)
+    if current.role not in ("admin", "manager"):
+        raise HTTPException(status_code=403, detail="Manager or admin only")
+    assert project.id is not None and project.category_id is not None
+    if body.name is not None:
+        name = body.name.strip()
+        if not name:
+            raise HTTPException(status_code=422, detail="Name required")
+        existing = session.exec(
+            select(Project).where(Project.category_id == project.category_id, Project.name == name)
+        ).first()
+        if existing is not None and existing.id != project.id:
+            raise HTTPException(status_code=422, detail="Name exists in this Category")
+        project.name = name
+    if body.code is not None:
+        code = body.code.strip().upper()
+        if not CODE_RE.match(code):
+            raise HTTPException(status_code=400, detail="Invalid code (A-Z0-9-, 2-12 chars)")
+        existing = session.exec(
+            select(Project).where(Project.category_id == project.category_id, Project.code == code)
+        ).first()
+        if existing is not None and existing.id != project.id:
+            raise HTTPException(status_code=422, detail="Code exists in this Category")
+        project.code = code
+    if body.description is not None:
+        project.description = body.description[:2000]
+    if body.color is not None:
+        project.color = _validate_color(body.color)
+    if "start_date" in body.model_fields_set:
+        project.start_date = body.start_date
+    if "target_date" in body.model_fields_set:
+        project.target_date = body.target_date
+    if body.project_status is not None:
+        project.project_status = _normalize_project_status(body.project_status) or "Active"
+    session.add(project)
+    try:
+        session.commit()
+    except Exception as exc:
+        session.rollback()
+        msg = str(exc).lower()
+        if "unique" in msg or "uq_projects_category" in msg:
+            raise HTTPException(status_code=422, detail="Code or name exists in this Category")
+        raise
+    session.refresh(project)
+    return _out(project, session)
 
 
 @router.get("/{project_id}/members", response_model=list[MemberOut])
@@ -578,3 +679,37 @@ def delete_link(
     session.delete(link)
     session.commit()
     return None
+
+
+class TreeDefaultUpdate(BaseModel):
+    tree_default: str
+
+
+@router.get("/{project_id}/tree-default")
+def get_project_tree_default(
+    project_id: int,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    project = require_project_access(project_id, current, session)
+    return {"tree_default": getattr(project, "tree_default", None) or "all"}
+
+
+@router.patch("/{project_id}/tree-default")
+def update_project_tree_default(
+    project_id: int,
+    body: TreeDefaultUpdate,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    project = require_project_access(project_id, current, session)
+    if current.role != "admin" and project.owner_id != current.id:
+        raise HTTPException(status_code=403, detail="Owner only")
+    val = (body.tree_default or "").strip().lower()
+    if val not in ("tasks-only", "tasks-subtasks", "all"):
+        raise HTTPException(status_code=422, detail="Invalid tree_default (tasks-only|tasks-subtasks|all)")
+    project.tree_default = val
+    session.add(project)
+    session.commit()
+    session.refresh(project)
+    return {"tree_default": project.tree_default}

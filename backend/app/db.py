@@ -67,6 +67,11 @@ def init_db() -> None:
 
     SQLModel.metadata.create_all(engine)
     _migrate_projects_category_scope()
+    _migrate_project_status()
+    _migrate_project_color()
+    _migrate_project_tree_default()
+    _migrate_task_position_column()
+    _migrate_task_history_note()
 
     with Session(engine) as session:
         from app.auth.models import User
@@ -270,6 +275,217 @@ def _migrate_projects_category_scope() -> None:
         ):
             try:
                 session.execute(text(f"CREATE UNIQUE INDEX IF NOT EXISTS {idx_name} ON projects {cols_pair}"))
+                session.commit()
+            except Exception:
+                pass
+
+
+def _migrate_project_status() -> None:
+    """Additive migration for Project Status (grill decision).
+
+    - Adds projects.project_status when missing (older sqlite files).
+    - Backfills NULL/empty to 'Active' (new-project default).
+    - Normalizes any legacy value outside {Not Started, Active, Complete}
+      to 'Active'. Label only: no task changes.
+    Idempotent.
+    """
+    from sqlalchemy import text
+
+    with Session(engine) as session:
+        try:
+            cols = [r[1] for r in session.execute(text("PRAGMA table_info(projects)")).all()]
+        except Exception:
+            return
+        if not cols:
+            return
+        if "project_status" not in cols:
+            try:
+                session.execute(text("ALTER TABLE projects ADD COLUMN project_status VARCHAR(16) DEFAULT 'Active'"))
+                session.commit()
+            except Exception:
+                return
+        try:
+            session.execute(text("UPDATE projects SET project_status='Active' WHERE project_status IS NULL OR project_status=''"))
+            session.commit()
+        except Exception:
+            pass
+        try:
+            session.execute(
+                text("UPDATE projects SET project_status='Active' WHERE project_status NOT IN ('Not Started','Active','Complete')")
+            )
+            session.commit()
+        except Exception:
+            pass
+
+
+def _migrate_project_color() -> None:
+    """Additive migration for Project display color.
+
+    - Adds projects.color when missing (older sqlite files).
+    - Backfills NULL/empty to '#6b7280' (category default).
+    Idempotent.
+    """
+    from sqlalchemy import text
+
+    with Session(engine) as session:
+        try:
+            cols = [r[1] for r in session.execute(text("PRAGMA table_info(projects)")).all()]
+        except Exception:
+            return
+        if not cols:
+            return
+        if "color" not in cols:
+            try:
+                session.execute(text("ALTER TABLE projects ADD COLUMN color VARCHAR(32) DEFAULT '#6b7280'"))
+                session.commit()
+            except Exception:
+                return
+        try:
+            session.execute(text("UPDATE projects SET color='#6b7280' WHERE color IS NULL OR color=''"))
+            session.commit()
+        except Exception:
+            pass
+
+
+TREE_DEFAULTS = ("tasks-only", "tasks-subtasks", "all")
+
+
+def _migrate_project_tree_default() -> None:
+    """V1 additive migration for Project tree default (Phase 4).
+
+    - Adds projects.tree_default when missing (older sqlite files).
+    - Backfills NULL/empty to 'all'; normalizes unknown values to 'all'.
+    Idempotent.
+    """
+    from sqlalchemy import text
+
+    with Session(engine) as session:
+        try:
+            cols = [r[1] for r in session.execute(text("PRAGMA table_info(projects)")).all()]
+        except Exception:
+            return
+        if not cols:
+            return
+        if "tree_default" not in cols:
+            try:
+                session.execute(
+                    text("ALTER TABLE projects ADD COLUMN tree_default VARCHAR(16) DEFAULT 'all'")
+                )
+                session.commit()
+            except Exception:
+                return
+        try:
+            session.execute(
+                text("UPDATE projects SET tree_default='all' WHERE tree_default IS NULL OR tree_default=''")
+            )
+            session.commit()
+        except Exception:
+            pass
+        try:
+            session.execute(
+                text("UPDATE projects SET tree_default='all' WHERE tree_default NOT IN ('tasks-only','tasks-subtasks','all')")
+            )
+            session.commit()
+        except Exception:
+            pass
+
+
+def _migrate_task_position_column() -> None:
+    """V1 additive migration: tasks.position + backfill in creation order.
+
+    - Adds tasks.position when missing (older sqlite files).
+    - Backfills NULL positions per parent scope ordered by id, so legacy
+      Projects keep creation order. New rows get max+1 on create.
+    Idempotent: safe to run on every boot and in tests.
+    """
+    from sqlalchemy import text
+
+    with Session(engine) as session:
+        try:
+            cols = [r[1] for r in session.execute(text("PRAGMA table_info(tasks)")).all()]
+        except Exception:
+            return
+        if not cols:
+            return
+        if "position" not in cols:
+            try:
+                session.execute(text("ALTER TABLE tasks ADD COLUMN position INTEGER"))
+                session.commit()
+            except Exception:
+                return
+    _migrate_task_positions()
+
+
+def _migrate_task_positions() -> None:
+    """Backfill NULL tasks.position per parent scope in id order.
+
+    Scope = (project_id, parent_id) with NULL parent meaning top-level Tasks.
+    Within each scope, rows with explicit positions keep them; NULL rows are
+    appended after the current max in id order. All-NULL scopes therefore
+    resolve to pure id order. Contiguous renumber is left to reorder calls.
+    """
+    from sqlalchemy import text
+
+    with Session(engine) as session:
+        try:
+            rows = session.execute(text("SELECT id FROM tasks WHERE position IS NULL")).all()
+            if not rows:
+                return
+            scopes = session.execute(
+                text("SELECT DISTINCT project_id, parent_id FROM tasks WHERE position IS NULL")
+            ).all()
+        except Exception:
+            return
+        for project_id, parent_id in scopes:
+            try:
+                if parent_id is None:
+                    siblings = session.execute(
+                        text(
+                            "SELECT id, position FROM tasks"
+                            " WHERE project_id = :p AND parent_id IS NULL ORDER BY id"
+                        ).bindparams(p=project_id)
+                    ).all()
+                else:
+                    siblings = session.execute(
+                        text(
+                            "SELECT id, position FROM tasks"
+                            " WHERE project_id = :p AND parent_id = :par ORDER BY id"
+                        ).bindparams(p=project_id, par=parent_id)
+                    ).all()
+            except Exception:
+                continue
+            taken = sorted(r[1] for r in siblings if r[1] is not None)
+            nxt = (max(taken) + 1) if taken else 1
+            for tid, pos in siblings:
+                if pos is not None:
+                    continue
+                try:
+                    session.execute(
+                        text("UPDATE tasks SET position = :n WHERE id = :t").bindparams(n=nxt, t=tid)
+                    )
+                    nxt += 1
+                except Exception:
+                    pass
+        try:
+            session.commit()
+        except Exception:
+            pass
+
+
+def _migrate_task_history_note() -> None:
+    """V1 additive migration: task_history.note for reorder audit rows."""
+    from sqlalchemy import text
+
+    with Session(engine) as session:
+        try:
+            cols = [r[1] for r in session.execute(text("PRAGMA table_info(task_history)")).all()]
+        except Exception:
+            return
+        if not cols:
+            return
+        if "note" not in cols:
+            try:
+                session.execute(text("ALTER TABLE task_history ADD COLUMN note VARCHAR(512)"))
                 session.commit()
             except Exception:
                 pass

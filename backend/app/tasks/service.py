@@ -11,9 +11,75 @@ from app.tasks.models import Task, TaskAssignee, TaskBlockedBy
 
 
 def get_project_tasks(session: Session, project_id: int) -> list[Task]:
-    return list(
-        session.exec(select(Task).where(Task.project_id == project_id).order_by(Task.id)).all()  # type: ignore[arg-type]
-    )
+    return ordered_siblings(session, project_id, None, project_wide=True)
+
+
+# V1 (Phase 4): persistent sibling order + WBS numbering.
+#
+# Order is global per parent, independent of Status/Assignee/Stage. WBS is
+# a pure function of ordered sibling lists: Task N, Subtask N.M,
+# Microtask N.M.K. Position is 1-based rank per parent scope.
+
+
+def ordered_siblings(
+    session: Session, project_id: int, parent_id: int | None, project_wide: bool = False
+) -> list[Task]:
+    """Siblings under one parent ordered by (position, id).
+
+    NULL positions sort last so legacy rows stay readable pre-backfill.
+    project_wide=True returns every task in the project (for WBS maps).
+    """
+    from sqlalchemy import func
+
+    if project_wide:
+        q = select(Task).where(Task.project_id == project_id)
+    elif parent_id is None:
+        q = select(Task).where(Task.project_id == project_id, Task.parent_id == None)  # type: ignore[comparison-overlap, union-attr]
+    else:
+        q = select(Task).where(Task.project_id == project_id, Task.parent_id == parent_id)
+    rows = list(session.exec(q).all())
+    rows.sort(key=lambda t: ((t.position is None, t.position if t.position is not None else 0, t.id or 0)))
+    return rows
+
+
+def next_position(session: Session, project_id: int, parent_id: int | None) -> int:
+    from sqlalchemy import func
+
+    mx: int | None = None
+    if parent_id is None:
+        mx = session.exec(
+            select(func.max(Task.position)).where(Task.project_id == project_id, Task.parent_id == None)  # type: ignore[comparison-overlap, union-attr, arg-type]
+        ).one()
+    else:
+        mx = session.exec(
+            select(func.max(Task.position)).where(Task.project_id == project_id, Task.parent_id == parent_id)
+        ).one()
+    return (int(mx) + 1) if mx is not None else 1
+
+
+def wbs_map_for_project(session: Session, project_id: int) -> dict[int, str]:
+    """WBS per task id for one project, derived from position order."""
+    tops = ordered_siblings(session, project_id, None)
+    out: dict[int, str] = {}
+    for i, top in enumerate(tops, start=1):
+        assert top.id is not None
+        out[top.id] = str(i)
+        subs = ordered_siblings(session, project_id, top.id)
+        for j, sub in enumerate(subs, start=1):
+            assert sub.id is not None
+            out[sub.id] = f"{i}.{j}"
+            micros = ordered_siblings(session, project_id, sub.id)
+            for k, mic in enumerate(micros, start=1):
+                assert mic.id is not None
+                out[mic.id] = f"{i}.{j}.{k}"
+    return out
+
+
+def wbs_for_task(session: Session, task: Task) -> str:
+    """WBS for a single task (fallback when no precomputed map)."""
+    assert task.id is not None
+    m = wbs_map_for_project(session, task.project_id)
+    return m.get(task.id, "")
 
 
 def is_done_status(session: Session, status_id: int) -> bool:

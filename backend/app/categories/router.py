@@ -12,6 +12,23 @@ from app.deps import get_current_user, get_session, require_writer
 router = APIRouter(prefix="/api/v1/categories", tags=["categories"])
 
 KEY_RE = re.compile(r"^CAT-[A-Z0-9-]{2,12}$")
+COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+
+def _validate_category_name(name: str) -> str:
+    name = (name or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Name required")
+    if len(name) > 80:
+        raise HTTPException(status_code=422, detail="Name max 80 chars")
+    return name
+
+
+def _validate_color(color: str | None) -> str:
+    color = (color or "#6b7280").strip()
+    if not COLOR_RE.match(color):
+        raise HTTPException(status_code=422, detail="Invalid color (hex #rrggbb)")
+    return color.lower()
 
 
 def _make_key(name: str) -> str:
@@ -115,13 +132,13 @@ def require_category_access(category_id: int, current: User, session: Session) -
 def list_categories(current: User = Depends(get_current_user), session: Session = Depends(get_session)):
     assert current.id is not None
     if current.role == "admin":
-        rows = session.exec(select(Category).order_by(Category.id)).all()  # type: ignore[arg-type]
+        rows = session.exec(select(Category).order_by(Category.name)).all()  # type: ignore[arg-type]
         return [_out(c, session) for c in rows]
     mrows = session.exec(select(CategoryMember).where(CategoryMember.user_id == current.id)).all()
     ids = [m.category_id for m in mrows if m.category_id is not None]
     if not ids:
         return []
-    rows = session.exec(select(Category).where(Category.id.in_(ids)).order_by(Category.id)).all()  # type: ignore[arg-type,union-attr]
+    rows = session.exec(select(Category).where(Category.id.in_(ids)).order_by(Category.name)).all()  # type: ignore[arg-type,union-attr]
     return [_out(c, session) for c in rows]
 
 
@@ -133,9 +150,7 @@ def create_category(
 ):
     if current.role not in ("admin", "manager"):
         raise HTTPException(status_code=403, detail="Manager or admin only")
-    name = body.name.strip()
-    if not name:
-        raise HTTPException(status_code=400, detail="Name required")
+    name = _validate_category_name(body.name)
     if session.exec(select(Category).where(Category.name == name)).first():
         raise HTTPException(status_code=409, detail="Name exists")
     if body.key is not None:
@@ -157,7 +172,7 @@ def create_category(
     category = Category(
         key=key,
         name=name,
-        color=body.color or "#6b7280",
+        color=_validate_color(body.color),
         status_profile_id=body.status_profile_id,
         created_by=current.id,
     )
@@ -187,15 +202,13 @@ def update_category(
         raise HTTPException(status_code=403, detail="Manager or admin only")
     # Rename changes name only, never key: key is immutable (extra key fields ignored by schema).
     if body.name is not None:
-        name = body.name.strip()
-        if not name:
-            raise HTTPException(status_code=400, detail="Name required")
+        name = _validate_category_name(body.name)
         existing = session.exec(select(Category).where(Category.name == name)).first()
         if existing is not None and existing.id != category.id:
             raise HTTPException(status_code=409, detail="Name exists")
         category.name = name
     if body.color is not None:
-        category.color = body.color
+        category.color = _validate_color(body.color)
     if "status_profile_id" in body.model_fields_set:
         if body.status_profile_id is not None:
             from app.statuses.models import StatusProfile
@@ -301,5 +314,5 @@ def list_category_projects(
 
     if "category_id" not in Project.model_fields:
         return []
-    rows = session.exec(select(Project).where(Project.category_id == category_id).order_by(Project.id)).all()  # type: ignore[attr-defined,arg-type]
+    rows = session.exec(select(Project).where(Project.category_id == category_id).order_by(Project.code)).all()  # type: ignore[attr-defined,arg-type]
     return [_project_out(p, session) for p in rows]
