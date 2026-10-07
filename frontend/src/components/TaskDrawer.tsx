@@ -84,8 +84,18 @@ interface ProjectStatus {
   id: number;
   name: string;
   color?: string;
+  shade?: string | null;
+  stage_id?: number | null;
   order: number;
   is_done?: boolean;
+}
+
+interface StageInfo {
+  id: number;
+  profile_id: number;
+  name: string;
+  order: number;
+  color_base: string;
 }
 
 interface MemberInfo {
@@ -97,6 +107,7 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
   const auth = useAuth();
   const [task, setTask] = useState<TaskOut | null>(null);
   const [statuses, setStatuses] = useState<ProjectStatus[]>([]);
+  const [stages, setStages] = useState<StageInfo[]>([]);
   const [members, setMembers] = useState<MemberInfo[]>([]);
   const [comments, setComments] = useState<CommentOut[]>([]);
   const [attachments, setAttachments] = useState<AttachmentOut[]>([]);
@@ -176,13 +187,32 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
         setSubtasks(subData);
         setMembers(memData);
 
-        if (projData && projData.status_profile_id) {
-          const stRes = await fetch(`/api/v1/status-profiles/${projData.status_profile_id}`, {
-            headers: { Authorization: `Bearer ${auth.accessToken}` },
-          });
-          if (stRes.ok) {
-            const stData = await stRes.json();
-            setStatuses(stData.statuses || []);
+        if (projData) {
+          // U3: Profile resolves live via parent Category (Project → Category → Profile).
+          // Older projects may still carry status_profile_id; prefer it when present.
+          let profileId: number | null = projData.status_profile_id ?? null;
+          if (!profileId && projData.category_id) {
+            try {
+              const catRes = await fetch(`/api/v1/categories/${projData.category_id}`, {
+                headers: { Authorization: `Bearer ${auth.accessToken}` },
+              });
+              if (catRes.ok) {
+                const catData = await catRes.json();
+                profileId = catData.status_profile_id ?? null;
+              }
+            } catch {
+              profileId = null;
+            }
+          }
+          if (profileId) {
+            const stRes = await fetch(`/api/v1/status-profiles/${profileId}`, {
+              headers: { Authorization: `Bearer ${auth.accessToken}` },
+            });
+            if (stRes.ok) {
+              const stData = await stRes.json();
+              setStatuses(stData.statuses || []);
+              setStages(stData.stages || []);
+            }
           }
         }
         setLoading(false);
@@ -474,11 +504,36 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
                   onChange={(e) => setSelectedStatusId(Number(e.target.value))}
                   className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs text-white"
                 >
-                  {statuses.map((st) => (
-                    <option key={st.id} value={st.id}>
-                      {st.name}
-                    </option>
-                  ))}
+                  {stages.length > 0 ? (
+                    <>
+                      {stages.map((st) => {
+                        const leafs = statuses.filter((s) => s.stage_id === st.id);
+                        if (leafs.length === 0) return null;
+                        return (
+                          <optgroup key={st.id} label={st.name}>
+                            {leafs.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        );
+                      })}
+                      {statuses
+                        .filter((s) => !s.stage_id)
+                        .map((st) => (
+                          <option key={st.id} value={st.id}>
+                            {st.name}
+                          </option>
+                        ))}
+                    </>
+                  ) : (
+                    statuses.map((st) => (
+                      <option key={st.id} value={st.id}>
+                        {st.name}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
               <div>

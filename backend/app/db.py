@@ -38,7 +38,7 @@ def init_db() -> None:
             )
             session.commit()
 
-        if not session.exec(select(StatusProfile)).first():
+        if session.exec(select(StatusProfile).where(StatusProfile.name == "Procurement")).first() is None:
             proc = StatusProfile(name="Procurement", is_template=True)
             session.add(proc)
             session.commit()
@@ -65,7 +65,9 @@ def init_db() -> None:
                     order=1,
                 )
             )
+            session.commit()
 
+        if session.exec(select(StatusProfile).where(StatusProfile.name == "Monthly Repetitive")).first() is None:
             monthly = StatusProfile(name="Monthly Repetitive", is_template=True)
             session.add(monthly)
             session.commit()
@@ -93,6 +95,8 @@ def init_db() -> None:
                 )
             )
             session.commit()
+
+    _migrate_status_stages()
 
 
 def _migrate_projects_category_scope() -> None:
@@ -219,3 +223,190 @@ def _migrate_projects_category_scope() -> None:
                 session.commit()
             except Exception:
                 pass
+
+
+def _tint_hex(base: str, idx: int, total: int) -> str:
+    try:
+        h = base.lstrip("#")
+        if len(h) == 3:
+            h = "".join(c * 2 for c in h)
+        r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    except Exception:
+        return base
+    total = max(total, 1)
+    f = 0.0 if total <= 1 else (idx / (total - 1)) * 0.45
+    r = round(r + (255 - r) * f)
+    g = round(g + (255 - g) * f)
+    b = round(b + (255 - b) * f)
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
+def _migrate_status_stages() -> None:
+    """U3 additive migration: status_stages + statuses.stage_id/shade + 5+6+4 seed.
+
+    - Adds statuses.stage_id / statuses.shade when missing (older sqlite files).
+    - Migrates existing rows into one Stage ``Main`` per profile, preserving
+      order; shade defaults to the stage base color when unset.
+    - Seeds the Procurements 5+6+4 staged example (SPEC-v0.3 4.3) when missing.
+    Idempotent: safe to run on every boot and in tests.
+    """
+    from sqlalchemy import text
+
+    from sqlmodel import Session as _Session
+
+    with _Session(engine) as session:
+        try:
+            scols = [r[1] for r in session.execute(text("PRAGMA table_info(statuses)")).all()]
+        except Exception:
+            return
+        if not scols:
+            return
+        if "stage_id" not in scols:
+            try:
+                session.execute(text("ALTER TABLE statuses ADD COLUMN stage_id INTEGER"))
+                session.commit()
+            except Exception:
+                pass
+        if "shade" not in scols:
+            try:
+                session.execute(text("ALTER TABLE statuses ADD COLUMN shade VARCHAR(32)"))
+                session.commit()
+            except Exception:
+                pass
+        # Ensure status_stages table exists for pre-U3 sqlite files.
+        try:
+            tcols = [r[1] for r in session.execute(text("PRAGMA table_info(status_stages)")).all()]
+        except Exception:
+            tcols = []
+        if not tcols:
+            try:
+                session.execute(
+                    text(
+                        "CREATE TABLE IF NOT EXISTS status_stages ("
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        "profile_id INTEGER NOT NULL REFERENCES status_profiles(id), "
+                        "name VARCHAR(128) NOT NULL, "
+                        "\"order\" INTEGER NOT NULL DEFAULT 0, "
+                        "color_base VARCHAR(32) NOT NULL DEFAULT '#6b7280')"
+                    )
+                )
+                session.commit()
+                session.execute(
+                    text("CREATE INDEX IF NOT EXISTS ix_status_stages_profile_id ON status_stages (profile_id)")
+                )
+                session.commit()
+            except Exception:
+                pass
+
+    # ORM pass: backfill Main stages + seed Procurements example.
+    with _Session(engine) as session:
+        from app.statuses.models import Status, StatusProfile, StatusStage
+
+        try:
+            profiles = session.exec(select(StatusProfile)).all()
+        except Exception:
+            return
+        for p in profiles:
+            if p.id is None:
+                continue
+            try:
+                stages = session.exec(
+                    select(StatusStage).where(StatusStage.profile_id == p.id)
+                ).all()
+            except Exception:
+                continue
+            if not stages:
+                main = StatusStage(
+                    profile_id=p.id, name="Main", order=1, color_base="#6b7280"
+                )
+                session.add(main)
+                session.commit()
+                session.refresh(main)
+                assert main.id is not None
+                try:
+                    rows = session.exec(
+                        select(Status).where(Status.profile_id == p.id)
+                    ).all()
+                except Exception:
+                    rows = []
+                for s in rows:
+                    s.stage_id = main.id
+                    if not getattr(s, "shade", None):
+                        s.shade = main.color_base
+                    session.add(s)
+                session.commit()
+
+        # Seed Procurements 5+6+4 (three base hues, leaf shades auto-tinted).
+        try:
+            existing = session.exec(
+                select(StatusProfile).where(StatusProfile.name == "Procurements")
+            ).first()
+        except Exception:
+            existing = None
+        if existing is None:
+            seeded = StatusProfile(name="Procurements", is_template=True)
+            session.add(seeded)
+            session.commit()
+            session.refresh(seeded)
+            assert seeded.id is not None
+            spec: list[tuple[str, str, list[str]]] = [
+                (
+                    "Prior Approval",
+                    "#3b82f6",
+                    [
+                        "Concept approval to be requested",
+                        "Pending concept approval",
+                        "Concept approval ok\u2013proc approval to be requested",
+                        "Pending proc approval",
+                        "Procurement approval received",
+                    ],
+                ),
+                (
+                    "Procurement Stage",
+                    "#f59e0b",
+                    [
+                        "Spec to be submitted",
+                        "Spec submitted\u2013approval pending",
+                        "Spec approved\u2013pending publishing",
+                        "Published",
+                        "Tender closed / Under evaluation",
+                        "Approval received",
+                    ],
+                ),
+                (
+                    "Post Approval",
+                    "#10b981",
+                    [
+                        "Award letter issued",
+                        "PB received",
+                        "Implementation",
+                        "Completed",
+                    ],
+                ),
+            ]
+            order = 1
+            for stage_order, (sname, base, leaves) in enumerate(spec, start=1):
+                st = StatusStage(
+                    profile_id=seeded.id,
+                    name=sname,
+                    order=stage_order,
+                    color_base=base,
+                )
+                session.add(st)
+                session.commit()
+                session.refresh(st)
+                assert st.id is not None
+                for idx, leaf in enumerate(leaves):
+                    session.add(
+                        Status(
+                            profile_id=seeded.id,
+                            stage_id=st.id,
+                            name=leaf,
+                            color=base,
+                            shade=_tint_hex(base, idx, len(leaves)),
+                            order=order,
+                            is_done=(leaf == "Completed"),
+                        )
+                    )
+                    order += 1
+            session.commit()

@@ -19,6 +19,30 @@ interface Member {
   role: string;
 }
 
+interface Stage {
+  id: number;
+  profile_id: number;
+  name: string;
+  order: number;
+  color_base: string;
+}
+
+interface ProfileStatus {
+  id: number;
+  profile_id: number;
+  stage_id?: number | null;
+  name: string;
+  color: string;
+  shade?: string | null;
+  order: number;
+  is_done?: boolean;
+}
+
+interface Profile {
+  id: number;
+  name: string;
+}
+
 export default function Categories() {
   const auth = useAuth();
   const { theme, setTheme } = useTheme();
@@ -37,6 +61,16 @@ export default function Categories() {
   const [showAddProject, setShowAddProject] = useState(false);
   const [projName, setProjName] = useState("");
   const [projCode, setProjCode] = useState("");
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [profileId, setProfileId] = useState("");
+  const [stages, setStages] = useState<Stage[]>([]);
+  const [profileStatuses, setProfileStatuses] = useState<ProfileStatus[]>([]);
+  const [newStageName, setNewStageName] = useState("");
+  const [newStageColor, setNewStageColor] = useState("#6b7280");
+  const [newStatusName, setNewStatusName] = useState("");
+  const [newStatusStage, setNewStatusStage] = useState("");
+  const [replacementId, setReplacementId] = useState("");
+  const [stageNotice, setStageNotice] = useState("");
 
   const fetchCategories = () => {
     if (!auth.accessToken) return;
@@ -70,11 +104,43 @@ export default function Categories() {
       .catch(() => setCatProjects([]));
   };
 
+  const fetchProfiles = () => {
+    fetch(`/api/v1/status-profiles`, {
+      headers: { Authorization: `Bearer ${auth.accessToken}` },
+    })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((all) => setProfiles((all as { id: number; name: string }[]).map((p) => ({ id: p.id, name: p.name }))))
+      .catch(() => setProfiles([]));
+  };
+
+  const fetchStages = (pid: number) => {
+    fetch(`/api/v1/status-profiles/${pid}/stages`, {
+      headers: { Authorization: `Bearer ${auth.accessToken}` },
+    })
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setStages)
+      .catch(() => setStages([]));
+    fetch(`/api/v1/status-profiles/${pid}/statuses`, {
+      headers: { Authorization: `Bearer ${auth.accessToken}` },
+    })
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setProfileStatuses)
+      .catch(() => setProfileStatuses([]));
+  };
+
   const handleSelect = (c: Category) => {
     setSelected(c);
     setRename(c.name);
+    setProfileId(c.status_profile_id ? String(c.status_profile_id) : "");
+    setStageNotice("");
     fetchMembers(c.id);
     fetchCatProjects(c.id);
+    fetchProfiles();
+    if (c.status_profile_id) fetchStages(c.status_profile_id);
+    else {
+      setStages([]);
+      setProfileStatuses([]);
+    }
   };
 
   const handleCreate = (e: React.FormEvent) => {
@@ -128,6 +194,101 @@ export default function Categories() {
         fetchCategories();
       })
       .catch((err) => setError(err.message));
+  };
+
+  const handleSetProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selected || !profileId) return;
+    setError("");
+    setStageNotice("");
+    fetch(`/api/v1/categories/${selected.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${auth.accessToken}`,
+      },
+      body: JSON.stringify({ status_profile_id: Number(profileId) }),
+    })
+      .then(async (r) => {
+        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || "Failed to set profile");
+        return r.json();
+      })
+      .then((updated: Category) => {
+        setSelected(updated);
+        fetchCategories();
+        fetchStages(Number(profileId));
+        setStageNotice("Profile linked (live reference — edits visible to all projects).");
+      })
+      .catch((err) => setError(err.message));
+  };
+
+  const handleCreateStage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profileId || !newStageName.trim()) return;
+    fetch(`/api/v1/status-profiles/${profileId}/stages`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${auth.accessToken}`,
+      },
+      body: JSON.stringify({ name: newStageName.trim(), color_base: newStageColor }),
+    }).then(async (r) => {
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || "Create stage failed");
+      setNewStageName("");
+      fetchStages(Number(profileId));
+    }).catch((err) => setError(err.message));
+  };
+
+  const handleDeleteStage = (stageId: number) => {
+    fetch(`/api/v1/stages/${stageId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${auth.accessToken}` },
+    }).then(async (r) => {
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        throw new Error(body.detail?.message || body.detail || "Delete stage failed (move statuses first)");
+      }
+      fetchStages(Number(profileId));
+    }).catch((err) => setError(err.message));
+  };
+
+  const handleCreateStatus = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profileId || !newStatusName.trim() || !newStatusStage) return;
+    fetch(`/api/v1/status-profiles/${profileId}/statuses`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${auth.accessToken}`,
+      },
+      body: JSON.stringify({ name: newStatusName.trim(), stage_id: Number(newStatusStage) }),
+    }).then(async (r) => {
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || "Create status failed");
+      setNewStatusName("");
+      fetchStages(Number(profileId));
+      setStageNotice("Status added — visible immediately, history untouched.");
+    }).catch((err) => setError(err.message));
+  };
+
+  const handleDeleteStatus = (statusId: number) => {
+    setError("");
+    setStageNotice("");
+    const qs = replacementId ? `?replacement_id=${Number(replacementId)}` : "";
+    fetch(`/api/v1/statuses/${statusId}${qs}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${auth.accessToken}` },
+    }).then(async (r) => {
+      if (r.status === 409) {
+        const body = await r.json().catch(() => ({}));
+        const d = body.detail || {};
+        throw new Error(
+          `Status in use (tasks: ${d.usage_tasks ?? "?"}, periods: ${d.usage_periods ?? "?"}). Pick a replacement below and retry.`
+        );
+      }
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || "Delete status failed");
+      fetchStages(Number(profileId));
+      setStageNotice("Status deleted (remapped with history where a replacement was chosen).");
+    }).catch((err) => setError(err.message));
   };
 
   const handleAddProject = (e: React.FormEvent) => {
@@ -286,7 +447,139 @@ export default function Categories() {
             }
           >
             <div>
-              <div className="flex items-center justify-between mb-2">
+          <div className="mb-4 rounded border border-slate-800 bg-slate-950/60 p-3">
+            <h3 className="text-sm font-semibold mb-2">Status Profile (live reference)</h3>
+            {stageNotice && <div className="mb-2 text-xs text-emerald-300">{stageNotice}</div>}
+            {canCreate ? (
+              <form onSubmit={handleSetProfile} className="flex flex-wrap gap-2 mb-3">
+                <select
+                  aria-label="status profile"
+                  className="flex-1 min-w-40 px-3 py-2 rounded bg-slate-800 text-sm border border-slate-700"
+                  value={profileId}
+                  onChange={(e) => setProfileId(e.target.value)}
+                >
+                  <option value="">Select profile...</option>
+                  {profiles.map((p) => (
+                    <option key={p.id} value={String(p.id)}>
+                      #{p.id} {p.name}
+                    </option>
+                  ))}
+                </select>
+                <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-medium text-white">
+                  Link profile
+                </button>
+              </form>
+            ) : (
+              <p className="text-xs text-slate-400 mb-2">Profile: {selected?.profile_name || "Not set"}</p>
+            )}
+            {profileId && (
+              <div className="space-y-3">
+                {stages.map((st) => (
+                  <div key={st.id} className="rounded border border-slate-800 bg-slate-900 px-3 py-2">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-2 text-sm">
+                        <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: st.color_base }} />
+                        <strong>{st.name}</strong>
+                        <span className="text-xs text-slate-500">order {st.order}</span>
+                      </span>
+                      {canCreate && (
+                        <button onClick={() => handleDeleteStage(st.id)} className="text-xs text-rose-400 hover:text-rose-300">
+                          Delete stage
+                        </button>
+                      )}
+                    </div>
+                    <ul className="mt-2 space-y-1">
+                      {profileStatuses
+                        .filter((s) => s.stage_id === st.id)
+                        .map((s) => (
+                          <li key={s.id} className="flex items-center justify-between bg-slate-800 px-2.5 py-1 rounded text-xs">
+                            <span>
+                              <span
+                                className="inline-block w-2.5 h-2.5 rounded-full mr-2"
+                                style={{ backgroundColor: s.shade || s.color }}
+                                title={s.shade || s.color}
+                              />
+                              {s.name}
+                            </span>
+                            {canCreate && (
+                              <button onClick={() => handleDeleteStatus(s.id)} className="text-rose-400 hover:text-rose-300">
+                                Delete
+                              </button>
+                            )}
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                ))}
+                {canCreate && (
+                  <>
+                    <form onSubmit={handleCreateStage} className="flex flex-wrap gap-2">
+                      <input
+                        aria-label="new stage name"
+                        placeholder="New stage name"
+                        className="flex-1 min-w-40 px-3 py-2 rounded bg-slate-800 text-sm border border-slate-700"
+                        value={newStageName}
+                        onChange={(e) => setNewStageName(e.target.value)}
+                      />
+                      <input
+                        aria-label="new stage color"
+                        type="color"
+                        className="w-12 h-10 px-1 rounded bg-slate-800 border border-slate-700"
+                        value={newStageColor}
+                        onChange={(e) => setNewStageColor(e.target.value)}
+                      />
+                      <button type="submit" className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm text-white">
+                        +Add Stage
+                      </button>
+                    </form>
+                    <form onSubmit={handleCreateStatus} className="flex flex-wrap gap-2">
+                      <input
+                        aria-label="new status name"
+                        placeholder="New status name"
+                        className="flex-1 min-w-40 px-3 py-2 rounded bg-slate-800 text-sm border border-slate-700"
+                        value={newStatusName}
+                        onChange={(e) => setNewStatusName(e.target.value)}
+                      />
+                      <select
+                        aria-label="target stage"
+                        required
+                        className="px-3 py-2 rounded bg-slate-800 text-sm border border-slate-700"
+                        value={newStatusStage}
+                        onChange={(e) => setNewStatusStage(e.target.value)}
+                      >
+                        <option value="">Stage...</option>
+                        {stages.map((st) => (
+                          <option key={st.id} value={String(st.id)}>
+                            {st.name}
+                          </option>
+                        ))}
+                      </select>
+                      <button type="submit" className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm text-white">
+                        +Add Status
+                      </button>
+                    </form>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className="text-xs text-slate-400">Replacement for delete (same profile):</label>
+                      <select
+                        aria-label="replacement status"
+                        className="px-3 py-2 rounded bg-slate-800 text-sm border border-slate-700"
+                        value={replacementId}
+                        onChange={(e) => setReplacementId(e.target.value)}
+                      >
+                        <option value="">None (unused only)...</option>
+                        {profileStatuses.map((s) => (
+                          <option key={s.id} value={String(s.id)}>
+                            #{s.id} {s.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="flex items-center justify-between mb-2">
                 <span className="flex items-center gap-2">
                   <span
                     className="inline-block w-3 h-3 rounded-full"

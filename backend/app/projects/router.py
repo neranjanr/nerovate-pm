@@ -362,7 +362,7 @@ def apply_profile(
     if current.role not in ("admin", "manager"):
         raise HTTPException(status_code=403, detail="Manager or admin only")
 
-    from app.statuses.models import StatusProfile, Status, CustomFieldDef
+    from app.statuses.models import StatusProfile, Status, CustomFieldDef, StatusStage
 
     template = session.get(StatusProfile, profile_id)
     if not template:
@@ -379,11 +379,29 @@ def apply_profile(
     session.refresh(proj_profile)
     assert proj_profile.id is not None
 
+    # U3: copy stages first so per-Project copies keep stage grouping.
+    stage_map: dict[int, int] = {}
+    for st in session.exec(select(StatusStage).where(StatusStage.profile_id == template.id)).all():
+        assert st.id is not None
+        new_st = StatusStage(
+            profile_id=proj_profile.id,
+            name=st.name,
+            order=st.order,
+            color_base=st.color_base,
+        )
+        session.add(new_st)
+        session.commit()
+        session.refresh(new_st)
+        assert new_st.id is not None
+        stage_map[st.id] = new_st.id
+
     for s in session.exec(select(Status).where(Status.profile_id == template.id)).all():
         new_s = Status(
             profile_id=proj_profile.id,
+            stage_id=stage_map.get(s.stage_id) if s.stage_id is not None else None,
             name=s.name,
             color=s.color,
+            shade=s.shade,
             order=s.order,
             is_done=s.is_done,
             is_blocked=s.is_blocked,

@@ -12,13 +12,25 @@ class StatusProfile(SQLModel, table=True):
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
+class StatusStage(SQLModel, table=True):
+    __tablename__ = "status_stages"  # type: ignore[assignment]
+
+    id: int | None = Field(default=None, primary_key=True)
+    profile_id: int = Field(foreign_key="status_profiles.id", index=True)
+    name: str = Field(max_length=128)
+    order: int = Field(default=0)
+    color_base: str = Field(default="#6b7280", max_length=32)
+
+
 class Status(SQLModel, table=True):
     __tablename__ = "statuses"  # type: ignore[assignment]
 
     id: int | None = Field(default=None, primary_key=True)
     profile_id: int = Field(foreign_key="status_profiles.id", index=True)
+    stage_id: int | None = Field(default=None, foreign_key="status_stages.id", index=True)
     name: str = Field(max_length=128)
     color: str = Field(default="#6b7280", max_length=32)
+    shade: str | None = Field(default=None, max_length=32)
     order: int = Field(default=0)
     is_done: bool = Field(default=False)
     is_blocked: bool = Field(default=False)
