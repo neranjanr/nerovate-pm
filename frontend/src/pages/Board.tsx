@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import TaskFilters, { EMPTY_FILTERS, buildTaskQuery, type TaskFilterState } from "../components/TaskFilters";
 import TelemetryBar from "../components/TelemetryBar";
 import { useAuth } from "../stores/auth";
+import TaskCreateModal from "../components/TaskCreateModal";
 import { buildTimelineExportUrl, downloadExport } from "../utils/exports";
 
 interface BoardTask {
@@ -167,7 +168,9 @@ export default function Board() {
   };
 
   const canDrag = auth.role !== "guest";
+  const canCreate = auth.role !== "guest";
   const depthFilter = filters.depth || "all";
+  const [modal, setModal] = useState<{ parentId: number | null; parentTitle?: string | null; kind: "Task" | "Subtask" | "Microtask" } | null>(null);
 
   return (
     <main className="p-6 bg-slate-950 min-h-screen text-slate-100">
@@ -191,6 +194,14 @@ export default function Board() {
               </button>
             ))}
           </div>
+          {canCreate && id && (
+            <button
+              onClick={() => setModal({ parentId: null, kind: "Task" })}
+              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded font-medium text-white"
+            >
+              +Add Task
+            </button>
+          )}
           <button
             onClick={jumpToday}
             className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 font-medium"
@@ -293,6 +304,20 @@ export default function Board() {
                         <span className="text-rose-300"> · blocked by {t.blocked_by_ids.join(", ")}</span>
                       )}
                     </div>
+                    {canCreate && t.depth < 2 && (
+                      <button
+                        onClick={() =>
+                          setModal({
+                            parentId: t.id,
+                            parentTitle: t.title,
+                            kind: t.depth === 0 ? "Subtask" : "Microtask",
+                          })
+                        }
+                        className="mt-1.5 text-[11px] text-indigo-300 hover:text-indigo-200"
+                      >
+                        {t.depth === 0 ? "+Add Subtask" : "+Add Microtask"}
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -307,6 +332,16 @@ export default function Board() {
         <div className="text-center text-slate-500 text-sm py-10">No tasks match the current filters.</div>
       )}
       <div className="mt-4 border-t border-slate-800 pt-2">{id && <TelemetryBar projectId={id} />}</div>
+      {modal && id && (
+        <TaskCreateModal
+          projectId={id}
+          parentId={modal.parentId}
+          parentTitle={modal.parentTitle}
+          kind={modal.kind}
+          onClose={() => setModal(null)}
+          onCreated={fetchTasks}
+        />
+      )}
     </main>
   );
 }

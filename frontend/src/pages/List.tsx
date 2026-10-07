@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import TaskFilters, { EMPTY_FILTERS, buildTaskQuery, type TaskFilterState } from "../components/TaskFilters";
 import TelemetryBar from "../components/TelemetryBar";
 import { useAuth } from "../stores/auth";
+import TaskCreateModal from "../components/TaskCreateModal";
 
 interface TaskItem {
   id: number;
@@ -30,6 +31,9 @@ export default function List() {
   const [groupBy, setGroupBy] = useState<"status" | "assignee" | "none">("status");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [modal, setModal] = useState<{ parentId: number | null; parentTitle?: string | null; kind: "Task" | "Subtask" | "Microtask" } | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const canCreate = auth.role !== "guest";
 
   useEffect(() => {
     if (!auth.accessToken || !id) return;
@@ -61,7 +65,7 @@ export default function List() {
         setError(e.message);
         setLoading(false);
       });
-  }, [auth.accessToken, id, filters]);
+  }, [auth.accessToken, id, filters, refreshKey]);
 
   const groups = useMemo(() => {
     if (groupBy === "none") return new Map<string, TaskItem[]>([["All tasks", tasks]]);
@@ -85,16 +89,26 @@ export default function List() {
     <main className="p-6 bg-slate-950 min-h-screen text-slate-100">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-semibold">List</h1>
-        <div className="flex items-center gap-1 text-xs bg-slate-800 rounded p-1 border border-slate-700">
-          {(["status", "assignee", "none"] as const).map((g) => (
+        <div className="flex items-center gap-2 text-xs">
+          {canCreate && (
             <button
-              key={g}
-              onClick={() => setGroupBy(g)}
-              className={`px-2.5 py-1 rounded capitalize ${groupBy === g ? "bg-indigo-600 text-white" : "text-slate-300"}`}
+              onClick={() => setModal({ parentId: null, kind: "Task" })}
+              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded font-medium text-white"
             >
-              {g === "none" ? "No grouping" : `By ${g}`}
+              +Add Task
             </button>
-          ))}
+          )}
+          <div className="flex items-center gap-1 bg-slate-800 rounded p-1 border border-slate-700">
+            {(["status", "assignee", "none"] as const).map((g) => (
+              <button
+                key={g}
+                onClick={() => setGroupBy(g)}
+                className={`px-2.5 py-1 rounded capitalize ${groupBy === g ? "bg-indigo-600 text-white" : "text-slate-300"}`}
+              >
+                {g === "none" ? "No grouping" : `By ${g}`}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       <TaskFilters filters={filters} onChange={setFilters} statuses={statuses} />
@@ -115,8 +129,24 @@ export default function List() {
                     <span className="font-mono text-slate-500 mr-2">#{t.id}</span>
                     {t.title}
                   </span>
-                  <span className="text-xs text-slate-400 font-mono shrink-0">
-                    depth {t.depth} · {t.due_date ?? "no due"}
+                  <span className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-slate-400 font-mono">
+                      depth {t.depth} · {t.due_date ?? "no due"}
+                    </span>
+                    {canCreate && t.depth < 2 && (
+                      <button
+                        onClick={() =>
+                          setModal({
+                            parentId: t.id,
+                            parentTitle: t.title,
+                            kind: t.depth === 0 ? "Subtask" : "Microtask",
+                          })
+                        }
+                        className="text-[11px] text-indigo-300 hover:text-indigo-200"
+                      >
+                        {t.depth === 0 ? "+Add Subtask" : "+Add Microtask"}
+                      </button>
+                    )}
                   </span>
                 </li>
               ))}
@@ -127,6 +157,16 @@ export default function List() {
         {tasks.length === 0 && !loading && <div className="text-center text-slate-500 text-sm py-10">No tasks match the current filters.</div>}
       </div>
       <div className="mt-4 border-t border-slate-800 pt-2">{id && <TelemetryBar projectId={id} />}</div>
+      {modal && id && (
+        <TaskCreateModal
+          projectId={id}
+          parentId={modal.parentId}
+          parentTitle={modal.parentTitle}
+          kind={modal.kind}
+          onClose={() => setModal(null)}
+          onCreated={() => setRefreshKey((k) => k + 1)}
+        />
+      )}
     </main>
   );
 }

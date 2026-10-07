@@ -37,15 +37,24 @@ class TaskCreate(BaseModel):
     parent_id: int | None = None
     title: str
     description_md: str = ""
-    status_id: int
+    status_id: int | None = None
     priority: str = "normal"
-    start_date: str
+    start_date: str | None = None
     due_date: str | None = None
     estimate_mins: int | None = None
     assignee_ids: list[int] = []
     watcher_ids: list[int] = []
     tag_names: list[str] = []
     blocked_by_ids: list[int] = []
+
+
+class TaskDefaultsOut(BaseModel):
+    project_id: int
+    status_id: int | None = None
+    status_name: str | None = None
+    stage_id: int | None = None
+    stage_name: str | None = None
+    start_date: str
 
 
 class TaskUpdate(BaseModel):
@@ -63,12 +72,76 @@ class TaskUpdate(BaseModel):
     blocked_by_ids: list[int] | None = None
 
 
-def _validate_blocked_by(task_id: int | None, blocked_by_ids: list[int], session: Session) -> None:
-    """Reject self-refs, duplicates, and circular chains of any length (SPEC 4.4)."""
+def _default_status_for_project(session: Session, project_id: int) -> Status | None:
+    """U4 default: first leaf Status of first Stage (ordered).
+
+    Resolves Profile via parent Category (live reference, SPEC-v0.3 4.3);
+    falls back to legacy projects.status_profile_id for pre-U2 data.
+    """
+    from app.categories.models import Category
+    from app.projects.models import Project
+    from app.statuses.models import StatusStage
+
+    project = session.get(Project, project_id)
+    if project is None:
+        return None
+    profile_id: int | None = None
+    cat_id = getattr(project, "category_id", None)
+    if cat_id is not None:
+        cat = session.get(Category, cat_id)
+        if cat is not None and cat.status_profile_id is not None:
+            profile_id = cat.status_profile_id
+    if profile_id is None:
+        profile_id = getattr(project, "status_profile_id", None)
+    if profile_id is None:
+        return None
+    stages = list(
+        session.exec(
+            select(StatusStage)
+            .where(StatusStage.profile_id == profile_id)
+            .order_by(StatusStage.order)  # type: ignore[arg-type]
+        ).all()
+    )
+    for first_stage in stages:
+        assert first_stage.id is not None
+        first_leaf_candidates = list(
+            session.exec(
+                select(Status)
+                .where(Status.stage_id == first_stage.id)
+                .order_by(Status.order)  # type: ignore[arg-type]
+            ).all()
+        )
+        if first_leaf_candidates:
+            return first_leaf_candidates[0]
+    rows = list(
+        session.exec(
+            select(Status)
+            .where(Status.profile_id == profile_id)
+            .order_by(Status.order)  # type: ignore[arg-type]
+        ).all()
+    )
+    return rows[0] if rows else None
+
+
+def _validate_blocked_by(
+    task_id: int | None,
+    blocked_by_ids: list[int],
+    session: Session,
+    project_id: int | None = None,
+) -> None:
+    """Reject self-refs, duplicates, and circular chains of any length (SPEC 4.4).
+
+    U4: blocked-by stays same-Project only (cross-Project deferred).
+    """
     if task_id is not None and task_id in blocked_by_ids:
         raise HTTPException(status_code=400, detail="Task cannot block itself")
     if len(set(blocked_by_ids)) != len(blocked_by_ids):
         raise HTTPException(status_code=400, detail="Duplicate blocked_by ids")
+    if project_id is not None:
+        for bvid in blocked_by_ids:
+            other = session.get(Task, bvid)
+            if other is None or other.project_id != project_id:
+                raise HTTPException(status_code=400, detail="blocked_by must be same-Project")
     if task_id is None:
         return
     # DFS from each proposed dependency: if we can reach task_id, it closes a cycle.
@@ -305,6 +378,31 @@ def _filtered_task_outs(
     return results
 
 
+@router.get("/defaults", response_model=TaskDefaultsOut)
+def get_task_defaults(
+    project_id: int,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """U4 hint endpoint: what title-only POST would default to."""
+    require_project_access(project_id, current, session)
+    default_status = _default_status_for_project(session, project_id)
+    stage_name: str | None = None
+    if default_status is not None and default_status.stage_id is not None:
+        from app.statuses.models import StatusStage as _Stage
+
+        st = session.get(_Stage, default_status.stage_id)
+        stage_name = st.name if st else None
+    return TaskDefaultsOut(
+        project_id=project_id,
+        status_id=default_status.id if default_status else None,
+        status_name=default_status.name if default_status else None,
+        stage_id=default_status.stage_id if default_status else None,
+        stage_name=stage_name,
+        start_date=date.today().isoformat(),
+    )
+
+
 @router.post("", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
 def create_task(
     body: TaskCreate,
@@ -315,10 +413,23 @@ def create_task(
     if current.role == "guest":
         raise HTTPException(status_code=403, detail="Guest cannot create tasks")
 
-    # Validate status belongs to project profile
-    status_obj = session.get(Status, body.status_id)
+    # U4: title-only; title still required (non-blank).
+    title = (body.title or "").strip()
+    if not title:
+        raise HTTPException(status_code=422, detail="Title required")
+
+    # U4 defaults: status_id = first leaf of first Stage, start_date = today.
+    status_id = body.status_id
+    if status_id is None:
+        default_status = _default_status_for_project(session, body.project_id)
+        if default_status is None or default_status.id is None:
+            raise HTTPException(status_code=422, detail="No statuses available for default")
+        status_id = default_status.id
+    status_obj = session.get(Status, status_id)
     if not status_obj:
         raise HTTPException(status_code=400, detail="Invalid status_id")
+
+    start_date = body.start_date or date.today().isoformat()
 
     depth = 0
     if body.parent_id is not None:
@@ -329,16 +440,20 @@ def create_task(
             raise HTTPException(status_code=400, detail="Hierarchy depth capped at 2 (Task > 1.1 > 1.1.1)")
         depth = parent.depth + 1
 
+    # Pre-commit: same-Project + existence for blocked_by so a 400
+    # never leaves an orphan Task behind.
+    _validate_blocked_by(None, body.blocked_by_ids, session, project_id=body.project_id)
+
     assert current.id is not None
     task = Task(
         project_id=body.project_id,
         parent_id=body.parent_id,
         depth=depth,
-        title=body.title,
+        title=title,
         description_md=body.description_md,
-        status_id=body.status_id,
+        status_id=status_id,
         priority=body.priority,
-        start_date=body.start_date,
+        start_date=start_date,
         due_date=body.due_date,
         estimate_mins=body.estimate_mins,
         created_by=current.id,
@@ -364,8 +479,8 @@ def create_task(
             session.refresh(tag_obj)
         assert tag_obj.id is not None
         session.add(TaskTag(task_id=task.id, tag_id=tag_obj.id))
-    # Blocked by (validate self/circular refs)
-    _validate_blocked_by(task.id, body.blocked_by_ids, session)
+    # Blocked by (validate self/circular refs + same-Project, U4)
+    _validate_blocked_by(task.id, body.blocked_by_ids, session, project_id=body.project_id)
     for bvid in body.blocked_by_ids:
         session.add(TaskBlockedBy(task_id=task.id, blocked_by_task_id=bvid))
 
@@ -830,7 +945,7 @@ def update_task(
             session.add(TaskWatcher(task_id=task_id_int, user_id=uid))
 
     if body.blocked_by_ids is not None:
-        _validate_blocked_by(task_id_int, body.blocked_by_ids, session)
+        _validate_blocked_by(task_id_int, body.blocked_by_ids, session, project_id=task.project_id)
         for b in session.exec(select(TaskBlockedBy).where(TaskBlockedBy.task_id == task.id)).all():  # type: ignore[arg-type]
             session.delete(b)
         for bvid in body.blocked_by_ids:
