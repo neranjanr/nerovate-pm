@@ -1,6 +1,7 @@
 export interface TaskFilterState {
   search: string;
   statusId: string;
+  stageId: string;
   assigneeId: string;
   watcherId: string;
   tag: string;
@@ -12,6 +13,7 @@ export interface TaskFilterState {
 export const EMPTY_FILTERS: TaskFilterState = {
   search: "",
   statusId: "",
+  stageId: "",
   assigneeId: "",
   watcherId: "",
   tag: "",
@@ -20,11 +22,12 @@ export const EMPTY_FILTERS: TaskFilterState = {
   overdue: "",
 };
 
-/** Single query builder shared by List/Calendar/Table (T8 parity rule). */
+/** Single query builder shared by List/Calendar/Table (T8 parity rule). U5: stage_id. */
 export function buildTaskQuery(projectId: string, f: TaskFilterState): string {
   const p = new URLSearchParams({ project_id: projectId });
   if (f.search.trim()) p.set("search", f.search.trim());
   if (f.statusId) p.set("status", f.statusId);
+  if (f.stageId) p.set("stage_id", f.stageId);
   if (f.assigneeId) p.set("assignee", f.assigneeId);
   if (f.watcherId) p.set("watcher", f.watcherId);
   if (f.tag.trim()) p.set("tag", f.tag.trim());
@@ -34,14 +37,23 @@ export function buildTaskQuery(projectId: string, f: TaskFilterState): string {
   return p.toString();
 }
 
+export interface StageOption {
+  id: number;
+  name: string;
+}
+
 interface Props {
   filters: TaskFilterState;
   onChange: (f: TaskFilterState) => void;
-  statuses: { id: number; name: string }[];
+  statuses: { id: number; name: string; stage_id?: number | null }[];
+  stages?: StageOption[];
 }
 
-export default function TaskFilters({ filters, onChange, statuses }: Props) {
+export default function TaskFilters({ filters, onChange, statuses, stages }: Props) {
   const set = (patch: Partial<TaskFilterState>) => onChange({ ...filters, ...patch });
+  const visibleStatuses = filters.stageId
+    ? statuses.filter((s) => String(s.stage_id ?? "") === filters.stageId)
+    : statuses;
   return (
     <div className="flex flex-wrap items-center gap-2 bg-slate-900/60 border border-slate-800 rounded p-2 text-xs">
       <input
@@ -58,12 +70,27 @@ export default function TaskFilters({ filters, onChange, statuses }: Props) {
         onChange={(e) => set({ statusId: e.target.value })}
       >
         <option value="">All statuses</option>
-        {statuses.map((s) => (
+        {visibleStatuses.map((s) => (
           <option key={s.id} value={String(s.id)}>
             {s.name}
           </option>
         ))}
       </select>
+      {stages !== undefined && stages.length > 0 && (
+        <select
+          aria-label="filter by stage"
+          className="px-2 py-1.5 rounded bg-slate-800 border border-slate-700 text-slate-200"
+          value={filters.stageId}
+          onChange={(e) => set({ stageId: e.target.value, statusId: "" })}
+        >
+          <option value="">All stages</option>
+          {stages.map((s) => (
+            <option key={s.id} value={String(s.id)}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      )}
       <input
         aria-label="filter by assignee"
         placeholder="Assignee id"

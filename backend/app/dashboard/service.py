@@ -16,12 +16,15 @@ def _day_bounds() -> tuple[str, str]:
     return today.isoformat(), (today + timedelta(days=7)).isoformat()
 
 
-def summarize(session: Session, project_id: int) -> dict:
+def summarize(session: Session, project_id: int, stage_id: int | None = None) -> dict:
     today, soon = _day_bounds()
     tasks = tasks_service.get_project_tasks(session, project_id)
+    if stage_id is not None:
+        tasks = [t for t in tasks if _stage_id_for_status(session, t.status_id) == stage_id]
 
     profile_id = _profile_id(session, project_id)
     statuses = tasks_service.list_statuses_for_profile(session, profile_id) if profile_id else []
+    stages = _ordered_stages(session, profile_id) if profile_id else []
 
     by_status: dict[str, int] = {}
     overdue = 0
@@ -45,12 +48,59 @@ def summarize(session: Session, project_id: int) -> dict:
     comments = tasks_service.list_comments_for_tasks(session, task_ids)
     atts = tasks_service.list_attachments_for_tasks(session, task_ids)
 
+    # U5 tiered breakdown: per-Stage counts + % done for Board headers /
+    # Timeline pipeline. Done = current Status is_done.
+    status_to_stage: dict[int, int | None] = {}
+    done_by_status: dict[int, bool] = {}
+    for s in statuses:
+        if s.id is not None:
+            status_to_stage[s.id] = getattr(s, "stage_id", None)
+            done_by_status[s.id] = bool(getattr(s, "is_done", False))
+    by_stage: dict[str, int] = {}
+    done_by_stage: dict[str, int] = {}
+    for t in tasks:
+        sid = status_to_stage.get(t.status_id)
+        if sid is None:
+            continue
+        key = str(sid)
+        by_stage[key] = by_stage.get(key, 0) + 1
+        if done_by_status.get(t.status_id, False):
+            done_by_stage[key] = done_by_stage.get(key, 0) + 1
+    stages_out = []
+    for st in sorted(stages, key=lambda s: s.order):
+        if st.id is None:
+            continue
+        key = str(st.id)
+        count = by_stage.get(key, 0)
+        done = done_by_stage.get(key, 0)
+        stages_out.append(
+            {
+                "id": st.id,
+                "name": st.name,
+                "order": st.order,
+                "color_base": st.color_base,
+                "count": count,
+                "done_count": done,
+                "pct_done": (done / count) if count else 0.0,
+            }
+        )
+
     return {
         "project_id": project_id,
         "total": len(tasks),
         "by_status": by_status,
+        "by_stage": by_stage,
+        "stages": stages_out,
         "statuses": [
-            {"id": s.id, "name": s.name, "color": s.color, "order": s.order, "is_done": s.is_done}
+            {
+                "id": s.id,
+                "name": s.name,
+                "color": s.color,
+                "order": s.order,
+                "is_done": s.is_done,
+                "stage_id": getattr(s, "stage_id", None),
+                "shade": getattr(s, "shade", None),
+            }
             for s in sorted(statuses, key=lambda s: s.order)
         ],
         "overdue": overdue,
@@ -68,12 +118,14 @@ def summarize(session: Session, project_id: int) -> dict:
     }
 
 
-def workload(session: Session, project_id: int) -> list[dict]:
+def workload(session: Session, project_id: int, stage_id: int | None = None) -> list[dict]:
     """Per-user open/overdue rows from task assignees (SPEC 4.5 summary.workload)."""
     from app.auth.models import User
 
     today, _soon = _day_bounds()
     tasks = tasks_service.get_project_tasks(session, project_id)
+    if stage_id is not None:
+        tasks = [t for t in tasks if _stage_id_for_status(session, t.status_id) == stage_id]
     per_user: dict[int, dict] = {}
     for t in tasks:
         assert t.id is not None
@@ -101,9 +153,11 @@ def workload(session: Session, project_id: int) -> list[dict]:
     return results
 
 
-def activity(session: Session, project_id: int, limit: int = 30) -> list[dict]:
+def activity(session: Session, project_id: int, limit: int = 30, stage_id: int | None = None) -> list[dict]:
     """Merged project audit stream: task.status_changed + task.comment_added."""
     tasks = tasks_service.get_project_tasks(session, project_id)
+    if stage_id is not None:
+        tasks = [t for t in tasks if _stage_id_for_status(session, t.status_id) == stage_id]
     task_ids = [t.id for t in tasks if t.id is not None]
     if not task_ids:
         return []
@@ -176,7 +230,39 @@ def storage_info(project_id: int) -> dict:
 
 
 def _profile_id(session: Session, project_id: int) -> int | None:
+    """Live reference: Project -> Category -> Profile (SPEC-v0.3 4.3).
+
+    Falls back to legacy projects.status_profile_id for pre-U2 data.
+    """
     from app.projects.models import Project
 
     project = session.get(Project, project_id)
-    return project.status_profile_id if project else None
+    if project is None:
+        return None
+    cat_id = getattr(project, "category_id", None)
+    if cat_id is not None:
+        from app.categories.models import Category
+
+        cat = session.get(Category, cat_id)
+        if cat is not None and cat.status_profile_id is not None:
+            return cat.status_profile_id
+    return getattr(project, "status_profile_id", None)
+
+
+def _stage_id_for_status(session: Session, status_id: int) -> int | None:
+    from app.statuses.models import Status
+
+    st = session.get(Status, status_id)
+    return st.stage_id if st else None
+
+
+def _ordered_stages(session: Session, profile_id: int) -> list:
+    from sqlmodel import select
+
+    from app.statuses.models import StatusStage
+
+    return list(
+        session.exec(
+            select(StatusStage).where(StatusStage.profile_id == profile_id).order_by(StatusStage.order)  # type: ignore[arg-type]
+        ).all()
+    )

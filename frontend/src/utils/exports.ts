@@ -55,11 +55,20 @@ export function filterByDepth<T extends DepthFilterable>(tasks: T[], depth: stri
 export function buildTimelineExportUrl(
   projectId: string,
   format: "json" | "csv",
-  depth: string
+  depth: string,
+  stageId?: string
 ): string {
   const p = new URLSearchParams({ project_id: projectId, format });
   if (depth === "0" || depth === "1" || depth === "2") p.set("depth", depth);
+  if (stageId) p.set("stage_id", stageId);
   return `/api/v1/tasks/timeline/export?${p.toString()}`;
+}
+
+export function buildTimelineUrl(projectId: string, depth: string, stageId?: string): string {
+  const p = new URLSearchParams({ project_id: projectId });
+  if (depth === "0" || depth === "1" || depth === "2") p.set("depth", depth);
+  if (stageId) p.set("stage_id", stageId);
+  return `/api/v1/tasks/timeline?${p.toString()}`;
 }
 
 export function buildDashboardExportUrl(projectId: string, format: "json" | "csv"): string {

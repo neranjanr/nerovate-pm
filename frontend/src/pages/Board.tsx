@@ -23,26 +23,40 @@ interface BoardTask {
   time_spent_mins: number;
 }
 
+interface StageInfo {
+  id: number;
+  name: string;
+  order: number;
+  color_base: string;
+}
+
 interface StatusInfo {
   id: number;
   name: string;
   order: number;
   is_done?: boolean;
+  stage_id?: number | null;
+  shade?: string | null;
+  color?: string;
 }
 
 const TODAY = () => new Date().toISOString().slice(0, 10);
 
 /**
- * Kanban Board + Task Hierarchy (SPEC-v0.2 P2, sample page 3).
- * Columns = Statuses of the Project Profile. Drag-drop changes Status via
- * POST /tasks/{id}/status (upserts Status Period + history). Depth 0/1/2
- * filter semantics match Timeline (shared TaskFilters + segmented control).
+ * Tiered Kanban Board (SPEC-v0.3 P2 / U5).
+ * Stage header row (name, count, % done, collapse toggle) + expanded leaf
+ * Status columns with horizontal scroll + shade chips. Drag-drop across
+ * Statuses (incl. across Stages) via POST /tasks/{id}/status (upserts
+ * Status Period + history). Profile resolves via parent Category live
+ * reference (falls back to legacy project.status_profile_id).
  */
 export default function Board() {
   const auth = useAuth();
   const { id } = useParams();
   const [tasks, setTasks] = useState<BoardTask[]>([]);
   const [statuses, setStatuses] = useState<StatusInfo[]>([]);
+  const [stages, setStages] = useState<StageInfo[]>([]);
+  const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
   const [filters, setFilters] = useState<TaskFilterState>({ ...EMPTY_FILTERS });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -73,15 +87,47 @@ export default function Board() {
 
   useEffect(() => {
     if (!auth.accessToken || !id) return;
-    fetch(`/api/v1/projects/${id}`, { headers: { Authorization: `Bearer ${auth.accessToken}` } })
+    const headers = { Authorization: `Bearer ${auth.accessToken}` };
+    fetch(`/api/v1/projects/${id}`, { headers })
       .then((r) => (r.ok ? r.json() : null))
-      .then((proj) => {
-        if (proj?.status_profile_id) {
-          return fetch(`/api/v1/status-profiles/${proj.status_profile_id}`, {
-            headers: { Authorization: `Bearer ${auth.accessToken}` },
-          })
-            .then((r) => (r.ok ? r.json() : null))
-            .then((sp) => setStatuses((sp?.statuses ?? []).sort((a: StatusInfo, b: StatusInfo) => a.order - b.order)));
+      .then(async (proj) => {
+        if (!proj) return;
+        // U5 live reference: Project -> Category -> Profile.
+        let profileId: number | null = proj.status_profile_id ?? null;
+        if (proj.category_id) {
+          try {
+            const cr = await fetch(`/api/v1/categories/${proj.category_id}`, { headers });
+            if (cr.ok) {
+              const cat = await cr.json();
+              if (cat?.status_profile_id) profileId = cat.status_profile_id;
+            }
+          } catch {
+            // fall back to legacy project profile id
+          }
+        }
+        if (!profileId) {
+          setStatuses([]);
+          setStages([]);
+          return;
+        }
+        const sr = await fetch(`/api/v1/status-profiles/${profileId}`, { headers });
+        if (sr.ok) {
+          const sp = await sr.json();
+          setStatuses((sp?.statuses ?? []).sort((a: StatusInfo, b: StatusInfo) => a.order - b.order));
+          setStages((sp?.stages ?? []).sort((a: StageInfo, b: StageInfo) => a.order - b.order));
+          return;
+        }
+        // Fallback for project-only members (category fetch 404s for them):
+        // dashboard summary carries the same stages/statuses breakdown.
+        try {
+          const dr = await fetch(`/api/v1/dashboard/summary?project_id=${id}`, { headers });
+          if (dr.ok) {
+            const d = await dr.json();
+            setStatuses((d?.statuses ?? []).sort((a: StatusInfo, b: StatusInfo) => a.order - b.order));
+            setStages((d?.stages ?? []).sort((a: StageInfo, b: StageInfo) => a.order - b.order));
+          }
+        } catch {
+          // leave empty; empty-state message covers it
         }
       })
       .catch(() => undefined);
@@ -99,19 +145,57 @@ export default function Board() {
     return m;
   }, [tasks]);
 
-  const columns = useMemo(() => {
-    if (statuses.length === 0) {
-      const m = new Map<string, BoardTask[]>();
-      m.set("All tasks", tasks);
-      return [...m.entries()].map(([name, rows]) => ({ key: name, name, statusId: -1, rows }));
+  const statusById = useMemo(() => new Map(statuses.map((s) => [s.id, s])), [statuses]);
+
+  const stageGroups = useMemo(() => {
+    const activeStages = filters.stageId
+      ? stages.filter((s) => String(s.id) === filters.stageId)
+      : stages;
+    if (activeStages.length === 0) {
+      // No stages (legacy profile): single flat group of leaf columns.
+      return [
+        {
+          stage: null as StageInfo | null,
+          leaves: statuses.map((s) => ({
+            key: String(s.id),
+            name: s.name,
+            statusId: s.id,
+            shade: s.shade || s.color || "#6b7280",
+            rows: tasks.filter((t) => t.status_id === s.id),
+            done: !!s.is_done,
+          })),
+        },
+      ];
     }
-    return statuses.map((s) => ({
-      key: String(s.id),
-      name: s.name,
-      statusId: s.id,
-      rows: tasks.filter((t) => t.status_id === s.id),
-    }));
-  }, [statuses, tasks]);
+    return activeStages.map((st) => {
+      const leaves = statuses
+        .filter((s) => s.stage_id === st.id)
+        .map((s) => ({
+          key: String(s.id),
+          name: s.name,
+          statusId: s.id,
+          shade: s.shade || st.color_base,
+          rows: tasks.filter((t) => t.status_id === s.id),
+          done: !!s.is_done,
+        }));
+      return { stage: st as StageInfo | null, leaves };
+    });
+  }, [stages, statuses, tasks, filters.stageId]);
+
+  const stageStats = useMemo(() => {
+    const m = new Map<number | string, { count: number; done: number }>();
+    for (const g of stageGroups) {
+      const key = g.stage ? g.stage.id : "flat";
+      let count = 0;
+      let done = 0;
+      for (const leaf of g.leaves) {
+        count += leaf.rows.length;
+        if (leaf.done) done += leaf.rows.length;
+      }
+      m.set(key, { count, done });
+    }
+    return m;
+  }, [stageGroups]);
 
   const today = TODAY();
   const todayCount = useMemo(
@@ -124,6 +208,9 @@ export default function Board() {
     if (first) first.scrollIntoView({ behavior: "smooth", block: "center" });
     else boardRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  const toggleStage = (stageId: number) =>
+    setCollapsed((prev) => ({ ...prev, [stageId]: !prev[stageId] }));
 
   const moveTask = (taskId: number, statusId: number) => {
     if (!auth.accessToken || statusId < 0) return;
@@ -158,7 +245,7 @@ export default function Board() {
     setExportError("");
     try {
       await downloadExport(
-        buildTimelineExportUrl(id, "csv", filters.depth),
+        buildTimelineExportUrl(id, "csv", filters.depth, filters.stageId || undefined),
         auth.accessToken,
         `timeline_project_${id}.csv`
       );
@@ -172,13 +259,81 @@ export default function Board() {
   const depthFilter = filters.depth || "all";
   const [modal, setModal] = useState<{ parentId: number | null; parentTitle?: string | null; kind: "Task" | "Subtask" | "Microtask" } | null>(null);
 
+  const renderCard = (t: BoardTask) => {
+    const isTodayDue = (t.due_date || "").slice(0, 10) === today;
+    return (
+      <div
+        key={t.id}
+        ref={(el) => {
+          if (el && isTodayDue) todayTaskRefs.current.set(t.id, el);
+          else todayTaskRefs.current.delete(t.id);
+        }}
+        draggable={canDrag}
+        onDragStart={() => setDragId(t.id)}
+        className={`bg-slate-900 border rounded p-2.5 text-xs cursor-grab ${
+          t.is_blocked ? "border-rose-700" : "border-slate-800"
+        } ${isTodayDue ? "ring-1 ring-amber-500/60" : ""}`}
+        title={canDrag ? "Drag to another column to change Status" : "Guests cannot move tasks"}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-mono text-slate-500">#{t.id} · depth {t.depth}</span>
+          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 capitalize">{t.priority}</span>
+        </div>
+        <div className="mt-1 font-medium text-slate-100">
+          {t.is_blocked && <span className="text-rose-400 mr-1">●</span>}
+          {t.title}
+        </div>
+        <div className="mt-1 font-mono text-[11px] text-slate-400">
+          {t.start_date} → {t.due_date ?? "no due"}
+        </div>
+        <div className="mt-1 flex flex-wrap gap-1 text-[11px]">
+          {t.tag_names.map((tag) => (
+            <span key={tag} className="px-1.5 rounded bg-slate-800 text-slate-300">
+              {tag}
+            </span>
+          ))}
+          {t.assignee_ids.length > 0 && (
+            <span className="px-1.5 rounded bg-indigo-950 text-indigo-300 font-mono">
+              {t.assignee_ids.length} assignee(s)
+            </span>
+          )}
+          {(childCounts.get(t.id) ?? 0) > 0 && (
+            <span className="px-1.5 rounded bg-slate-800 text-slate-400">
+              {childCounts.get(t.id)} sub
+            </span>
+          )}
+        </div>
+        <div className="mt-1 font-mono text-[11px] text-slate-500">
+          est {t.estimate_mins ?? 0}m vs spent {t.time_spent_mins}m
+          {t.blocked_by_ids.length > 0 && (
+            <span className="text-rose-300"> · blocked by {t.blocked_by_ids.join(", ")}</span>
+          )}
+        </div>
+        {canCreate && t.depth < 2 && (
+          <button
+            onClick={() =>
+              setModal({
+                parentId: t.id,
+                parentTitle: t.title,
+                kind: t.depth === 0 ? "Subtask" : "Microtask",
+              })
+            }
+            className="mt-1.5 text-[11px] text-indigo-300 hover:text-indigo-200"
+          >
+            {t.depth === 0 ? "+Add Subtask" : "+Add Microtask"}
+          </button>
+        )}
+      </div>
+    );
+  };
+
   return (
     <main className="p-6 bg-slate-950 min-h-screen text-slate-100">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-semibold">Board</h1>
           <p className="text-xs text-slate-400 mt-1">
-            Kanban by Status · depth 0 Task › 1.1 Subtask › 1.1.1 Microtask · drag-drop writes Status Period + history
+            Tiered by Stage · depth 0 Task › 1.1 Subtask › 1.1.1 Microtask · drag-drop writes Status Period + history
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs">
@@ -221,7 +376,12 @@ export default function Board() {
         </div>
       </div>
 
-      <TaskFilters filters={filters} onChange={setFilters} statuses={statuses} />
+      <TaskFilters
+        filters={filters}
+        onChange={setFilters}
+        statuses={statuses.map((s) => ({ id: s.id, name: s.name, stage_id: s.stage_id ?? null }))}
+        stages={stages.map((s) => ({ id: s.id, name: s.name }))}
+      />
       {loading && (
         <div role="status" className="mt-3 text-xs text-slate-400">
           Loading board…
@@ -238,98 +398,95 @@ export default function Board() {
         </div>
       )}
 
-      <div ref={boardRef} className="mt-4 flex gap-3 overflow-x-auto pb-4">
-        {columns.map((col) => (
-          <section
-            key={col.key}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={() => {
-              if (dragId != null && col.statusId >= 0) moveTask(dragId, col.statusId);
-              setDragId(null);
-            }}
-            className="w-72 shrink-0 bg-slate-900/40 border border-slate-800 rounded-lg flex flex-col max-h-[65vh]"
-          >
-            <header className="px-3 py-2 border-b border-slate-800 text-sm font-semibold flex justify-between items-center">
-              <span className="truncate">{col.name}</span>
-              <span className="text-slate-400 font-mono text-xs">{col.rows.length}</span>
-            </header>
-            <div className="p-2 space-y-2 overflow-y-auto">
-              {col.rows.map((t) => {
-                const isTodayDue = (t.due_date || "").slice(0, 10) === today;
-                return (
-                  <div
-                    key={t.id}
-                    ref={(el) => {
-                      if (el && isTodayDue) todayTaskRefs.current.set(t.id, el);
-                      else todayTaskRefs.current.delete(t.id);
-                    }}
-                    draggable={canDrag}
-                    onDragStart={() => setDragId(t.id)}
-                    className={`bg-slate-900 border rounded p-2.5 text-xs cursor-grab ${
-                      t.is_blocked ? "border-rose-700" : "border-slate-800"
-                    } ${isTodayDue ? "ring-1 ring-amber-500/60" : ""}`}
-                    title={canDrag ? "Drag to another column to change Status" : "Guests cannot move tasks"}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-slate-500">#{t.id} · depth {t.depth}</span>
-                      <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 capitalize">{t.priority}</span>
-                    </div>
-                    <div className="mt-1 font-medium text-slate-100">
-                      {t.is_blocked && <span className="text-rose-400 mr-1">●</span>}
-                      {t.title}
-                    </div>
-                    <div className="mt-1 font-mono text-[11px] text-slate-400">
-                      {t.start_date} → {t.due_date ?? "no due"}
-                    </div>
-                    <div className="mt-1 flex flex-wrap gap-1 text-[11px]">
-                      {t.tag_names.map((tag) => (
-                        <span key={tag} className="px-1.5 rounded bg-slate-800 text-slate-300">
-                          {tag}
-                        </span>
-                      ))}
-                      {t.assignee_ids.length > 0 && (
-                        <span className="px-1.5 rounded bg-indigo-950 text-indigo-300 font-mono">
-                          {t.assignee_ids.length} assignee(s)
-                        </span>
-                      )}
-                      {(childCounts.get(t.id) ?? 0) > 0 && (
-                        <span className="px-1.5 rounded bg-slate-800 text-slate-400">
-                          {childCounts.get(t.id)} sub
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-1 font-mono text-[11px] text-slate-500">
-                      est {t.estimate_mins ?? 0}m vs spent {t.time_spent_mins}m
-                      {t.blocked_by_ids.length > 0 && (
-                        <span className="text-rose-300"> · blocked by {t.blocked_by_ids.join(", ")}</span>
-                      )}
-                    </div>
-                    {canCreate && t.depth < 2 && (
-                      <button
-                        onClick={() =>
-                          setModal({
-                            parentId: t.id,
-                            parentTitle: t.title,
-                            kind: t.depth === 0 ? "Subtask" : "Microtask",
-                          })
-                        }
-                        className="mt-1.5 text-[11px] text-indigo-300 hover:text-indigo-200"
-                      >
-                        {t.depth === 0 ? "+Add Subtask" : "+Add Microtask"}
-                      </button>
-                    )}
+      <div ref={boardRef} className="mt-4 space-y-4">
+        {stageGroups.map((group) => {
+          const key = group.stage ? group.stage.id : "flat";
+          const stats = stageStats.get(key) ?? { count: 0, done: 0 };
+          const pct = stats.count > 0 ? Math.round((stats.done / stats.count) * 100) : 0;
+          const isCollapsed = group.stage ? !!collapsed[group.stage.id] : false;
+          return (
+            <section key={String(key)} className="border border-slate-800 rounded-lg overflow-hidden">
+              {group.stage && (
+                <header className="flex items-center justify-between gap-3 px-4 py-2.5 bg-slate-900/70">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: group.stage.color_base }}
+                      title={`Stage color ${group.stage.color_base}`}
+                    />
+                    <h2 className="text-sm font-semibold truncate">{group.stage.name}</h2>
+                    <span className="text-xs font-mono text-slate-400">
+                      {stats.count} task(s) · {pct}% done
+                    </span>
                   </div>
-                );
-              })}
-              {col.rows.length === 0 && (
-                <div className="py-8 text-center text-slate-500 text-xs">No tasks — drop here to move.</div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="w-28 h-1.5 rounded bg-slate-800 overflow-hidden" title={`${pct}% done`}>
+                      <div className="h-full bg-emerald-500" style={{ width: `${pct}%` }} />
+                    </div>
+                    <button
+                      onClick={() => toggleStage(group.stage!.id)}
+                      className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium"
+                      aria-expanded={!isCollapsed}
+                    >
+                      {isCollapsed ? "Expand" : "Collapse"}
+                    </button>
+                  </div>
+                </header>
               )}
-            </div>
-          </section>
-        ))}
+              {!isCollapsed && (
+                <div className="flex gap-3 overflow-x-auto p-3">
+                  {group.leaves.map((col) => (
+                    <section
+                      key={col.key}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => {
+                        if (dragId != null && col.statusId >= 0) moveTask(dragId, col.statusId);
+                        setDragId(null);
+                      }}
+                      className="w-72 shrink-0 bg-slate-900/40 border border-slate-800 rounded-lg flex flex-col max-h-[65vh]"
+                    >
+                      <header className="px-3 py-2 border-b border-slate-800 text-sm font-semibold flex justify-between items-center gap-2">
+                        <span className="flex items-center gap-1.5 truncate">
+                          <span
+                            className="w-2.5 h-2.5 rounded shrink-0"
+                            style={{ backgroundColor: col.shade }}
+                            title={`Shade ${col.shade}`}
+                          />
+                          <span className="truncate">{col.name}</span>
+                        </span>
+                        <span className="text-slate-400 font-mono text-xs">{col.rows.length}</span>
+                      </header>
+                      <div className="p-2 space-y-2 overflow-y-auto">
+                        {col.rows.map((t) => renderCard(t))}
+                        {col.rows.length === 0 && (
+                          <div className="py-8 text-center text-slate-500 text-xs">No tasks — drop here to move.</div>
+                        )}
+                      </div>
+                    </section>
+                  ))}
+                  {group.leaves.length === 0 && (
+                    <div className="py-6 px-4 text-xs text-slate-500">
+                      No leaf Statuses in this Stage yet — add one in Category settings.
+                    </div>
+                  )}
+                </div>
+              )}
+              {isCollapsed && (
+                <div className="px-4 py-2 text-xs text-slate-500">
+                  Collapsed — {stats.count} task(s), {stats.done} done. Expand to see leaf columns.
+                </div>
+              )}
+            </section>
+          );
+        })}
       </div>
       {tasks.length === 0 && !loading && !error && (
         <div className="text-center text-slate-500 text-sm py-10">No tasks match the current filters.</div>
+      )}
+      {statusById.size === 0 && !loading && (
+        <div className="text-center text-slate-500 text-xs py-4">
+          No Statuses in this Category profile yet.
+        </div>
       )}
       <div className="mt-4 border-t border-slate-800 pt-2">{id && <TelemetryBar projectId={id} />}</div>
       {modal && id && (

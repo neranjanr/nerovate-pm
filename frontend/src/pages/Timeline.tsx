@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../stores/auth";
+import { useTheme } from "../stores/theme";
 import TaskDrawer from "../components/TaskDrawer";
 import TelemetryBar from "../components/TelemetryBar";
 import {
   GRANULARITIES,
   buildTimelineExportUrl,
+  buildTimelineUrl,
   downloadExport,
   filterByDepth,
   ganttMinWidth,
@@ -42,9 +44,18 @@ interface ProjectStatus {
   id: number;
   name: string;
   color?: string;
+  shade?: string | null;
+  stage_id?: number | null;
   order: number;
   is_done?: boolean;
   is_blocked?: boolean;
+}
+
+interface StageInfo {
+  id: number;
+  name: string;
+  order: number;
+  color_base: string;
 }
 
 interface ProjectMemberInfo {
@@ -54,15 +65,27 @@ interface ProjectMemberInfo {
 
 const TODAY = () => new Date().toISOString().slice(0, 10);
 
+/**
+ * Execution Timeline (SPEC-v0.3 P3 / U5).
+ * Pipeline = Stages (counts, % done from leaf Statuses, planned range from
+ * task_status_periods); expand a Stage to see stacked per-Status bars built
+ * from the same periods source. Depth 0/1/2 + stage_id filters bind
+ * GET /tasks/timeline; profile resolves via parent Category live reference.
+ */
 export default function Timeline() {
   const auth = useAuth();
+  const { theme } = useTheme();
+  const isSample = theme === "sample";
   const { id } = useParams();
   const [tasks, setTasks] = useState<TimelineItem[]>([]);
   const [statuses, setStatuses] = useState<ProjectStatus[]>([]);
+  const [stages, setStages] = useState<StageInfo[]>([]);
   const [, setMembers] = useState<ProjectMemberInfo[]>([]);
   const [selectedTask, setSelectedTask] = useState<TimelineItem | null>(null);
   const [drawerTaskId, setDrawerTaskId] = useState<number | null>(null);
   const [depthFilter, setDepthFilter] = useState<string>("all");
+  const [stageFilter, setStageFilter] = useState<string>("");
+  const [expandedStages, setExpandedStages] = useState<Record<number, boolean>>({});
   const [granularity, setGranularity] = useState<Granularity>("week");
   const [showPeriods, setShowPeriods] = useState<boolean>(true);
   const [blockedOnly, setBlockedOnly] = useState<boolean>(false);
@@ -72,34 +95,61 @@ export default function Timeline() {
   const ganttRef = useRef<HTMLDivElement>(null);
   const todayRef = useRef<HTMLDivElement>(null);
 
-  const fetchData = () => {
+  const fetchData = useCallback(() => {
     if (!auth.accessToken || !id) return;
     setLoading(true);
     setError("");
+    const headers = { Authorization: `Bearer ${auth.accessToken}` };
+    const timelineUrl = buildTimelineUrl(
+      id,
+      depthFilter,
+      stageFilter || undefined
+    );
     Promise.all([
-      fetch(`/api/v1/tasks/timeline?project_id=${id}`, {
-        headers: { Authorization: `Bearer ${auth.accessToken}` },
+      fetch(timelineUrl, {
+        headers,
       }).then((r) => {
         if (!r.ok) throw new Error(`Timeline failed: ${r.status}`);
         return r.json();
       }),
-      fetch(`/api/v1/projects/${id}`, {
-        headers: { Authorization: `Bearer ${auth.accessToken}` },
-      }).then((r) => (r.ok ? r.json() : null)),
-      fetch(`/api/v1/projects/${id}/members`, {
-        headers: { Authorization: `Bearer ${auth.accessToken}` },
-      }).then((r) => (r.ok ? r.json() : [])),
+      fetch(`/api/v1/projects/${id}`, { headers }).then((r) => (r.ok ? r.json() : null)),
+      fetch(`/api/v1/projects/${id}/members`, { headers }).then((r) => (r.ok ? r.json() : [])),
     ])
       .then(async ([timelineTasks, projData, mems]) => {
         setTasks(timelineTasks);
         setMembers(mems);
-        if (projData && projData.status_profile_id) {
-          const stRes = await fetch(`/api/v1/status-profiles/${projData.status_profile_id}`, {
-            headers: { Authorization: `Bearer ${auth.accessToken}` },
-          });
+        // Live reference: Project -> Category -> Profile.
+        let profileId: number | null = projData?.status_profile_id ?? null;
+        if (projData?.category_id) {
+          try {
+            const cr = await fetch(`/api/v1/categories/${projData.category_id}`, { headers });
+            if (cr.ok) {
+              const cat = await cr.json();
+              if (cat?.status_profile_id) profileId = cat.status_profile_id;
+            }
+          } catch {
+            // keep legacy fallback
+          }
+        }
+        if (profileId) {
+          const stRes = await fetch(`/api/v1/status-profiles/${profileId}`, { headers });
           if (stRes.ok) {
             const stData = await stRes.json();
-            setStatuses(stData.statuses || []);
+            setStatuses((stData.statuses || []).sort((a: ProjectStatus, b: ProjectStatus) => a.order - b.order));
+            setStages((stData.stages || []).sort((a: StageInfo, b: StageInfo) => a.order - b.order));
+          }
+        } else {
+          // Fallback for project-only members (category fetch 404s for them):
+          // dashboard summary carries the same stages/statuses breakdown.
+          try {
+            const dr = await fetch(`/api/v1/dashboard/summary?project_id=${id}`, { headers });
+            if (dr.ok) {
+              const d = await dr.json();
+              setStatuses((d?.statuses || []).sort((a: ProjectStatus, b: ProjectStatus) => a.order - b.order));
+              setStages((d?.stages || []).sort((a: StageInfo, b: StageInfo) => a.order - b.order));
+            }
+          } catch {
+            // leave empty; empty-state message covers it
           }
         }
         setLoading(false);
@@ -108,17 +158,58 @@ export default function Timeline() {
         setError(err.message || "Failed to load timeline");
         setLoading(false);
       });
-  };
+  }, [auth.accessToken, id, depthFilter, stageFilter]);
 
   useEffect(() => {
     fetchData();
-  }, [auth.accessToken, id]);
+  }, [fetchData]);
+
+  const statusById = useMemo(() => new Map(statuses.map((s) => [s.id, s])), [statuses]);
 
   const filteredTasks = useMemo(() => {
     let rows = filterByDepth(tasks, depthFilter);
     if (blockedOnly) rows = rows.filter((t) => t.is_blocked);
     return rows;
   }, [tasks, depthFilter, blockedOnly]);
+
+  // Pipeline aggregation per Stage from the same periods source.
+  const pipeline = useMemo(() => {
+    if (stages.length === 0) return [];
+    return stages.map((st) => {
+      const leafIds = new Set(statuses.filter((s) => s.stage_id === st.id).map((s) => s.id));
+      const tasksInStage = tasks.filter((t) => leafIds.has(t.status_id));
+      const done = tasksInStage.filter((t) => statusById.get(t.status_id)?.is_done).length;
+      // Periods inside this Stage across all tasks (stacked-bar source).
+      const periodsInStage: StatusPeriod[] = [];
+      for (const t of tasks) {
+        for (const p of t.periods || []) {
+          if (leafIds.has(p.status_id)) periodsInStage.push(p);
+        }
+      }
+      const starts = periodsInStage.map((p) => (p.start_date || "").slice(0, 10)).filter(Boolean).sort();
+      const dues = periodsInStage.map((p) => (p.due_date || "").slice(0, 10)).filter(Boolean).sort();
+      const perStatus = statuses
+        .filter((s) => s.stage_id === st.id)
+        .map((s) => ({
+          status: s,
+          taskCount: tasks.filter((t) => t.status_id === s.id).length,
+          periodCount: periodsInStage.filter((p) => p.status_id === s.id).length,
+        }));
+      return {
+        stage: st,
+        taskCount: tasksInStage.length,
+        doneCount: done,
+        pct: tasksInStage.length > 0 ? done / tasksInStage.length : 0,
+        periodCount: periodsInStage.length,
+        plannedStart: starts[0] || null as string | null,
+        plannedEnd: dues[dues.length - 1] || null as string | null,
+        perStatus,
+      };
+    });
+  }, [stages, statuses, tasks, statusById]);
+
+  const toggleStage = (stageId: number) =>
+    setExpandedStages((prev) => ({ ...prev, [stageId]: !prev[stageId] }));
 
   const today = TODAY();
   const todayDueCount = useMemo(
@@ -135,9 +226,9 @@ export default function Timeline() {
     setExportError("");
     try {
       await downloadExport(
-        buildTimelineExportUrl(id, format, depthFilter),
+        buildTimelineExportUrl(id, format, depthFilter, stageFilter || undefined),
         auth.accessToken,
-        `timeline_project_${id}${depthFilter !== "all" ? `_depth${depthFilter}` : ""}.${format}`
+        `timeline_project_${id}${depthFilter !== "all" ? `_depth${depthFilter}` : ""}${stageFilter ? `_stage${stageFilter}` : ""}.${format}`
       );
     } catch (e) {
       setExportError(e instanceof Error ? e.message : "Export failed");
@@ -188,8 +279,20 @@ export default function Timeline() {
   }).length;
   const blockedTasks = tasks.filter((t) => t.is_blocked).length;
 
+  const periodBarColor = (statusId: number): string => {
+    const st = statusById.get(statusId);
+    if (st?.is_done) return "#059669";
+    return st?.shade || st?.color || "#4f46e5";
+  };
+
   return (
-    <main className="flex-1 bg-slate-950 text-slate-100 flex flex-col h-[calc(100vh-110px)] overflow-hidden">
+    <main
+      className={
+        isSample
+          ? "flex-1 bg-surface text-on-surface flex flex-col h-[calc(100vh-110px)] overflow-hidden"
+          : "flex-1 bg-slate-950 text-slate-100 flex flex-col h-[calc(100vh-110px)] overflow-hidden"
+      }
+    >
       {error && (
         <div role="alert" className="p-3 bg-rose-950 text-rose-300 text-xs">
           {error}
@@ -200,28 +303,120 @@ export default function Timeline() {
           Loading timeline...
         </div>
       )}
-      {/* Status Profile progress */}
-      <div className="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 overflow-x-auto">
-          <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold shrink-0">Status flow:</span>
-          {statuses.map((st, idx) => {
-            const count = tasks.filter((t) => t.status_id === st.id).length;
+      {/* Stage pipeline (U5): Stages with counts, % done, planned range */}
+      {pipeline.length > 0 && (
+        <div className="bg-slate-900 border-b border-slate-800 px-6 py-2 space-y-1.5 max-h-44 overflow-y-auto">
+          <div className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+            Pipeline by Stage — click to expand stacked per-Status bars
+          </div>
+          {pipeline.map((row) => {
+            const expanded = !!expandedStages[row.stage.id];
             return (
-              <div key={st.id} className="flex items-center gap-2 shrink-0">
-                <div className="px-3 py-1 rounded bg-slate-800 border border-slate-700 text-xs flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
-                  <span className="font-medium text-slate-200">{st.name}</span>
-                  <span className="px-1.5 py-0.2 bg-slate-900 rounded text-slate-400 text-[10px] font-mono">{count}</span>
-                </div>
-                {idx < statuses.length - 1 && <span className="text-slate-600">→</span>}
+              <div key={row.stage.id} className="rounded border border-slate-800 bg-slate-900/40">
+                <button
+                  onClick={() => toggleStage(row.stage.id)}
+                  className="w-full flex items-center justify-between gap-3 px-3 py-1.5 text-xs"
+                  aria-expanded={expanded}
+                >
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: row.stage.color_base }}
+                    />
+                    <span className="font-semibold text-slate-200 truncate">{row.stage.name}</span>
+                    <span className="font-mono text-slate-400">
+                      {row.taskCount} task(s) · {Math.round(row.pct * 100)}% done · {row.periodCount} period(s)
+                    </span>
+                    <span className="font-mono text-slate-500">
+                      {row.plannedStart || "—"} → {row.plannedEnd || "—"}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-2 shrink-0">
+                    <span className="w-20 h-1.5 rounded bg-slate-800 overflow-hidden">
+                      <span className="block h-full bg-emerald-500" style={{ width: `${Math.round(row.pct * 100)}%` }} />
+                    </span>
+                    <span className="text-slate-400">{expanded ? "▾" : "▸"}</span>
+                  </span>
+                </button>
+                {expanded && (
+                  <div className="px-3 pb-2 flex items-stretch gap-1.5 overflow-x-auto">
+                    {row.perStatus.map(({ status, taskCount, periodCount }) => (
+                      <div
+                        key={status.id}
+                        className="shrink-0 min-w-28 rounded border border-slate-700/70 bg-slate-800/60 px-2 py-1.5"
+                        title={`${status.name}: ${taskCount} task(s), ${periodCount} period(s)`}
+                      >
+                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-200">
+                          <span
+                            className="w-2 h-2 rounded shrink-0"
+                            style={{ backgroundColor: status.shade || row.stage.color_base }}
+                          />
+                          <span className="truncate">{status.name}</span>
+                        </div>
+                        <div className="mt-1 h-3 rounded overflow-hidden flex">
+                          <span
+                            className="h-full"
+                            style={{
+                              width: `${row.periodCount > 0 ? Math.max(4, Math.round((periodCount / row.periodCount) * 100)) : 0}%`,
+                              backgroundColor: status.shade || row.stage.color_base,
+                            }}
+                          />
+                        </div>
+                        <div className="mt-1 font-mono text-[10px] text-slate-400">
+                          {taskCount} tasks · {periodCount} periods
+                        </div>
+                      </div>
+                    ))}
+                    {row.perStatus.length === 0 && (
+                      <div className="text-[11px] text-slate-500 italic py-1">No leaf Statuses in this Stage.</div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
-          {statuses.length === 0 && !loading && (
-            <span className="text-xs text-slate-500">No statuses yet.</span>
-          )}
         </div>
-        <div className="flex items-center gap-2 text-xs shrink-0">
+      )}
+      {/* Legacy flat status flow (kept when no stages exist) */}
+      {pipeline.length === 0 && (
+        <div className="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 overflow-x-auto">
+            <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold shrink-0">Status flow:</span>
+            {statuses.map((st, idx) => {
+              const count = tasks.filter((t) => t.status_id === st.id).length;
+              return (
+                <div key={st.id} className="flex items-center gap-2 shrink-0">
+                  <div className="px-3 py-1 rounded bg-slate-800 border border-slate-700 text-xs flex items-center gap-2">
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: st.shade || st.color || "#818cf8" }}
+                    ></span>
+                    <span className="font-medium text-slate-200">{st.name}</span>
+                    <span className="px-1.5 py-0.2 bg-slate-900 rounded text-slate-400 text-[10px] font-mono">{count}</span>
+                  </div>
+                  {idx < statuses.length - 1 && <span className="text-slate-600">→</span>}
+                </div>
+              );
+            })}
+            {statuses.length === 0 && !loading && (
+              <span className="text-xs text-slate-500">No statuses yet.</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-xs shrink-0">
+            <div className="px-2.5 py-1 rounded bg-slate-800 text-slate-300">
+              Total: <strong className="text-white">{totalTasks}</strong>
+            </div>
+            <div className="px-2.5 py-1 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-900">
+              Completed: <strong className="text-white">{completedTasks}</strong>
+            </div>
+            <div className="px-2.5 py-1 rounded bg-rose-950/80 text-rose-300 border border-rose-900">
+              Blocked: <strong className="text-white">{blockedTasks}</strong>
+            </div>
+          </div>
+        </div>
+      )}
+      {pipeline.length > 0 && (
+        <div className="bg-slate-900 border-b border-slate-800 px-6 py-1.5 flex items-center justify-end gap-2 text-xs">
           <div className="px-2.5 py-1 rounded bg-slate-800 text-slate-300">
             Total: <strong className="text-white">{totalTasks}</strong>
           </div>
@@ -232,7 +427,7 @@ export default function Timeline() {
             Blocked: <strong className="text-white">{blockedTasks}</strong>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Controls Bar */}
       <div className="bg-slate-900/50 border-b border-slate-800 px-6 py-2 flex items-center justify-between gap-4 text-xs flex-wrap">
@@ -251,6 +446,24 @@ export default function Timeline() {
               </button>
             ))}
           </div>
+          {stages.length > 0 && (
+            <label className="flex items-center gap-1.5 bg-slate-800 rounded p-1 border border-slate-700">
+              <span className="px-2 text-slate-400">Stage:</span>
+              <select
+                aria-label="filter timeline by stage"
+                value={stageFilter}
+                onChange={(e) => setStageFilter(e.target.value)}
+                className="bg-slate-800 text-slate-200 text-xs rounded px-1 py-1"
+              >
+                <option value="">All stages</option>
+                {stages.map((s) => (
+                  <option key={s.id} value={String(s.id)}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <div className="flex items-center gap-1.5 bg-slate-800 rounded p-1 border border-slate-700">
             <span className="px-2 text-slate-400">Granularity:</span>
             {GRANULARITIES.map((g) => (
@@ -383,6 +596,9 @@ export default function Timeline() {
               const wbsCode = getWbsNumber(index, filteredTasks);
               const isSelected = selectedTask?.task_id === t.task_id;
               const isTodayDue = (t.due_date || "").slice(0, 10) === today;
+              const sortedPeriods = [...(t.periods || [])].sort((a, b) =>
+                String(a.start_date || "").localeCompare(String(b.start_date || ""))
+              );
               return (
                 <div
                   key={t.task_id}
@@ -395,21 +611,18 @@ export default function Timeline() {
                     <span className="font-mono text-slate-400 font-semibold">{wbsCode} — <strong className="text-slate-200">{t.title}</strong></span>
                     <span className="text-slate-400 font-mono text-[11px]">Start: {t.start_date}</span>
                   </div>
-                  {/* Status periods visual bar */}
+                  {/* Status periods visual bar: one segment per period, same source as pipeline */}
                   <div className="relative h-6 bg-slate-900 rounded border border-slate-800 flex items-center overflow-hidden px-2">
-                    {showPeriods && t.periods && t.periods.length > 0 ? (
+                    {showPeriods && sortedPeriods.length > 0 ? (
                       <div className="flex items-center gap-1 w-full">
-                        {t.periods.map((p) => {
-                          const stObj = statuses.find((s) => s.id === p.status_id);
-                          const isDone = stObj?.is_done;
+                        {sortedPeriods.map((p) => {
+                          const stObj = statusById.get(p.status_id);
                           return (
                             <div
                               key={p.id}
                               title={`Status: ${stObj?.name || p.status_id} (${p.start_date || "?"} → ${p.due_date || "?"})`}
-                              className={`h-4 rounded flex items-center justify-center text-[10px] font-mono px-2 text-white truncate ${
-                                isDone ? "bg-emerald-600" : "bg-indigo-600"
-                              }`}
-                              style={{ flex: 1 }}
+                              className="h-4 rounded flex items-center justify-center text-[10px] font-mono px-2 text-white truncate"
+                              style={{ flex: 1, backgroundColor: periodBarColor(p.status_id) }}
                             >
                               {granularity === "day" || granularity === "week" ? stObj?.name || "Period" : ""}
                             </div>
@@ -459,7 +672,7 @@ export default function Timeline() {
                 <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Status Periods Log ({selectedTask.periods.length})</h4>
                 <div className="flex gap-2 overflow-x-auto max-w-md">
                   {selectedTask.periods.map((p) => {
-                    const st = statuses.find((s) => s.id === p.status_id);
+                    const st = statusById.get(p.status_id);
                     return (
                       <div key={p.id} className="bg-slate-800 border border-slate-700 rounded p-2 text-[11px] shrink-0">
                         <div className="font-semibold text-indigo-300">{st?.name || `Status #${p.status_id}`}</div>

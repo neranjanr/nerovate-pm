@@ -28,6 +28,18 @@ class StatusInfo(BaseModel):
     color: str = ""
     order: int = 0
     is_done: bool = False
+    stage_id: int | None = None
+    shade: str | None = None
+
+
+class StageInfo(BaseModel):
+    id: int
+    name: str
+    order: int = 0
+    color_base: str = "#6b7280"
+    count: int = 0
+    done_count: int = 0
+    pct_done: float = 0.0
 
 
 class Telemetry(BaseModel):
@@ -42,6 +54,8 @@ class SummaryOut(BaseModel):
     project_id: int
     total: int
     by_status: dict[str, int]
+    by_stage: dict[str, int] = {}
+    stages: list[StageInfo] = []
     statuses: list[StatusInfo] = []
     overdue: int
     due_soon: int
@@ -73,15 +87,16 @@ def _require_workload_view(current: User) -> None:
 @router.get("/summary", response_model=SummaryOut)
 def get_summary(
     project_id: int,
+    stage_id: int | None = None,
     current: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     require_project_access(project_id, current, session)
     _require_dashboard_view(current)
-    data = dashboard_service.summarize(session, project_id)
+    data = dashboard_service.summarize(session, project_id, stage_id=stage_id)
     # Workload rows respect the view matrix: member sees KPIs only.
     if can_access_view(current.role, "workload"):
-        data["workload"] = dashboard_service.workload(session, project_id)
+        data["workload"] = dashboard_service.workload(session, project_id, stage_id=stage_id)
     else:
         data["workload"] = []
     return data
@@ -90,24 +105,26 @@ def get_summary(
 @router.get("/workload", response_model=list[dict])
 def get_workload(
     project_id: int,
+    stage_id: int | None = None,
     current: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     require_project_access(project_id, current, session)
     _require_workload_view(current)
-    return dashboard_service.workload(session, project_id)
+    return dashboard_service.workload(session, project_id, stage_id=stage_id)
 
 
 @router.get("/activity", response_model=list[dict])
 def get_activity(
     project_id: int,
     limit: int = 30,
+    stage_id: int | None = None,
     current: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     require_project_access(project_id, current, session)
     _require_dashboard_view(current)
-    return dashboard_service.activity(session, project_id, limit=limit)
+    return dashboard_service.activity(session, project_id, limit=limit, stage_id=stage_id)
 
 
 @router.get("/storage", response_model=StorageOut)

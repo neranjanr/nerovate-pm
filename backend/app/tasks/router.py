@@ -284,6 +284,8 @@ def _task_out(t: Task, session: Session) -> TaskOut:
 @router.get("", response_model=list[TaskOut])
 def list_tasks(
     project_id: int | None = None,
+    category_id: int | None = None,
+    stage_id: int | None = None,
     status_id: int | None = None,
     status: int | None = None,
     assignee_id: int | None = None,
@@ -301,6 +303,8 @@ def list_tasks(
     return _filtered_task_outs(
         session,
         project_id=project_id,
+        category_id=category_id,
+        stage_id=stage_id,
         status_id=status_id if status_id is not None else status,
         assignee_id=assignee_id if assignee_id is not None else assignee,
         watcher_id=watcher_id if watcher_id is not None else watcher,
@@ -313,10 +317,23 @@ def list_tasks(
     )
 
 
+def _stage_status_ids(session: Session, stage_id: int) -> list[int]:
+    """Resolve leaf Status ids for a Stage; 404 on unknown Stage (U5)."""
+    from app.statuses.models import StatusStage
+
+    stage = session.get(StatusStage, stage_id)
+    if stage is None:
+        raise HTTPException(status_code=404, detail="Stage not found")
+    rows = session.exec(select(Status).where(Status.stage_id == stage_id)).all()
+    return [s.id for s in rows if s.id is not None]
+
+
 def _filtered_task_outs(
     session: Session,
     *,
     project_id: int | None,
+    category_id: int | None = None,
+    stage_id: int | None = None,
     status_id: int | None = None,
     assignee_id: int | None = None,
     watcher_id: int | None = None,
@@ -329,15 +346,47 @@ def _filtered_task_outs(
 ) -> list[TaskOut]:
     """Single definition of List/Calendar/Table filters (SPEC-v0.2 4.5 + T8).
 
-    SQL-level: project (membership-gated), status, depth, search.
+    SPEC-v0.3 4.5 (U5): gains category_id and stage_id filters.
+    SQL-level: project/category (membership-gated), stage, status, depth, search.
     Python-level: assignee/watcher/tag/blocked/overdue (derived flags).
     """
     from app.tasks import service as tasks_service
 
+    stage_ids: list[int] | None = None
+    if stage_id is not None:
+        stage_ids = _stage_status_ids(session, stage_id)
+
     query = select(Task)
     if project_id is not None:
-        require_project_access(project_id, current, session)
+        project = require_project_access(project_id, current, session)
+        if category_id is not None:
+            if getattr(project, "category_id", None) != category_id:
+                return []
         query = query.where(Task.project_id == project_id)
+    elif category_id is not None:
+        from app.categories.router import require_category_access as _require_cat
+
+        _require_cat(category_id, current, session)
+        from app.projects.models import Project as _Project
+
+        cat_pids = [
+            p.id
+            for p in session.exec(
+                select(_Project).where(_Project.category_id == category_id)
+            ).all()
+            if p.id is not None
+        ]
+        if not cat_pids:
+            return []
+        if current.role != "admin":
+            assert current.id is not None
+            from app.categories.access import visible_project_ids as _visible
+
+            visible = set(_visible(session, current.id))
+            cat_pids = [pid for pid in cat_pids if pid in visible]
+            if not cat_pids:
+                return []
+        query = query.where(Task.project_id.in_(cat_pids))  # type: ignore[attr-defined, union-attr]
     else:
         # if no project_id, filter by projects user has access to (hybrid union, U1)
         if current.role != "admin":
@@ -349,6 +398,10 @@ def _filtered_task_outs(
                 return []
             query = query.where(Task.project_id.in_(pids))  # type: ignore[attr-defined, union-attr]
 
+    if stage_ids is not None:
+        if not stage_ids:
+            return []
+        query = query.where(Task.status_id.in_(stage_ids))  # type: ignore[attr-defined, union-attr]
     if status_id is not None:
         query = query.where(Task.status_id == status_id)
     if depth is not None:
@@ -522,11 +575,18 @@ class BlockedMapItem(BaseModel):
 @router.get("/blocked-map", response_model=list[BlockedMapItem])
 def get_blocked_map(
     project_id: int,
+    stage_id: int | None = None,
     current: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     require_project_access(project_id, current, session)
-    tasks = session.exec(select(Task).where(Task.project_id == project_id)).all()
+    query = select(Task).where(Task.project_id == project_id)
+    if stage_id is not None:
+        stage_ids = _stage_status_ids(session, stage_id)
+        if not stage_ids:
+            return []
+        query = query.where(Task.status_id.in_(stage_ids))  # type: ignore[attr-defined, union-attr]
+    tasks = session.exec(query).all()
     result = []
     for t in tasks:
         assert t.id is not None
@@ -539,29 +599,38 @@ def get_blocked_map(
 def get_task_timeline(
     project_id: int,
     depth: int | None = None,
+    stage_id: int | None = None,
     current: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     require_project_access(project_id, current, session)
     if not can_access_view(current.role, "timeline"):
         raise HTTPException(status_code=403, detail="Timeline view requires member+")
-    return _timeline_items(session, project_id, depth=depth)
+    return _timeline_items(session, project_id, depth=depth, stage_id=stage_id)
 
 
 def _timeline_items(
     session: Session,
     project_id: int,
     depth: int | None = None,
+    stage_id: int | None = None,
 ) -> list[TaskTimelineItem]:
     """Single definition of timeline rows (T9 depth parity with List/Board).
 
     Derived only from tasks.start_date + task_status_periods (SPEC-v0.2 P3).
+    U5: optional stage_id narrows to tasks whose current Status sits in
+    that Stage (pipeline expand / stacked-bar source stays periods).
     """
     query = select(Task).where(Task.project_id == project_id)
     if depth is not None:
         if depth not in (0, 1, 2):
             raise HTTPException(status_code=400, detail="Invalid depth (0|1|2)")
         query = query.where(Task.depth == depth)
+    if stage_id is not None:
+        stage_ids = _stage_status_ids(session, stage_id)
+        if not stage_ids:
+            return []
+        query = query.where(Task.status_id.in_(stage_ids))  # type: ignore[attr-defined, union-attr]
     tasks = session.exec(query.order_by(Task.id)).all()  # type: ignore[arg-type]
     results = []
     for t in tasks:
@@ -633,6 +702,7 @@ def export_task_timeline(
     project_id: int,
     format: str = "json",
     depth: int | None = None,
+    stage_id: int | None = None,
     current: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
@@ -640,6 +710,7 @@ def export_task_timeline(
 
     JSON mirrors GET /timeline; CSV flattens one row per task with periods
     summarized. Membership-gated (404) + timeline view-gated (guest 403).
+    U5: depth + stage_id parity with GET /timeline.
     """
     require_project_access(project_id, current, session)
     if not can_access_view(current.role, "timeline"):
@@ -647,8 +718,10 @@ def export_task_timeline(
     fmt = format.lower()
     if fmt not in ("json", "csv"):
         raise HTTPException(status_code=400, detail="Invalid format (json|csv)")
-    items = _timeline_items(session, project_id, depth=depth)
+    items = _timeline_items(session, project_id, depth=depth, stage_id=stage_id)
     suffix = f"_depth{depth}" if depth is not None else ""
+    if stage_id is not None:
+        suffix += f"_stage{stage_id}"
     if fmt == "csv":
         return Response(
             content=_timeline_export_csv(items),
@@ -725,6 +798,7 @@ def get_task_calendar(
     project_id: int,
     status_id: int | None = None,
     status: int | None = None,
+    stage_id: int | None = None,
     assignee_id: int | None = None,
     assignee: int | None = None,
     watcher_id: int | None = None,
@@ -740,7 +814,7 @@ def get_task_calendar(
     """Calendar plots Task dues + Status Period planned dues (T8).
 
     Reuses the exact List filter set; view-gated to calendar (guest 403),
-    membership-gated to 404 for non-members.
+    membership-gated to 404 for non-members. U5: stage_id parity.
     """
     require_project_access(project_id, current, session)
     if not can_access_view(current.role, "calendar"):
@@ -748,6 +822,7 @@ def get_task_calendar(
     tasks = _filtered_task_outs(
         session,
         project_id=project_id,
+        stage_id=stage_id,
         status_id=status_id if status_id is not None else status,
         assignee_id=assignee_id if assignee_id is not None else assignee,
         watcher_id=watcher_id if watcher_id is not None else watcher,
@@ -799,6 +874,7 @@ def get_task_table(
     project_id: int,
     status_id: int | None = None,
     status: int | None = None,
+    stage_id: int | None = None,
     assignee_id: int | None = None,
     assignee: int | None = None,
     watcher_id: int | None = None,
@@ -814,6 +890,7 @@ def get_task_table(
     """Table columns: Task + Status+dates + start + assignees + custom fields (T8).
 
     Reuses the exact List filter set; view-gated to table (guest 403).
+    U5: stage_id parity.
     """
     require_project_access(project_id, current, session)
     if not can_access_view(current.role, "table"):
@@ -821,6 +898,7 @@ def get_task_table(
     tasks = _filtered_task_outs(
         session,
         project_id=project_id,
+        stage_id=stage_id,
         status_id=status_id if status_id is not None else status,
         assignee_id=assignee_id if assignee_id is not None else assignee,
         watcher_id=watcher_id if watcher_id is not None else watcher,
