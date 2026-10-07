@@ -5,40 +5,22 @@ import { useTheme } from "../stores/theme";
 import TaskDrawer from "../components/TaskDrawer";
 import TelemetryBar from "../components/TelemetryBar";
 import {
+  buildChildrenMap,
+  getVisibleTreeTasks,
+  getDescendantStats,
+  getSubtreeDateRange,
+  type TreeTask as TimelineItem,
+  type StatusPeriod,
+} from "../utils/wbsTree";
+import {
   GRANULARITIES,
   buildTimelineExportUrl,
   buildTimelineUrl,
   downloadExport,
-  filterByDepth,
   ganttMinWidth,
   pxPerDay,
   type Granularity,
 } from "../utils/exports";
-
-interface StatusPeriod {
-  id: number;
-  task_id: number;
-  status_id: number;
-  start_date?: string | null;
-  due_date?: string | null;
-  actual_end_date?: string | null;
-  actor_id?: number | null;
-  created_at: string;
-}
-
-interface TimelineItem {
-  task_id: number;
-  title: string;
-  depth: number;
-  parent_id?: number | null;
-  status_id: number;
-  status_name: string;
-  start_date: string;
-  due_date?: string | null;
-  assignee_ids: number[];
-  is_blocked: boolean;
-  periods: StatusPeriod[];
-}
 
 interface ProjectStatus {
   id: number;
@@ -83,6 +65,8 @@ export default function Timeline() {
   const [, setMembers] = useState<ProjectMemberInfo[]>([]);
   const [selectedTask, setSelectedTask] = useState<TimelineItem | null>(null);
   const [drawerTaskId, setDrawerTaskId] = useState<number | null>(null);
+  const [treeDefault, setTreeDefault] = useState<"tasks-only" | "tasks-subtasks" | "all">("all");
+  const [collapsedIds, setCollapsedIds] = useState<Set<number>>(new Set());
   const [depthFilter, setDepthFilter] = useState<string>("all");
   const [stageFilter, setStageFilter] = useState<string>("");
   const [expandedStages, setExpandedStages] = useState<Record<number, boolean>>({});
@@ -114,10 +98,14 @@ export default function Timeline() {
       }),
       fetch(`/api/v1/projects/${id}`, { headers }).then((r) => (r.ok ? r.json() : null)),
       fetch(`/api/v1/projects/${id}/members`, { headers }).then((r) => (r.ok ? r.json() : [])),
+      fetch(`/api/v1/projects/${id}/tree-default`, { headers }).then((r) => (r.ok ? r.json() : null)),
     ])
-      .then(async ([timelineTasks, projData, mems]) => {
+      .then(async ([timelineTasks, projData, mems, treeDefData]) => {
         setTasks(timelineTasks);
         setMembers(mems);
+        if (treeDefData?.tree_default) {
+          setTreeDefault(treeDefData.tree_default);
+        }
         // Live reference: Project -> Category -> Profile.
         let profileId: number | null = projData?.status_profile_id ?? null;
         if (projData?.category_id) {
@@ -166,11 +154,53 @@ export default function Timeline() {
 
   const statusById = useMemo(() => new Map(statuses.map((s) => [s.id, s])), [statuses]);
 
-  const filteredTasks = useMemo(() => {
-    let rows = filterByDepth(tasks, depthFilter);
+  const childrenMap = useMemo(() => buildChildrenMap(tasks), [tasks]);
+
+  const handleTreeDefaultChange = async (newDefault: "tasks-only" | "tasks-subtasks" | "all") => {
+    setTreeDefault(newDefault);
+    if (!auth.accessToken || !id) return;
+    try {
+      await fetch(`/api/v1/projects/${id}/tree-default`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${auth.accessToken}`,
+        },
+        body: JSON.stringify({ tree_default: newDefault }),
+      });
+    } catch {
+      // ignore
+    }
+  };
+
+  const collapseAll = () => {
+    const parentIds = new Set<number>();
+    for (const [pid, kids] of childrenMap.entries()) {
+      if (pid !== null && kids.length > 0) {
+        parentIds.add(pid);
+      }
+    }
+    for (const t of tasks) {
+      if ((childrenMap.get(t.task_id) || []).length > 0) {
+        parentIds.add(t.task_id);
+      }
+    }
+    setCollapsedIds(parentIds);
+  };
+
+  const expandAll = () => {
+    setCollapsedIds(new Set());
+  };
+
+  const visibleTasks = useMemo(() => {
+    let rows = getVisibleTreeTasks(tasks, treeDefault, collapsedIds);
     if (blockedOnly) rows = rows.filter((t) => t.is_blocked);
+    if (stageFilter) {
+      const stageIds = new Set(statuses.filter((s) => s.stage_id === Number(stageFilter)).map((s) => s.id));
+      rows = rows.filter((t) => stageIds.has(t.status_id));
+    }
     return rows;
-  }, [tasks, depthFilter, blockedOnly]);
+  }, [tasks, treeDefault, collapsedIds, blockedOnly, stageFilter, statuses]);
 
   // Pipeline aggregation per Stage from the same periods source.
   const pipeline = useMemo(() => {
@@ -433,19 +463,31 @@ export default function Timeline() {
       <div className="bg-slate-900/50 border-b border-slate-800 px-6 py-2 flex items-center justify-between gap-4 text-xs flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-1.5 bg-slate-800 rounded p-1 border border-slate-700">
-            <span className="px-2 text-slate-400">Depth:</span>
-            {["all", "0", "1", "2"].map((d) => (
+            <span className="px-2 text-slate-400">Tree view:</span>
+            {(["tasks-only", "tasks-subtasks", "all"] as const).map((d) => (
               <button
                 key={d}
-                onClick={() => setDepthFilter(d)}
+                onClick={() => handleTreeDefaultChange(d)}
                 className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
-                  depthFilter === d ? "bg-indigo-600 text-white" : "text-slate-300 hover:text-white"
+                  treeDefault === d ? "bg-indigo-600 text-white" : "text-slate-300 hover:text-white"
                 }`}
               >
-                {d === "all" ? "All" : `Depth ${d}`}
+                {d === "tasks-only" ? "Tasks only" : d === "tasks-subtasks" ? "Tasks+Subtasks" : "All"}
               </button>
             ))}
           </div>
+          <button
+            onClick={collapseAll}
+            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 font-medium transition-colors text-xs"
+          >
+            Collapse All
+          </button>
+          <button
+            onClick={expandAll}
+            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 font-medium transition-colors text-xs"
+          >
+            Expand All
+          </button>
           {stages.length > 0 && (
             <label className="flex items-center gap-1.5 bg-slate-800 rounded p-1 border border-slate-700">
               <span className="px-2 text-slate-400">Stage:</span>
@@ -545,10 +587,14 @@ export default function Timeline() {
             <div className="col-span-2 text-right">Due Date</div>
           </div>
           <div className="divide-y divide-slate-800/60">
-            {filteredTasks.map((t, index) => {
-              const wbsCode = getWbsNumber(index, filteredTasks);
+            {visibleTasks.map((t) => {
+              const wbsCode = t.wbs || getWbsNumber(tasks.indexOf(t), tasks);
+              const kids = childrenMap.get(t.task_id) || [];
+              const hasKids = kids.length > 0;
+              const isCollapsed = collapsedIds.has(t.task_id);
               const indentClass = t.depth === 1 ? "pl-4" : t.depth === 2 ? "pl-8" : "pl-0";
               const isSelected = selectedTask?.task_id === t.task_id;
+              const stats = hasKids && isCollapsed ? getDescendantStats(t.task_id, childrenMap, statuses) : null;
               return (
                 <div
                   key={t.task_id}
@@ -558,9 +604,33 @@ export default function Timeline() {
                   }`}
                 >
                   <div className="col-span-2 font-mono text-slate-400 font-semibold">{wbsCode}</div>
-                  <div className={`col-span-5 font-medium text-slate-200 truncate ${indentClass}`}>
+                  <div className={`col-span-5 font-medium text-slate-200 truncate flex items-center gap-1.5 ${indentClass}`}>
+                    {hasKids ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCollapsedIds((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(t.task_id)) next.delete(t.task_id);
+                            else next.add(t.task_id);
+                            return next;
+                          });
+                        }}
+                        className="w-4 h-4 text-slate-400 hover:text-white shrink-0 font-mono text-[10px] flex items-center justify-center bg-slate-800 rounded border border-slate-700"
+                        aria-label={isCollapsed ? "Expand" : "Collapse"}
+                      >
+                        {isCollapsed ? "▸" : "▾"}
+                      </button>
+                    ) : (
+                      <span className="w-4 shrink-0" />
+                    )}
                     {t.is_blocked && <span className="text-rose-400 mr-1" title="Blocked">⚠️</span>}
-                    {t.title}
+                    <span className="truncate">{t.title}</span>
+                    {stats && (
+                      <span className="ml-2 font-mono text-[10px] text-indigo-300 bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-900 shrink-0">
+                        +{stats.total} children, {stats.completed} Complete
+                      </span>
+                    )}
                   </div>
                   <div className="col-span-3">
                     <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 text-[11px]">
@@ -573,8 +643,8 @@ export default function Timeline() {
                 </div>
               );
             })}
-            {filteredTasks.length === 0 && !loading && (
-              <div className="py-12 text-center text-slate-500 text-sm">No tasks found for the current depth filter.</div>
+            {visibleTasks.length === 0 && !loading && (
+              <div className="py-12 text-center text-slate-500 text-sm">No tasks found for the current tree view filter.</div>
             )}
           </div>
         </div>
@@ -592,10 +662,18 @@ export default function Timeline() {
             Today: {today}{todayDueCount > 0 ? ` — ${todayDueCount} task(s) due` : " — nothing due"}
           </div>
           <div className="p-4 space-y-4" style={{ minWidth: ganttMinWidth(granularity) }}>
-            {filteredTasks.map((t, index) => {
-              const wbsCode = getWbsNumber(index, filteredTasks);
+            {visibleTasks.map((t) => {
+              const wbsCode = t.wbs || getWbsNumber(tasks.indexOf(t), tasks);
+              const kids = childrenMap.get(t.task_id) || [];
+              const hasKids = kids.length > 0;
+              const isCollapsed = collapsedIds.has(t.task_id);
+              const isCollapsedParent = hasKids && isCollapsed;
+              const stats = isCollapsedParent ? getDescendantStats(t.task_id, childrenMap, statuses) : null;
+              const dateRange = isCollapsedParent ? getSubtreeDateRange(t.task_id, t, childrenMap) : null;
+              const barStart = dateRange ? dateRange.start : t.start_date;
+              const barDue = dateRange ? dateRange.due : t.due_date;
               const isSelected = selectedTask?.task_id === t.task_id;
-              const isTodayDue = (t.due_date || "").slice(0, 10) === today;
+              const isTodayDue = (barDue || "").slice(0, 10) === today;
               const sortedPeriods = [...(t.periods || [])].sort((a, b) =>
                 String(a.start_date || "").localeCompare(String(b.start_date || ""))
               );
@@ -609,11 +687,18 @@ export default function Timeline() {
                 >
                   <div className="flex items-center justify-between text-xs mb-2">
                     <span className="font-mono text-slate-400 font-semibold">{wbsCode} — <strong className="text-slate-200">{t.title}</strong></span>
-                    <span className="text-slate-400 font-mono text-[11px]">Start: {t.start_date}</span>
+                    <span className="text-slate-400 font-mono text-[11px]">Start: {barStart}</span>
                   </div>
                   {/* Status periods visual bar: one segment per period, same source as pipeline */}
                   <div className="relative h-6 bg-slate-900 rounded border border-slate-800 flex items-center overflow-hidden px-2">
-                    {showPeriods && sortedPeriods.length > 0 ? (
+                    {isCollapsedParent ? (
+                      <div
+                        className="h-4 rounded bg-indigo-700/80 border border-indigo-500/60 flex items-center justify-center text-[10px] font-mono px-2 text-white truncate w-full"
+                        title={`Summary: ${barStart} → ${barDue || "no due"} (+${stats?.total} children, ${stats?.completed} Complete)`}
+                      >
+                        Summary: {barStart} → {barDue || "no due"} (+{stats?.total} children, {stats?.completed} Complete)
+                      </div>
+                    ) : showPeriods && sortedPeriods.length > 0 ? (
                       <div className="flex items-center gap-1 w-full">
                         {sortedPeriods.map((p) => {
                           const stObj = statusById.get(p.status_id);
@@ -635,7 +720,7 @@ export default function Timeline() {
                       <div
                         className="h-4 rounded bg-indigo-600"
                         style={{ width: "100%" }}
-                        title={`${t.start_date} → ${t.due_date || "no due"}`}
+                        title={`${barStart} → ${barDue || "no due"}`}
                       />
                     )}
                   </div>
