@@ -29,15 +29,7 @@ def client(monkeypatch):
 
     db_module.init_db()
 
-    # seed base admin user (bcrypt12)
-    import bcrypt
-
-    from app.auth.models import User
-
-    with Session(engine) as s:
-        pw = bcrypt.hashpw("adminpass123".encode(), bcrypt.gensalt(rounds=12)).decode()
-        s.add(User(username="admin", password_hash=pw, name="Admin", role="admin", active=True))
-        s.commit()
+    # Default admin (admin/admin) is seeded by init_db; nothing extra to do here.
 
     app = create_app()
     with TestClient(app) as c:
@@ -57,7 +49,7 @@ def _auth_headers(client: TestClient, username: str, password: str):
 
 @pytest.fixture()
 def admin_token_headers(client: TestClient):
-    return _auth_headers(client, "admin", "adminpass123")
+    return _auth_headers(client, "admin", "admin")
 
 
 def _create_user(client: TestClient, headers, username: str, role: str):

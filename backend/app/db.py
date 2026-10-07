@@ -2,13 +2,63 @@ import os
 
 from sqlmodel import Session, SQLModel, create_engine, select
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./data/nrg.db")
+DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./data/nerovate.db")
 
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
 
 
+def _sqlite_path(url: str) -> str:
+    if "sqlite" not in url:
+        return ""
+    return url.split("sqlite:///", 1)[-1].split("?", 1)[0]
+
+
+def _legacy_path_for(target_path: str) -> str | None:
+    """Map a nerovate.db path back to its legacy nrg.db sibling."""
+    if not target_path or target_path == ":memory:":
+        return None
+    if target_path.endswith("nerovate.db"):
+        return target_path[: -len("nerovate.db")] + "nrg.db"
+    return None
+
+
+def migrate_legacy_db(target_url: str | None = None, source_path: str | None = None) -> bool:
+    """Copy legacy nrg.db -> nerovate.db when the target is missing.
+
+    Idempotent: returns True only when a copy happened. Copies WAL
+    sidecars (-wal/-shm/-journal) when present. Never overwrites an
+    existing target. Safe to call on every boot and in tests.
+    """
+    import shutil
+
+    target_path = _sqlite_path(target_url or DATABASE_URL)
+    if not target_path or target_path == ":memory:":
+        return False
+    legacy = source_path or _legacy_path_for(target_path)
+    if not legacy:
+        return False
+    if os.path.isfile(target_path) or not os.path.isfile(legacy):
+        return False
+    try:
+        parent = os.path.dirname(target_path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        shutil.copy2(legacy, target_path)
+        for suffix in ("-wal", "-shm", "-journal"):
+            sidecar = legacy + suffix
+            if os.path.isfile(sidecar) and not os.path.isfile(target_path + suffix):
+                try:
+                    shutil.copy2(sidecar, target_path + suffix)
+                except OSError:
+                    pass
+        return True
+    except OSError:
+        return False
+
+
 def init_db() -> None:
+    migrate_legacy_db()
     from app.auth import models as _auth_models  # noqa: F401
     from app.categories import models as _cat_models  # noqa: F401
     from app.projects import models as _proj_models  # noqa: F401

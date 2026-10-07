@@ -197,7 +197,7 @@ def storage_info(project_id: int) -> dict:
 
     db_bytes = 0
     try:
-        url = getattr(db_module, "DATABASE_URL", "sqlite:///./data/nrg.db")
+        url = getattr(db_module, "DATABASE_URL", "sqlite:///./data/nerovate.db")
         path = url.split("sqlite:///", 1)[-1].split("?", 1)[0] if "sqlite" in url else ""
         if path == ":memory:" or not path:
             db_bytes = 0

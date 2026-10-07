@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import type { Role } from "../modules/registry";
+import { AUTH_KEYS, LEGACY_AUTH_KEYS, readWithFallback, writeNewKey } from "./storageKeys";
 
 interface AuthState {
   accessToken: string | null;
@@ -13,28 +14,30 @@ const AuthCtx = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(() =>
-    localStorage.getItem("nrg_access")
+    readWithFallback(localStorage, AUTH_KEYS.access, LEGACY_AUTH_KEYS.access)
   );
   const [role, setRole] = useState<Role | null>(
-    () => (localStorage.getItem("nrg_role") as Role | null)
+    () => (readWithFallback(localStorage, AUTH_KEYS.role, LEGACY_AUTH_KEYS.role) as Role | null)
   );
   const [username, setUsername] = useState<string | null>(() =>
-    localStorage.getItem("nrg_user")
+    readWithFallback(localStorage, AUTH_KEYS.user, LEGACY_AUTH_KEYS.user)
   );
 
   const login = (token: string, r: Role, u: string) => {
     setAccessToken(token);
     setRole(r);
     setUsername(u);
-    localStorage.setItem("nrg_access", token);
-    localStorage.setItem("nrg_role", r);
-    localStorage.setItem("nrg_user", u);
+    writeNewKey(localStorage, AUTH_KEYS.access, LEGACY_AUTH_KEYS.access, token);
+    writeNewKey(localStorage, AUTH_KEYS.role, LEGACY_AUTH_KEYS.role, r);
+    writeNewKey(localStorage, AUTH_KEYS.user, LEGACY_AUTH_KEYS.user, u);
   };
   const logout = () => {
     setAccessToken(null);
     setRole(null);
     setUsername(null);
-    localStorage.clear();
+    for (const k of Object.values({ ...AUTH_KEYS, ...LEGACY_AUTH_KEYS })) {
+      localStorage.removeItem(k);
+    }
   };
   return (
     <AuthCtx.Provider value={{ accessToken, role, username, login, logout }}>

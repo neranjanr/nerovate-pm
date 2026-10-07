@@ -21,7 +21,7 @@ def _login(client: TestClient, username: str, password: str):
 
 
 def test_login_issues_access_and_refresh_tokens(client: TestClient, admin_user):
-    body = _login(client, "admin", "adminpass123")
+    body = _login(client, "admin", "admin")
     # refresh flow: 7d refresh -> new 60m access
     r = client.post("/api/v1/auth/refresh", json={"refresh_token": body["refresh_token"]})
     assert r.status_code == 200, r.text
@@ -34,7 +34,7 @@ def test_login_wrong_password_is_401(client: TestClient, admin_user):
 
 
 def test_me_returns_role(client: TestClient, admin_user):
-    body = _login(client, "admin", "adminpass123")
+    body = _login(client, "admin", "admin")
     r = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {body['access_token']}"})
     assert r.status_code == 200
     assert r.json()["role"] == "admin"

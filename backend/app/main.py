@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="NRG Projects", lifespan=lifespan)
+    app = FastAPI(title="Nerovate-PM", lifespan=lifespan)
     app.include_router(auth_router)
     app.include_router(users_router)
     app.include_router(categories_router)
