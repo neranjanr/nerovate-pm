@@ -10,6 +10,10 @@ import {
   getDescendantStats,
   getSubtreeDateRange,
   getWbsNumber,
+  canDropAsSiblings,
+  getSiblingPosition,
+  getReorderDisabledReason,
+  formatReorderConfirm,
   type TreeTask as TimelineItem,
   type StatusPeriod,
 } from "../utils/wbsTree";
@@ -77,6 +81,13 @@ export default function Timeline() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [exportError, setExportError] = useState<string>("");
+  const [reorderModal, setReorderModal] = useState<{
+    draggedTask: TimelineItem;
+    targetTask: TimelineItem;
+    oldPos: number;
+    newPos: number;
+    wbs: string;
+  } | null>(null);
   const ganttRef = useRef<HTMLDivElement>(null);
   const todayRef = useRef<HTMLDivElement>(null);
 
@@ -278,6 +289,9 @@ export default function Timeline() {
     if (st?.is_done) return "#059669";
     return st?.shade || st?.color || "#4f46e5";
   };
+
+  const isFiltered = depthFilter !== "all" || Boolean(stageFilter) || blockedOnly;
+  const canReorder = auth.role !== "guest" && !isFiltered;
 
   return (
     <main
@@ -563,7 +577,42 @@ export default function Timeline() {
                 <div
                   key={t.task_id}
                   onClick={() => setSelectedTask(t)}
+                  draggable={canReorder}
+                  title={getReorderDisabledReason(auth.role, isFiltered) ?? "Drag to reorder sibling"}
+                  onDragStart={(e) => {
+                    if (!canReorder) return;
+                    e.dataTransfer.setData("text/plain", String(t.task_id));
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = canReorder ? "move" : "none";
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (!canReorder) return;
+                    const draggedId = Number(e.dataTransfer.getData("text/plain"));
+                    if (!draggedId || draggedId === t.task_id) return;
+                    const draggedTask = tasks.find((x) => x.task_id === draggedId);
+                    if (!draggedTask) return;
+                    if (!canDropAsSiblings(draggedTask, t)) {
+                      alert("Cross-parent reorder not allowed");
+                      return;
+                    }
+                    const oldPos = getSiblingPosition(draggedTask, tasks);
+                    const newPos = getSiblingPosition(t, tasks);
+                    const wbs = draggedTask.wbs || getWbsNumber(tasks.indexOf(draggedTask), tasks);
+                    setReorderModal({
+                      draggedTask,
+                      targetTask: t,
+                      oldPos,
+                      newPos,
+                      wbs,
+                    });
+                  }}
                   className={`grid grid-cols-12 px-4 py-3 text-xs items-center cursor-pointer transition-colors ${
+                    canReorder ? "cursor-grab active:cursor-grabbing" : ""
+                  } ${
                     isSelected ? "bg-indigo-950/40 border-l-2 border-indigo-500" : "hover:bg-slate-900/60"
                   }`}
                 >
@@ -760,6 +809,59 @@ export default function Timeline() {
           onClose={() => setDrawerTaskId(null)}
           onUpdated={fetchData}
         />
+      )}
+      {reorderModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-lg border border-slate-700 bg-slate-900 p-4">
+            <h2 className="text-sm font-semibold text-slate-100">Confirm Reorder</h2>
+            <p className="mt-2 text-xs font-mono text-indigo-300 bg-indigo-950/60 p-2 rounded border border-indigo-900">
+              {formatReorderConfirm(
+                reorderModal.wbs,
+                reorderModal.draggedTask.title,
+                reorderModal.oldPos,
+                reorderModal.newPos
+              )}
+            </p>
+            <div className="mt-4 flex justify-end gap-2 text-xs">
+              <button
+                onClick={() => setReorderModal(null)}
+                className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!auth.accessToken) return;
+                  try {
+                    const r = await fetch("/api/v1/tasks/reorder", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${auth.accessToken}`,
+                      },
+                      body: JSON.stringify({
+                        item_id: reorderModal.draggedTask.task_id,
+                        to_position: reorderModal.newPos,
+                      }),
+                    });
+                    if (!r.ok) {
+                      const err = await r.json().catch(() => ({}));
+                      throw new Error(err.detail || `Reorder failed: ${r.status}`);
+                    }
+                    setReorderModal(null);
+                    fetchData();
+                  } catch (e) {
+                    alert(e instanceof Error ? e.message : "Reorder failed");
+                    setReorderModal(null);
+                  }
+                }}
+                className="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );

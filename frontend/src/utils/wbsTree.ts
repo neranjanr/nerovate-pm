@@ -105,6 +105,34 @@ export function getVisibleTreeTasks(
   return result;
 }
 
+/** V4: same-parent drop validation — Tasks among Tasks, Subtasks among same-Task siblings, Microtasks among same-Subtask siblings. */
+export function canDropAsSiblings(
+  dragged: Pick<TreeTask, "task_id" | "parent_id">,
+  target: Pick<TreeTask, "task_id" | "parent_id">
+): boolean {
+  if (dragged.task_id === target.task_id) return false;
+  return (dragged.parent_id ?? null) === (target.parent_id ?? null);
+}
+
+/** V4: 1-based sibling rank, prefers stored position, falls back to sibling order. */
+export function getSiblingPosition(task: TreeTask, allTasks: TreeTask[]): number {
+  if (typeof task.position === "number" && task.position > 0) return task.position;
+  const siblings = allTasks.filter((t) => (t.parent_id ?? null) === (task.parent_id ?? null));
+  return siblings.indexOf(task) + 1;
+}
+
+/** V4: Confirm modal copy `WBS 'Title': position A -> B`. */
+export function formatReorderConfirm(wbs: string, title: string, oldPos: number, newPos: number): string {
+  return `${wbs} '${title}': position ${oldPos} → ${newPos}`;
+}
+
+/** V4: drag disabled reason — guest role or any filter/search/depth active. Null when reorder allowed. */
+export function getReorderDisabledReason(role: string | null | undefined, isFiltered: boolean): string | null {
+  if (role === "guest") return "Guest cannot reorder tasks";
+  if (isFiltered) return "Drag disabled while filters/search/depth active";
+  return null;
+}
+
 export function getWbsNumber(index: number, taskList: TreeTask[]): string {
   const task = taskList[index];
   if (!task) return `${index + 1}`;
