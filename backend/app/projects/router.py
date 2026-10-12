@@ -584,6 +584,7 @@ def apply_profile(
             order=s.order,
             is_done=s.is_done,
             is_blocked=s.is_blocked,
+            kind=getattr(s, "kind", None) or "normal",
         )
         session.add(new_s)
 

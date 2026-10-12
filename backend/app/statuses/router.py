@@ -5,6 +5,7 @@ from sqlmodel import Session, select
 from app.auth.models import User
 from app.deps import get_current_user, get_session, require_writer
 from app.statuses.models import CustomFieldDef, Status, StatusProfile, StatusStage
+from app.statuses.signals import BLOCKED, NORMAL, normalize_kind
 
 router = APIRouter(prefix="/api/v1/status-profiles", tags=["status-profiles"])
 stages_router = APIRouter(prefix="/api/v1/stages", tags=["status-stages"])
@@ -12,7 +13,8 @@ statuses_router = APIRouter(prefix="/api/v1/statuses", tags=["statuses"])
 
 
 def _tint_hex(base: str, idx: int, total: int) -> str:
-    """Lighten a hex color toward white by position (auto-tinted leaf shades)."""
+    """Tier-2 cascade shade: first leaf = lightest tint (~85% toward white),
+    last leaf = solid base. Cycles with dark-shift handled by caller via idx."""
     try:
         h = base.lstrip("#")
         if len(h) == 3:
@@ -21,20 +23,41 @@ def _tint_hex(base: str, idx: int, total: int) -> str:
     except Exception:
         return base
     total = max(total, 1)
-    # First leaf keeps the base; later leaves lighten up to ~45% toward white.
-    f = 0.0 if total <= 1 else (idx / (total - 1)) * 0.45
+    # Q4 cascade: light -> solid across position.
+    f = 0.0 if total <= 1 else 0.85 - (idx / (total - 1)) * 0.85
+    # Cycle for 5th+ statuses: reuse ramp (caller passes idx % total window).
+    f = max(0.0, min(0.85, f))
     r = round(r + (255 - r) * f)
     g = round(g + (255 - g) * f)
     b = round(b + (255 - b) * f)
     return f"#{r:02x}{g:02x}{b:02x}"
 
 
+def _recascade_stage(session: Session, stage: StatusStage) -> None:
+    """Recompute stored color/shade for all child statuses of a stage."""
+    assert stage.id is not None
+    rows = list(
+        session.exec(
+            select(Status).where(Status.stage_id == stage.id).order_by(Status.order)  # type: ignore[arg-type]
+        ).all()
+    )
+    total = max(len(rows), 1)
+    for idx, s in enumerate(rows):
+        shade = _tint_hex(stage.color_base, idx % 4 if len(rows) > 4 else idx, min(total, 4) if len(rows) > 4 else total)
+        s.color = shade
+        s.shade = shade
+        session.add(s)
+
+
 class StatusCreate(BaseModel):
     name: str
-    color: str = "#6b7280"
+    color: str | None = None
     order: int = 0
     is_done: bool = False
     is_blocked: bool = False
+    kind: str = NORMAL
+    is_milestone: bool = False
+    active: bool = True
     stage_id: int | None = None
     shade: str | None = None
 
@@ -45,6 +68,9 @@ class StatusUpdate(BaseModel):
     order: int | None = None
     is_done: bool | None = None
     is_blocked: bool | None = None
+    kind: str | None = None
+    is_milestone: bool | None = None
+    active: bool | None = None
     stage_id: int | None = None
     shade: str | None = None
 
@@ -59,18 +85,25 @@ class StatusOut(BaseModel):
     order: int
     is_done: bool
     is_blocked: bool
+    kind: str = NORMAL
+    is_milestone: bool = False
+    active: bool = True
 
 
 class StageCreate(BaseModel):
     name: str
     order: int = 0
     color_base: str = "#6b7280"
+    description: str = ""
+    active: bool = True
 
 
 class StageUpdate(BaseModel):
     name: str | None = None
     order: int | None = None
     color_base: str | None = None
+    description: str | None = None
+    active: bool | None = None
 
 
 class StageOut(BaseModel):
@@ -79,6 +112,8 @@ class StageOut(BaseModel):
     name: str
     order: int
     color_base: str
+    description: str = ""
+    active: bool = True
 
 
 class CustomFieldDefCreate(BaseModel):
@@ -102,17 +137,23 @@ class CustomFieldDefOut(BaseModel):
 
 class StatusProfileCreate(BaseModel):
     name: str
+    description: str = ""
+    active: bool = True
     is_template: bool = True
 
 
 class StatusProfileUpdate(BaseModel):
     name: str | None = None
+    description: str | None = None
+    active: bool | None = None
     is_template: bool | None = None
 
 
 class StatusProfileOut(BaseModel):
     id: int
     name: str
+    description: str = ""
+    active: bool = True
     is_template: bool
     created_by: int | None = None
     created_at: str
@@ -129,11 +170,14 @@ def _stage_out(s: StatusStage) -> StageOut:
         name=s.name,
         order=s.order,
         color_base=s.color_base,
+        description=getattr(s, "description", "") or "",
+        active=getattr(s, "active", True),
     )
 
 
 def _status_out(s: Status) -> StatusOut:
     assert s.id is not None
+    kind = getattr(s, "kind", None) or (BLOCKED if s.is_blocked else NORMAL)
     return StatusOut(
         id=s.id,
         profile_id=s.profile_id,
@@ -144,7 +188,33 @@ def _status_out(s: Status) -> StatusOut:
         order=s.order,
         is_done=s.is_done,
         is_blocked=s.is_blocked,
+        kind=kind,
+        is_milestone=getattr(s, "is_milestone", False) or False,
+        active=getattr(s, "active", True),
     )
+
+
+def _require_kind(value: str | None) -> str:
+    """Validate an incoming kind payload; 422 on unknown kinds."""
+    try:
+        return normalize_kind(value)
+    except ValueError:
+        raise HTTPException(status_code=422, detail=f"Unknown status kind: {value!r}")
+
+
+def _kind_for_create(body: StatusCreate) -> tuple[str, bool]:
+    """Resolve (kind, is_blocked) for a new Status.
+
+    Explicit kind wins; legacy is_blocked=True backfills to blocked kind;
+    blocked kind keeps the row/border treatment flag in sync.
+    """
+    kind = _require_kind(body.kind)
+    is_blocked = body.is_blocked
+    if kind == NORMAL and is_blocked:
+        kind = BLOCKED
+    if kind == BLOCKED:
+        is_blocked = True
+    return kind, is_blocked
 
 
 def _ordered_stages(session: Session, profile_id: int) -> list[StatusStage]:
@@ -211,6 +281,8 @@ def _profile_out(p: StatusProfile, session: Session) -> StatusProfileOut:
     return StatusProfileOut(
         id=p.id,
         name=p.name,
+        description=getattr(p, "description", "") or "",
+        active=getattr(p, "active", True),
         is_template=p.is_template,
         created_by=p.created_by,
         created_at=p.created_at,
@@ -299,6 +371,8 @@ def create_status_profile(
     assert current.id is not None
     profile = StatusProfile(
         name=body.name,
+        description=body.description,
+        active=body.active,
         is_template=body.is_template,
         created_by=current.id,
     )
@@ -334,6 +408,10 @@ def update_status_profile(
         raise HTTPException(status_code=404, detail="Status profile not found")
     if body.name is not None:
         p.name = body.name
+    if body.description is not None:
+        p.description = body.description
+    if body.active is not None:
+        p.active = body.active
     if body.is_template is not None:
         p.is_template = body.is_template
     session.add(p)
@@ -379,6 +457,8 @@ def clone_status_profile(
     assert current.id is not None
     clone = StatusProfile(
         name=f"{p.name} (Clone)",
+        description=getattr(p, "description", "") or "",
+        active=getattr(p, "active", True),
         is_template=True,
         created_by=current.id,
     )
@@ -396,6 +476,8 @@ def clone_status_profile(
             name=st.name,
             order=st.order,
             color_base=st.color_base,
+            description=getattr(st, "description", "") or "",
+            active=getattr(st, "active", True),
         )
         session.add(new_st)
         session.commit()
@@ -415,6 +497,9 @@ def clone_status_profile(
             order=s.order,
             is_done=s.is_done,
             is_blocked=s.is_blocked,
+            kind=getattr(s, "kind", None) or NORMAL,
+            is_milestone=getattr(s, "is_milestone", False) or False,
+            active=getattr(s, "active", True),
         )
         session.add(new_s)
 
@@ -472,6 +557,8 @@ def create_profile_stage(
         name=name,
         order=order,
         color_base=body.color_base or "#6b7280",
+        description=body.description,
+        active=body.active,
     )
     session.add(st)
     session.commit()
@@ -512,9 +599,18 @@ def update_stage(
         st.order = body.order
     if body.color_base is not None:
         st.color_base = body.color_base
+    if body.description is not None:
+        st.description = body.description
+    if body.active is not None:
+        st.active = body.active
     session.add(st)
     session.commit()
     session.refresh(st)
+    # Q4: Tier-1 recolor cascades to Tier-2 shades.
+    if body.color_base is not None:
+        _recascade_stage(session, st)
+        session.commit()
+        session.refresh(st)
     return _stage_out(st)
 
 
@@ -574,16 +670,24 @@ def create_stage_status(
     if not name:
         raise HTTPException(status_code=400, detail="Name required")
     order = body.order if body.order else _next_status_order(session, st.profile_id, stage_id)
-    shade = body.shade if body.shade is not None else st.color_base
+    # Q4: Tier-2 shade derived from Tier-1 base + position (read-only cascade).
+    siblings = list(
+        session.exec(select(Status).where(Status.stage_id == stage_id).order_by(Status.order)).all()  # type: ignore[arg-type]
+    )
+    shade = _tint_hex(st.color_base, len(siblings) % 4 if len(siblings) >= 4 else len(siblings), 4)
+    kind, is_blocked = _kind_for_create(body)
     s = Status(
         profile_id=st.profile_id,
         stage_id=stage_id,
         name=name,
-        color=body.color,
+        color=shade,
         shade=shade,
         order=order,
         is_done=body.is_done,
-        is_blocked=body.is_blocked,
+        is_blocked=is_blocked,
+        kind=kind,
+        is_milestone=body.is_milestone,
+        active=body.active,
     )
     session.add(s)
     session.commit()
@@ -624,18 +728,31 @@ def create_profile_status(
         raise HTTPException(status_code=400, detail="Name required")
     stage = _resolve_stage(session, profile_id, body.stage_id)
     order = body.order if body.order else _next_status_order(session, profile_id, body.stage_id)
+    # Q4 cascade: derive shade from parent stage base when staged.
     shade = body.shade
-    if shade is None and stage is not None:
-        shade = stage.color_base
+    color = body.color
+    if stage is not None:
+        siblings = list(
+            session.exec(select(Status).where(Status.stage_id == stage.id).order_by(Status.order)).all()  # type: ignore[arg-type]
+        )
+        derived = _tint_hex(stage.color_base, len(siblings) % 4 if len(siblings) >= 4 else len(siblings), 4)
+        shade = derived
+        color = derived
+    elif shade is None:
+        shade = color
+    kind, is_blocked = _kind_for_create(body)
     s = Status(
         profile_id=profile_id,
         stage_id=body.stage_id,
         name=name,
-        color=body.color,
+        color=color or "#6b7280",
         shade=shade,
         order=order,
         is_done=body.is_done,
-        is_blocked=body.is_blocked,
+        is_blocked=is_blocked,
+        kind=kind,
+        is_milestone=body.is_milestone,
+        active=body.active,
     )
     session.add(s)
     session.commit()
@@ -667,8 +784,21 @@ def update_profile_status(
         s.order = body.order
     if body.is_done is not None:
         s.is_done = body.is_done
-    if body.is_blocked is not None:
+    if body.kind is not None:
+        # Explicit kind wins and keeps the treatment flag in sync.
+        s.kind = _require_kind(body.kind)
+        s.is_blocked = s.kind == BLOCKED
+    elif body.is_blocked is not None:
         s.is_blocked = body.is_blocked
+        current_kind = getattr(s, "kind", None) or NORMAL
+        if body.is_blocked and current_kind == NORMAL:
+            s.kind = BLOCKED
+        elif not body.is_blocked and current_kind == BLOCKED:
+            s.kind = NORMAL
+    if body.is_milestone is not None:
+        s.is_milestone = body.is_milestone
+    if body.active is not None:
+        s.active = body.active
     if "stage_id" in body.model_fields_set:
         _resolve_stage(session, profile_id, body.stage_id)
         s.stage_id = body.stage_id
@@ -681,6 +811,13 @@ def update_profile_status(
     session.add(s)
     session.commit()
     session.refresh(s)
+    # Recascade siblings when order changes so positional shades stay correct.
+    if body.order is not None and s.stage_id is not None:
+        st = session.get(StatusStage, s.stage_id)
+        if st is not None:
+            _recascade_stage(session, st)
+            session.commit()
+            session.refresh(s)
     return _status_out(s)
 
 

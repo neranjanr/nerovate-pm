@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../stores/auth";
 import { buildDashboardExportUrl, downloadExport } from "../utils/exports";
+import { buildStatusSignalMap } from "../utils/statusSignals";
 
 interface StatusInfo {
   id: number;
@@ -9,6 +10,9 @@ interface StatusInfo {
   color?: string;
   order: number;
   is_done?: boolean;
+  stage_id?: number | null;
+  kind?: string;
+  is_milestone?: boolean;
 }
 
 interface WorkloadRow {
@@ -162,9 +166,14 @@ export default function Dashboard() {
 
   const pipeline = useMemo(() => {
     if (!summary) return [];
+    const signalById = buildStatusSignalMap(summary.statuses);
     return [...summary.statuses]
       .sort((a, b) => a.order - b.order)
-      .map((s) => ({ ...s, count: summary.by_status[String(s.id)] || 0 }));
+      .map((s) => ({
+        ...s,
+        count: summary.by_status[String(s.id)] || 0,
+        signal: signalById.get(s.id) ?? { glyph: "", weight: 0, label: "", milestone: false },
+      }));
   }, [summary]);
 
   const exportServer = async (format: "json" | "csv") => {
@@ -181,45 +190,45 @@ export default function Dashboard() {
     }
   };
 
-  if (loading && !summary) return <div role="status" className="p-6 text-slate-400 text-sm">Loading dashboard…</div>;
+  if (loading && !summary) return <div role="status" className="p-6 text-on-surface-variant text-sm">Loading dashboard…</div>;
 
   return (
-    <main className="flex-1 bg-slate-950 text-slate-100 p-6 space-y-6 overflow-y-auto">
-      {error && <div role="alert" className="p-3 bg-rose-950 text-rose-300 text-xs rounded">{error}</div>}
-      {exportError && <div role="alert" className="p-3 bg-rose-950 text-rose-300 text-xs rounded">{exportError}</div>}
+    <main className="flex-1 bg-surface text-on-surface p-6 space-y-6 overflow-y-auto">
+      {error && <div role="alert" className="p-3 bg-error-container text-error text-xs rounded">{error}</div>}
+      {exportError && <div role="alert" className="p-3 bg-error-container text-error text-xs rounded">{exportError}</div>}
 
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold">Metrics Dashboard &amp; Workload</h1>
         <div className="flex gap-2">
           <button
             onClick={fetchData}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 text-xs font-medium"
+            className="px-3 py-1.5 bg-surface-container hover:bg-surface-container-high rounded border border-subtle text-xs font-medium"
           >
             Refresh
           </button>
           <button
             onClick={() => void exportServer("json")}
-            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded text-xs font-medium text-white"
+            className="px-3 py-1.5 bg-primary-container hover:bg-primary rounded text-xs font-medium text-on-primary"
           >
             Export JSON
           </button>
           {canSeeWorkload && (
             <button
               onClick={() => void exportServer("csv")}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 text-xs font-medium"
+              className="px-3 py-1.5 bg-surface-container hover:bg-surface-container-high rounded border border-subtle text-xs font-medium"
             >
               Export CSV
             </button>
           )}
           <button
             onClick={() => window.print()}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 text-xs font-medium"
+            className="px-3 py-1.5 bg-surface-container hover:bg-surface-container-high rounded border border-subtle text-xs font-medium"
           >
             Export PDF
           </button>
         </div>
       </div>
-      {loading && summary && <div role="status" className="text-xs text-slate-500">Refreshing…</div>}
+      {loading && summary && <div role="status" className="text-xs text-outline">Refreshing…</div>}
 
       {/* KPI SUMMARY CARDS: 5 Columns Grid (GET /api/v1/dashboard/summary) */}
       <section className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -230,14 +239,14 @@ export default function Dashboard() {
           { label: "Blocked", value: summary?.blocked ?? 0 },
           { label: "Comments", value: summary?.telemetry.comments_total ?? 0 },
         ].map((kpi) => (
-          <div key={kpi.label} className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+          <div key={kpi.label} className="bg-surface-container-lowest border border-subtle rounded-lg p-4">
             <div className="text-2xl font-bold">{kpi.value}</div>
-            <div className="text-xs text-slate-400 mt-1">{kpi.label}</div>
+            <div className="text-xs text-on-surface-variant mt-1">{kpi.label}</div>
           </div>
         ))}
       </section>
       {summary && (
-        <div className="text-[11px] text-slate-500 font-mono">
+        <div className="text-[11px] text-outline font-mono">
           Telemetry: {summary.telemetry.periods_total} status periods ·{" "}
           {summary.telemetry.attachments_count} attachments ({fmtBytes(summary.telemetry.attachments_bytes)}) ·
           est {summary.estimate_mins}m vs spent {summary.time_spent_mins}m
@@ -245,19 +254,31 @@ export default function Dashboard() {
       )}
 
       {/* Status pipeline flow with counts + mini target-vs-actual bars */}
-      <section className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+      <section className="bg-surface-container-lowest border border-subtle rounded-lg p-4">
         <h2 className="text-sm font-semibold mb-3">Status pipeline</h2>
         <div className="flex items-center gap-2 overflow-x-auto">
           {pipeline.map((s, idx) => (
             <div key={s.id} className="flex items-center gap-2 shrink-0">
-              <div className="px-3 py-1.5 rounded bg-slate-800 border border-slate-700 text-xs flex items-center gap-2">
+              <div
+                className="px-3 py-1.5 rounded bg-surface-container border border-subtle text-xs flex items-center gap-2"
+                title={s.signal.glyph ? `Weight ${s.signal.weight}% within stage · ${s.signal.label}` : undefined}
+              >
+                {s.signal.glyph && (
+                  <span
+                    role="img"
+                    aria-label={`Status signal: ${s.signal.glyph} ${s.signal.weight}% ${s.signal.label}`}
+                    className="font-mono text-on-surface-variant"
+                  >
+                    {s.signal.glyph} {s.signal.weight}%
+                  </span>
+                )}
                 <span className="font-medium">{s.name}</span>
-                <span className="px-1.5 rounded bg-slate-900 text-slate-300 font-mono">{s.count}</span>
+                <span className="px-1.5 rounded bg-surface-container-lowest text-on-surface-variant font-mono">{s.count}</span>
               </div>
-              {idx < pipeline.length - 1 && <span className="text-slate-600">→</span>}
+              {idx < pipeline.length - 1 && <span className="text-outline">→</span>}
             </div>
           ))}
-          {pipeline.length === 0 && <span className="text-xs text-slate-500">No statuses yet.</span>}
+          {pipeline.length === 0 && <span className="text-xs text-outline">No statuses yet.</span>}
         </div>
         {summary && summary.total > 0 && (
           <div className="mt-3 space-y-1.5">
@@ -265,18 +286,18 @@ export default function Dashboard() {
               const pct = Math.round((s.count / summary.total) * 100);
               return (
                 <div key={s.id} className="flex items-center gap-2 text-[11px]">
-                  <span className="w-32 truncate text-slate-400">{s.name}</span>
-                  <div className="flex-1 h-2 bg-slate-800 rounded overflow-hidden">
+                  <span className="w-32 truncate text-on-surface-variant">{s.name}</span>
+                  <div className="flex-1 h-2 bg-surface-container rounded overflow-hidden">
                     <div className="h-full bg-indigo-500" style={{ width: `${pct}%` }} />
                   </div>
-                  <span className="w-10 text-right font-mono text-slate-400">{pct}%</span>
+                  <span className="w-10 text-right font-mono text-on-surface-variant">{pct}%</span>
                 </div>
               );
             })}
             <div className="flex items-center gap-2 text-[11px] pt-1">
-              <span className="w-32 truncate text-slate-400">Target vs actual (time)</span>
+              <span className="w-32 truncate text-on-surface-variant">Target vs actual (time)</span>
               <div
-                className="flex-1 h-2 bg-slate-800 rounded overflow-hidden"
+                className="flex-1 h-2 bg-surface-container rounded overflow-hidden"
                 title={`Estimated ${summary.estimate_mins}m vs spent ${summary.time_spent_mins}m`}
               >
                 <div
@@ -292,7 +313,7 @@ export default function Dashboard() {
                   }}
                 />
               </div>
-              <span className="w-24 text-right font-mono text-slate-400">
+              <span className="w-24 text-right font-mono text-on-surface-variant">
                 {summary.time_spent_mins}m / {summary.estimate_mins}m
               </span>
             </div>
@@ -301,25 +322,25 @@ export default function Dashboard() {
       </section>
 
       {/* Dependency preview (root blocker → impacted) */}
-      <section className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+      <section className="bg-surface-container-lowest border border-subtle rounded-lg p-4">
         <h2 className="text-sm font-semibold mb-2">Dependency preview</h2>
         {rootBlocker ? (
-          <div className="text-xs text-slate-300">
-            Root blocker <strong className="text-white">#{rootBlocker.task_id} {rootBlocker.title}</strong>
-            {" "}→ impacts <strong className="text-rose-300">{rootBlocker.impacted}</strong> task(s).
-            <span className="text-slate-500"> ({summary?.blocked ?? 0} blocked total)</span>
+          <div className="text-xs text-on-surface-variant">
+            Root blocker <strong className="text-on-primary">#{rootBlocker.task_id} {rootBlocker.title}</strong>
+            {" "}→ impacts <strong className="text-error">{rootBlocker.impacted}</strong> task(s).
+            <span className="text-outline"> ({summary?.blocked ?? 0} blocked total)</span>
           </div>
         ) : (
-          <div className="text-xs text-slate-500">No blocked dependencies — critical path is clear.</div>
+          <div className="text-xs text-outline">No blocked dependencies — critical path is clear.</div>
         )}
       </section>
 
       {/* Team Capacity Rows (workload-gated: hidden from member/guest) */}
       {canSeeWorkload ? (
-        <section className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+        <section className="bg-surface-container-lowest border border-subtle rounded-lg p-4">
           <h2 className="text-sm font-semibold mb-3">Team capacity</h2>
           {(summary?.workload || []).length === 0 && (
-            <div className="text-xs text-slate-500">No assignees yet.</div>
+            <div className="text-xs text-outline">No assignees yet.</div>
           )}
           <div className="space-y-2">
             {(summary?.workload || []).map((w) => {
@@ -327,13 +348,13 @@ export default function Dashboard() {
               return (
                 <div key={w.user_id} className="flex items-center gap-3 text-xs">
                   <span className="w-36 truncate font-medium">{w.name}</span>
-                  <div className="flex-1 h-2.5 bg-slate-800 rounded overflow-hidden">
+                  <div className="flex-1 h-2.5 bg-surface-container rounded overflow-hidden">
                     <div
                       className={`h-full ${w.overdue > 0 ? "bg-rose-500" : "bg-emerald-500"}`}
                       style={{ width: `${cap}%` }}
                     />
                   </div>
-                  <span className="font-mono text-slate-400 w-48 text-right">
+                  <span className="font-mono text-on-surface-variant w-48 text-right">
                     {w.open} open · {w.overdue} overdue · {w.blocked} blocked
                   </span>
                 </div>
@@ -345,28 +366,28 @@ export default function Dashboard() {
 
       <div className="grid md:grid-cols-2 gap-4">
         {/* AUDIT & EVENT DISPATCH STREAM */}
-        <section className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+        <section className="bg-surface-container-lowest border border-subtle rounded-lg p-4">
           <h2 className="text-sm font-semibold mb-3">Audit &amp; event stream</h2>
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {activity.map((e, i) => (
-              <div key={`${e.kind}-${i}`} className="text-xs bg-slate-800/60 border border-slate-800 rounded p-2">
-                <span className="font-mono text-indigo-300">{e.kind}</span>
-                <span className="text-slate-400"> · task #{e.task_id} · </span>
-                <span className="text-slate-500 font-mono">{e.at}</span>
+              <div key={`${e.kind}-${i}`} className="text-xs bg-surface-container/60 border border-subtle rounded p-2">
+                <span className="font-mono text-primary">{e.kind}</span>
+                <span className="text-on-surface-variant"> · task #{e.task_id} · </span>
+                <span className="text-outline font-mono">{e.at}</span>
                 {e.kind === "task.comment_added" && e.body_md && (
-                  <div className="text-slate-300 mt-1 truncate">{e.body_md}</div>
+                  <div className="text-on-surface-variant mt-1 truncate">{e.body_md}</div>
                 )}
               </div>
             ))}
-            {activity.length === 0 && <div className="text-xs text-slate-500">No events yet.</div>}
+            {activity.length === 0 && <div className="text-xs text-outline">No events yet.</div>}
           </div>
         </section>
 
         {/* On-Prem Storage & Backup Card */}
-        <section className="bg-slate-900 border border-slate-800 rounded-lg p-4">
+        <section className="bg-surface-container-lowest border border-subtle rounded-lg p-4">
           <h2 className="text-sm font-semibold mb-3">On-prem storage &amp; backup</h2>
           {storage ? (
-            <div className="text-xs space-y-1.5 text-slate-300">
+            <div className="text-xs space-y-1.5 text-on-surface-variant">
               <div>
                 Database: <strong className="font-mono">{fmtBytes(storage.db_bytes)}</strong> (SQLite WAL)
               </div>
@@ -374,10 +395,10 @@ export default function Dashboard() {
                 Uploads: <strong className="font-mono">{fmtBytes(storage.uploads_bytes)}</strong> ·{" "}
                 {storage.uploads_count} file(s)
               </div>
-              <div className="text-slate-500">{storage.backup_note}</div>
+              <div className="text-outline">{storage.backup_note}</div>
             </div>
           ) : (
-            <div className="text-xs text-slate-500">Storage info unavailable.</div>
+            <div className="text-xs text-outline">Storage info unavailable.</div>
           )}
         </section>
       </div>

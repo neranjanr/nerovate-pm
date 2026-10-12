@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../stores/auth";
+import {
+  MILESTONE_BADGE,
+  STATUS_KINDS,
+  deriveStatusSignal,
+  kindLabel,
+} from "../utils/statusSignals";
 
 interface StatusInfo {
   id: number;
@@ -11,6 +17,7 @@ interface StatusInfo {
   order: number;
   is_done: boolean;
   is_blocked: boolean;
+  kind: string;
   is_milestone: boolean;
   active: boolean;
 }
@@ -123,6 +130,7 @@ export default function GlobalSettings() {
   const [editingStatusName, setEditingStatusName] = useState("");
   const [editingStatusDone, setEditingStatusDone] = useState(false);
   const [editingStatusMilestone, setEditingStatusMilestone] = useState(false);
+  const [editingStatusKind, setEditingStatusKind] = useState("normal");
   const [editingStatusActive, setEditingStatusActive] = useState(true);
   const [editingStatusStage, setEditingStatusStage] = useState<string>("");
   const [dragStageId, setDragStageId] = useState<number | null>(null);
@@ -1027,6 +1035,8 @@ export default function GlobalSettings() {
                       <div className="p-2 pl-6 space-y-1.5">
                         {kids.map((s, i) => {
                           const shade = cascadeShade(st.color_base, kids.length > 4 ? i % 4 : i, Math.min(kids.length, 4) || 1);
+                          const sig = deriveStatusSignal(i, kids.length, s.kind ?? "normal", s.is_done);
+                          const sigLabel = `${sig.glyph} ${sig.weight}% ${kindLabel(s.kind ?? "normal", s.is_done)}`;
                           return (
                             <div
                               key={s.id}
@@ -1044,6 +1054,14 @@ export default function GlobalSettings() {
                                   style={{ backgroundColor: shade, color: i >= 2 ? "#fff" : "#111" }}
                                 >
                                   Auto {i + 1}
+                                </span>
+                                <span
+                                  role="img"
+                                  aria-label={`Status signal: ${sigLabel}`}
+                                  title={`Status weight ${sig.weight}% within stage (${sigLabel})`}
+                                  className="px-1.5 py-0.5 rounded text-[10px] font-mono border border-subtle bg-surface-container"
+                                >
+                                  {sig.glyph} {sig.weight}%
                                 </span>
                                 {editingStatusId === s.id ? (
                                   <>
@@ -1067,7 +1085,20 @@ export default function GlobalSettings() {
                                       <input type="checkbox" checked={editingStatusDone} onChange={(e) => setEditingStatusDone(e.target.checked)} /> Done
                                     </label>
                                     <label className="flex items-center gap-1 text-[11px]">
-                                      <input type="checkbox" checked={editingStatusMilestone} onChange={(e) => setEditingStatusMilestone(e.target.checked)} /> ★ Milestone
+                                      <input type="checkbox" checked={editingStatusMilestone} onChange={(e) => setEditingStatusMilestone(e.target.checked)} /> {MILESTONE_BADGE} Milestone
+                                    </label>
+                                    <label className="flex items-center gap-1 text-[11px]">
+                                      Kind
+                                      <select
+                                        aria-label="edit status kind"
+                                        value={editingStatusKind}
+                                        onChange={(e) => setEditingStatusKind(e.target.value)}
+                                        className="px-2 py-1 rounded border border-subtle text-xs"
+                                      >
+                                        {STATUS_KINDS.map((k) => (
+                                          <option key={k} value={k}>{k.replace("_", " ")}</option>
+                                        ))}
+                                      </select>
                                     </label>
                                     <label className="flex items-center gap-1 text-[11px]">
                                       <input type="checkbox" checked={editingStatusActive} onChange={(e) => setEditingStatusActive(e.target.checked)} /> Active
@@ -1077,6 +1108,7 @@ export default function GlobalSettings() {
                                         updateStatus(s.id, {
                                           name: editingStatusName.trim() || s.name,
                                           is_done: editingStatusDone,
+                                          kind: editingStatusKind,
                                           is_milestone: editingStatusMilestone,
                                           active: editingStatusActive,
                                           stage_id: editingStatusStage ? Number(editingStatusStage) : s.stage_id,
@@ -1093,13 +1125,24 @@ export default function GlobalSettings() {
                                     <span className="font-semibold">{s.name}</span>
                                     {!s.active && <span className="text-[10px] text-outline">(inactive)</span>}
                                     {s.is_done && <span className="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 text-[10px]">Done</span>}
-                                    {s.is_milestone && <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 text-[10px]">★ Milestone</span>}
+                                    {(s.kind ?? "normal") !== "normal" && !s.is_done && (
+                                      <span
+                                        role="img"
+                                        aria-label={`Kind: ${kindLabel(s.kind ?? "normal", false)}`}
+                                        title={`Kind: ${kindLabel(s.kind ?? "normal", false)}`}
+                                        className="px-1.5 py-0.5 rounded border border-subtle text-[10px]"
+                                      >
+                                        {(s.kind ?? "normal").replace("_", " ")}
+                                      </span>
+                                    )}
+                                    {s.is_milestone && <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 text-[10px]">{MILESTONE_BADGE} Milestone</span>}
                                     {canManage && (
                                       <button
                                         onClick={() => {
                                           setEditingStatusId(s.id);
                                           setEditingStatusName(s.name);
                                           setEditingStatusDone(s.is_done);
+                                          setEditingStatusKind(s.kind ?? "normal");
                                           setEditingStatusMilestone(s.is_milestone);
                                           setEditingStatusActive(s.active);
                                           setEditingStatusStage(s.stage_id ? String(s.stage_id) : "");

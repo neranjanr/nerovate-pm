@@ -30,6 +30,7 @@ class StatusInfo(BaseModel):
     is_done: bool = False
     stage_id: int | None = None
     shade: str | None = None
+    kind: str = "normal"
 
 
 class StageInfo(BaseModel):

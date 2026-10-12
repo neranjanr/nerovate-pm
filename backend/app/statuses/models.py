@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from sqlalchemy import CheckConstraint
 from sqlmodel import Field, SQLModel
 
 
@@ -7,6 +8,8 @@ class StatusProfile(SQLModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(max_length=128)
+    description: str = Field(default="", max_length=512)
+    active: bool = Field(default=True)
     is_template: bool = Field(default=True)
     created_by: int | None = Field(default=None, foreign_key="users.id")
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
@@ -18,22 +21,34 @@ class StatusStage(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     profile_id: int = Field(foreign_key="status_profiles.id", index=True)
     name: str = Field(max_length=128)
+    description: str = Field(default="", max_length=512)
     order: int = Field(default=0)
     color_base: str = Field(default="#6b7280", max_length=32)
+    active: bool = Field(default=True)
 
 
 class Status(SQLModel, table=True):
     __tablename__ = "statuses"  # type: ignore[assignment]
+    __table_args__ = (  # type: ignore[assignment]
+        CheckConstraint(
+            "kind IN ('normal','on_hold','blocked','attention','cancelled')",
+            name="ck_statuses_kind",
+        ),
+    )
 
     id: int | None = Field(default=None, primary_key=True)
     profile_id: int = Field(foreign_key="status_profiles.id", index=True)
     stage_id: int | None = Field(default=None, foreign_key="status_stages.id", index=True)
     name: str = Field(max_length=128)
+    description: str = Field(default="", max_length=512)
     color: str = Field(default="#6b7280", max_length=32)
     shade: str | None = Field(default=None, max_length=32)
     order: int = Field(default=0)
     is_done: bool = Field(default=False)
     is_blocked: bool = Field(default=False)
+    kind: str = Field(default="normal", max_length=16)
+    is_milestone: bool = Field(default=False)
+    active: bool = Field(default=True)
 
 
 class CustomFieldDef(SQLModel, table=True):

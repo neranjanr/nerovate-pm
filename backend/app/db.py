@@ -72,6 +72,8 @@ def init_db() -> None:
     _migrate_project_tree_default()
     _migrate_task_position_column()
     _migrate_task_history_note()
+    _migrate_status_stages()
+    _migrate_status_kind()
 
     with Session(engine) as session:
         from app.auth.models import User
@@ -152,6 +154,57 @@ def init_db() -> None:
             session.commit()
 
     _migrate_status_stages()
+    _migrate_status_kind()
+
+
+def _migrate_status_kind() -> None:
+    """Status-glyph-weight additive migration: statuses.kind + backfill.
+
+    - Adds statuses.kind when missing (older sqlite files), default normal.
+    - Backfills legacy is_blocked rows to kind blocked; NULL/unknown to normal.
+    - Enforcement for fresh DBs comes from the model CHECK constraint;
+      legacy files rely on API validation (SQLite cannot ADD CONSTRAINT).
+    Idempotent: safe to run on every boot and in tests.
+    """
+    from sqlalchemy import text
+
+    with Session(engine) as session:
+        try:
+            cols = [r[1] for r in session.execute(text("PRAGMA table_info(statuses)")).all()]
+        except Exception:
+            return
+        if not cols:
+            return
+        if "kind" not in cols:
+            try:
+                session.execute(
+                    text("ALTER TABLE statuses ADD COLUMN kind VARCHAR(16) DEFAULT 'normal'")
+                )
+                session.commit()
+            except Exception:
+                return
+        try:
+            session.execute(
+                text("UPDATE statuses SET kind='blocked' WHERE is_blocked = 1 AND (kind IS NULL OR kind = 'normal')")
+            )
+            session.commit()
+        except Exception:
+            pass
+        try:
+            session.execute(text("UPDATE statuses SET kind='normal' WHERE kind IS NULL"))
+            session.commit()
+        except Exception:
+            pass
+        try:
+            session.execute(
+                text(
+                    "UPDATE statuses SET kind='normal' WHERE kind NOT IN "
+                    "('normal','on_hold','blocked','attention','cancelled')"
+                )
+            )
+            session.commit()
+        except Exception:
+            pass
 
 
 def _migrate_projects_category_scope() -> None:
@@ -198,6 +251,7 @@ def _migrate_projects_category_scope() -> None:
                         session.commit()
                 except Exception:
                     pass
+                session.commit()
         except Exception:
             pass
 
@@ -539,6 +593,31 @@ def _migrate_status_stages() -> None:
                 session.commit()
             except Exception:
                 pass
+        for col, ddl in [
+            ("is_milestone", "ALTER TABLE statuses ADD COLUMN is_milestone BOOLEAN DEFAULT 0"),
+            ("active", "ALTER TABLE statuses ADD COLUMN active BOOLEAN DEFAULT 1"),
+            ("description", "ALTER TABLE statuses ADD COLUMN description VARCHAR(512) DEFAULT ''"),
+        ]:
+            if col not in scols:
+                try:
+                    session.execute(text(ddl))
+                    session.commit()
+                except Exception:
+                    pass
+        try:
+            pcols = [r[1] for r in session.execute(text("PRAGMA table_info(status_profiles)")).all()]
+        except Exception:
+            pcols = []
+        for col, ddl in [
+            ("description", "ALTER TABLE status_profiles ADD COLUMN description VARCHAR(512) DEFAULT ''"),
+            ("active", "ALTER TABLE status_profiles ADD COLUMN active BOOLEAN DEFAULT 1"),
+        ]:
+            if pcols and col not in pcols:
+                try:
+                    session.execute(text(ddl))
+                    session.commit()
+                except Exception:
+                    pass
         # Ensure status_stages table exists for pre-U3 sqlite files.
         try:
             tcols = [r[1] for r in session.execute(text("PRAGMA table_info(status_stages)")).all()]
@@ -552,7 +631,9 @@ def _migrate_status_stages() -> None:
                         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                         "profile_id INTEGER NOT NULL REFERENCES status_profiles(id), "
                         "name VARCHAR(128) NOT NULL, "
+                        "description VARCHAR(512) DEFAULT '', "
                         "\"order\" INTEGER NOT NULL DEFAULT 0, "
+                        "active BOOLEAN DEFAULT 1, "
                         "color_base VARCHAR(32) NOT NULL DEFAULT '#6b7280')"
                     )
                 )
@@ -563,6 +644,17 @@ def _migrate_status_stages() -> None:
                 session.commit()
             except Exception:
                 pass
+        elif tcols:
+            for col, ddl in [
+                ("description", "ALTER TABLE status_stages ADD COLUMN description VARCHAR(512) DEFAULT ''"),
+                ("active", "ALTER TABLE status_stages ADD COLUMN active BOOLEAN DEFAULT 1"),
+            ]:
+                if col not in tcols:
+                    try:
+                        session.execute(text(ddl))
+                        session.commit()
+                    except Exception:
+                        pass
 
     # ORM pass: backfill Main stages + seed Procurements example.
     with _Session(engine) as session:

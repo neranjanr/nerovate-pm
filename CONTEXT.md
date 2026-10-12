@@ -56,6 +56,18 @@ _Avoid_: State, Phase, Tier 2
 A leaf Status flagged as a key checkpoint, e.g. Concept Approval Received. Created and edited like a normal Status with a star tag; later paired with a date in table views.
 _Avoid_: Phase gate, milestone type
 
+**Status Weight**:
+The derived display-only percent of a Status within its own Stage (first 0%, last 100%, single-Status Stage 100%). Never stored; recomputed from ordering, so reordering updates it automatically. No per-Task manual editing.
+_Avoid_: Progress (implies Task-level), stored weight
+
+**Status Kind**:
+The stored exception overlay of a Status: normal (default), on_hold, blocked, attention, or cancelled. Set per Status; Done stays a separate flag that always wins rendering. Kind never moves the weight.
+_Avoid_: Status type, blocked flag (one of several kinds)
+
+**Status Glyph**:
+The single derived text signal per Status: a five-step monochrome ramp (○ → ◔ → ◑ → ◕ → ●) by position for normal Statuses, a flag glyph (‖, !, !!, ×) for exception kinds, ✓ for Done, plus an additive ★ badge for Milestones. Always paired with the weight and a text label, never color alone.
+_Avoid_: Emoji, icon picker, doubled glyphs
+
 **Status Period**:
 The date range for a Task in one Status: start date, due date (planned end), actual end date. All optional; Task-level start defaults to creation date.
 _Avoid_: Status dates, phase dates

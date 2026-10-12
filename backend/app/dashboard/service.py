@@ -100,6 +100,8 @@ def summarize(session: Session, project_id: int, stage_id: int | None = None) ->
                 "is_done": s.is_done,
                 "stage_id": getattr(s, "stage_id", None),
                 "shade": getattr(s, "shade", None),
+                "kind": getattr(s, "kind", None)
+                or ("blocked" if getattr(s, "is_blocked", False) else "normal"),
             }
             for s in sorted(statuses, key=lambda s: s.order)
         ],

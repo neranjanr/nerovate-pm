@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../stores/auth";
 import { useTheme } from "../stores/theme";
+import TaskDialog from "../components/TaskDialog";
 import TaskDrawer from "../components/TaskDrawer";
 import TelemetryBar from "../components/TelemetryBar";
 import {
@@ -26,6 +27,7 @@ import {
   pxPerDay,
   type Granularity,
 } from "../utils/exports";
+import { deriveStatusSignal, kindLabel, stageAverage } from "../utils/statusSignals";
 
 interface ProjectStatus {
   id: number;
@@ -36,6 +38,8 @@ interface ProjectStatus {
   order: number;
   is_done?: boolean;
   is_blocked?: boolean;
+  kind?: string;
+  is_milestone?: boolean;
 }
 
 interface StageInfo {
@@ -70,6 +74,7 @@ export default function Timeline() {
   const [, setMembers] = useState<ProjectMemberInfo[]>([]);
   const [selectedTask, setSelectedTask] = useState<TimelineItem | null>(null);
   const [drawerTaskId, setDrawerTaskId] = useState<number | null>(null);
+  const [editTaskId, setEditTaskId] = useState<number | null>(null);
   const [treeDefault, setTreeDefault] = useState<"tasks-only" | "tasks-subtasks" | "all">("all");
   const [collapsedIds, setCollapsedIds] = useState<Set<number>>(new Set());
   const [depthFilter, setDepthFilter] = useState<string>("all");
@@ -230,18 +235,32 @@ export default function Timeline() {
       }
       const starts = periodsInStage.map((p) => (p.start_date || "").slice(0, 10)).filter(Boolean).sort();
       const dues = periodsInStage.map((p) => (p.due_date || "").slice(0, 10)).filter(Boolean).sort();
-      const perStatus = statuses
+      const orderedLeaves = statuses
         .filter((s) => s.stage_id === st.id)
-        .map((s) => ({
+        .sort((a, b) => a.order - b.order);
+      const weightByStatus = new Map<number, number>();
+      const perStatus = orderedLeaves.map((s, i) => {
+        const sig = deriveStatusSignal(i, orderedLeaves.length, s.kind ?? "normal", !!s.is_done);
+        weightByStatus.set(s.id, sig.weight);
+        return {
           status: s,
           taskCount: tasks.filter((t) => t.status_id === s.id).length,
           periodCount: periodsInStage.filter((p) => p.status_id === s.id).length,
-        }));
+          sig,
+          sigLabel: kindLabel(s.kind ?? "normal", !!s.is_done),
+        };
+      });
+      // Stage average percent from per-Status positional weights (exception
+      // tasks keep their positional percent; flags stay visible, never dropped).
+      const avgWeight = stageAverage(
+        tasksInStage.map((t) => weightByStatus.get(t.status_id) ?? 0)
+      );
       return {
         stage: st,
         taskCount: tasksInStage.length,
         doneCount: done,
         pct: tasksInStage.length > 0 ? done / tasksInStage.length : 0,
+        avgWeight,
         periodCount: periodsInStage.length,
         plannedStart: starts[0] || null as string | null,
         plannedEnd: dues[dues.length - 1] || null as string | null,
@@ -298,29 +317,29 @@ export default function Timeline() {
       className={
         isSample
           ? "flex-1 bg-surface text-on-surface flex flex-col h-[calc(100vh-110px)] overflow-hidden"
-          : "flex-1 bg-slate-950 text-slate-100 flex flex-col h-[calc(100vh-110px)] overflow-hidden"
+          : "flex-1 bg-surface text-on-surface flex flex-col h-[calc(100vh-110px)] overflow-hidden"
       }
     >
       {error && (
-        <div role="alert" className="p-3 bg-rose-950 text-rose-300 text-xs">
+        <div role="alert" className="p-3 bg-error-container text-error text-xs">
           {error}
         </div>
       )}
       {loading && (
-        <div role="status" className="p-3 text-slate-400 text-xs">
+        <div role="status" className="p-3 text-on-surface-variant text-xs">
           Loading timeline...
         </div>
       )}
       {/* Stage pipeline (U5): Stages with counts, % done, planned range */}
       {pipeline.length > 0 && (
-        <div className="bg-slate-900 border-b border-slate-800 px-6 py-2 space-y-1.5 max-h-44 overflow-y-auto">
-          <div className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+        <div className="bg-surface-container-lowest border-b border-subtle px-6 py-2 space-y-1.5 max-h-44 overflow-y-auto">
+          <div className="text-[11px] uppercase tracking-wider text-on-surface-variant font-semibold">
             Pipeline by Stage — click to expand stacked per-Status bars
           </div>
           {pipeline.map((row) => {
             const expanded = !!expandedStages[row.stage.id];
             return (
-              <div key={row.stage.id} className="rounded border border-slate-800 bg-slate-900/40">
+              <div key={row.stage.id} className="rounded border border-subtle bg-surface-container-low">
                 <button
                   onClick={() => toggleStage(row.stage.id)}
                   className="w-full flex items-center justify-between gap-3 px-3 py-1.5 text-xs"
@@ -331,35 +350,42 @@ export default function Timeline() {
                       className="w-2.5 h-2.5 rounded-full shrink-0"
                       style={{ backgroundColor: row.stage.color_base }}
                     />
-                    <span className="font-semibold text-slate-200 truncate">{row.stage.name}</span>
-                    <span className="font-mono text-slate-400">
-                      {row.taskCount} task(s) · {Math.round(row.pct * 100)}% done · {row.periodCount} period(s)
+                    <span className="font-semibold text-on-surface truncate">{row.stage.name}</span>
+                    <span className="font-mono text-on-surface-variant">
+                      {row.taskCount} task(s) · {Math.round(row.pct * 100)}% done · {row.avgWeight}% avg weight · {row.periodCount} period(s)
                     </span>
-                    <span className="font-mono text-slate-500">
+                    <span className="font-mono text-outline">
                       {row.plannedStart || "—"} → {row.plannedEnd || "—"}
                     </span>
                   </span>
                   <span className="flex items-center gap-2 shrink-0">
-                    <span className="w-20 h-1.5 rounded bg-slate-800 overflow-hidden">
+                    <span className="w-20 h-1.5 rounded bg-surface-container overflow-hidden">
                       <span className="block h-full bg-emerald-500" style={{ width: `${Math.round(row.pct * 100)}%` }} />
                     </span>
-                    <span className="text-slate-400">{expanded ? "▾" : "▸"}</span>
+                    <span className="text-on-surface-variant">{expanded ? "▾" : "▸"}</span>
                   </span>
                 </button>
                 {expanded && (
                   <div className="px-3 pb-2 flex items-stretch gap-1.5 overflow-x-auto">
-                    {row.perStatus.map(({ status, taskCount, periodCount }) => (
+                    {row.perStatus.map(({ status, taskCount, periodCount, sig, sigLabel }) => (
                       <div
                         key={status.id}
-                        className="shrink-0 min-w-28 rounded border border-slate-700/70 bg-slate-800/60 px-2 py-1.5"
-                        title={`${status.name}: ${taskCount} task(s), ${periodCount} period(s)`}
+                        className="shrink-0 min-w-28 rounded border border-subtle/70 bg-surface-container/60 px-2 py-1.5"
+                        title={`${status.name}: ${taskCount} task(s), ${periodCount} period(s), weight ${sig.weight}% (${sigLabel})`}
                       >
-                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-200">
+                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-on-surface">
                           <span
                             className="w-2 h-2 rounded shrink-0"
                             style={{ backgroundColor: status.shade || row.stage.color_base }}
                           />
                           <span className="truncate">{status.name}</span>
+                          <span
+                            role="img"
+                            aria-label={`Status signal: ${sig.glyph} ${sig.weight}% ${sigLabel}`}
+                            className="font-mono text-[10px] text-on-surface-variant shrink-0"
+                          >
+                            {sig.glyph} {sig.weight}%{status.is_milestone ? " ★" : ""}
+                          </span>
                         </div>
                         <div className="mt-1 h-3 rounded overflow-hidden flex">
                           <span
@@ -370,13 +396,13 @@ export default function Timeline() {
                             }}
                           />
                         </div>
-                        <div className="mt-1 font-mono text-[10px] text-slate-400">
+                        <div className="mt-1 font-mono text-[10px] text-on-surface-variant">
                           {taskCount} tasks · {periodCount} periods
                         </div>
                       </div>
                     ))}
                     {row.perStatus.length === 0 && (
-                      <div className="text-[11px] text-slate-500 italic py-1">No leaf Statuses in this Stage.</div>
+                      <div className="text-[11px] text-outline italic py-1">No leaf Statuses in this Stage.</div>
                     )}
                   </div>
                 )}
@@ -387,67 +413,67 @@ export default function Timeline() {
       )}
       {/* Legacy flat status flow (kept when no stages exist) */}
       {pipeline.length === 0 && (
-        <div className="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between gap-4">
+        <div className="bg-surface-container-lowest border-b border-subtle px-6 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 overflow-x-auto">
-            <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold shrink-0">Status flow:</span>
+            <span className="text-xs uppercase tracking-wider text-on-surface-variant font-semibold shrink-0">Status flow:</span>
             {statuses.map((st, idx) => {
               const count = tasks.filter((t) => t.status_id === st.id).length;
               return (
                 <div key={st.id} className="flex items-center gap-2 shrink-0">
-                  <div className="px-3 py-1 rounded bg-slate-800 border border-slate-700 text-xs flex items-center gap-2">
+                  <div className="px-3 py-1 rounded bg-surface-container border border-subtle text-xs flex items-center gap-2">
                     <span
                       className="w-2 h-2 rounded-full"
                       style={{ backgroundColor: st.shade || st.color || "#818cf8" }}
                     ></span>
-                    <span className="font-medium text-slate-200">{st.name}</span>
-                    <span className="px-1.5 py-0.2 bg-slate-900 rounded text-slate-400 text-[10px] font-mono">{count}</span>
+                    <span className="font-medium text-on-surface">{st.name}</span>
+                    <span className="px-1.5 py-0.2 bg-surface-container-lowest rounded text-on-surface-variant text-[10px] font-mono">{count}</span>
                   </div>
-                  {idx < statuses.length - 1 && <span className="text-slate-600">→</span>}
+                  {idx < statuses.length - 1 && <span className="text-outline">→</span>}
                 </div>
               );
             })}
             {statuses.length === 0 && !loading && (
-              <span className="text-xs text-slate-500">No statuses yet.</span>
+              <span className="text-xs text-outline">No statuses yet.</span>
             )}
           </div>
           <div className="flex items-center gap-2 text-xs shrink-0">
-            <div className="px-2.5 py-1 rounded bg-slate-800 text-slate-300">
-              Total: <strong className="text-white">{totalTasks}</strong>
+            <div className="px-2.5 py-1 rounded bg-surface-container text-on-surface-variant">
+              Total: <strong className="text-on-primary">{totalTasks}</strong>
             </div>
             <div className="px-2.5 py-1 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-900">
-              Completed: <strong className="text-white">{completedTasks}</strong>
+              Completed: <strong className="text-on-primary">{completedTasks}</strong>
             </div>
-            <div className="px-2.5 py-1 rounded bg-rose-950/80 text-rose-300 border border-rose-900">
-              Blocked: <strong className="text-white">{blockedTasks}</strong>
+            <div className="px-2.5 py-1 rounded bg-error-container/80 text-error border border-rose-900">
+              Blocked: <strong className="text-on-primary">{blockedTasks}</strong>
             </div>
           </div>
         </div>
       )}
       {pipeline.length > 0 && (
-        <div className="bg-slate-900 border-b border-slate-800 px-6 py-1.5 flex items-center justify-end gap-2 text-xs">
-          <div className="px-2.5 py-1 rounded bg-slate-800 text-slate-300">
-            Total: <strong className="text-white">{totalTasks}</strong>
+        <div className="bg-surface-container-lowest border-b border-subtle px-6 py-1.5 flex items-center justify-end gap-2 text-xs">
+          <div className="px-2.5 py-1 rounded bg-surface-container text-on-surface-variant">
+            Total: <strong className="text-on-primary">{totalTasks}</strong>
           </div>
           <div className="px-2.5 py-1 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-900">
-            Completed: <strong className="text-white">{completedTasks}</strong>
+            Completed: <strong className="text-on-primary">{completedTasks}</strong>
           </div>
-          <div className="px-2.5 py-1 rounded bg-rose-950/80 text-rose-300 border border-rose-900">
-            Blocked: <strong className="text-white">{blockedTasks}</strong>
+          <div className="px-2.5 py-1 rounded bg-error-container/80 text-error border border-rose-900">
+            Blocked: <strong className="text-on-primary">{blockedTasks}</strong>
           </div>
         </div>
       )}
 
       {/* Controls Bar */}
-      <div className="bg-slate-900/50 border-b border-slate-800 px-6 py-2 flex items-center justify-between gap-4 text-xs flex-wrap">
+      <div className="bg-surface-container-lowest/50 border-b border-subtle px-6 py-2 flex items-center justify-between gap-4 text-xs flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-1.5 bg-slate-800 rounded p-1 border border-slate-700">
-            <span className="px-2 text-slate-400">Tree view:</span>
+          <div className="flex items-center gap-1.5 bg-surface-container rounded p-1 border border-subtle">
+            <span className="px-2 text-on-surface-variant">Tree view:</span>
             {(["tasks-only", "tasks-subtasks", "all"] as const).map((d) => (
               <button
                 key={d}
                 onClick={() => handleTreeDefaultChange(d)}
                 className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
-                  treeDefault === d ? "bg-indigo-600 text-white" : "text-slate-300 hover:text-white"
+                  treeDefault === d ? "bg-primary-container text-on-primary" : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
                 {d === "tasks-only" ? "Tasks only" : d === "tasks-subtasks" ? "Tasks+Subtasks" : "All"}
@@ -456,24 +482,24 @@ export default function Timeline() {
           </div>
           <button
             onClick={collapseAll}
-            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 font-medium transition-colors text-xs"
+            className="px-2.5 py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface-variant rounded border border-subtle font-medium transition-colors text-xs"
           >
             Collapse All
           </button>
           <button
             onClick={expandAll}
-            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 font-medium transition-colors text-xs"
+            className="px-2.5 py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface-variant rounded border border-subtle font-medium transition-colors text-xs"
           >
             Expand All
           </button>
           {stages.length > 0 && (
-            <label className="flex items-center gap-1.5 bg-slate-800 rounded p-1 border border-slate-700">
-              <span className="px-2 text-slate-400">Stage:</span>
+            <label className="flex items-center gap-1.5 bg-surface-container rounded p-1 border border-subtle">
+              <span className="px-2 text-on-surface-variant">Stage:</span>
               <select
                 aria-label="filter timeline by stage"
                 value={stageFilter}
                 onChange={(e) => setStageFilter(e.target.value)}
-                className="bg-slate-800 text-slate-200 text-xs rounded px-1 py-1"
+                className="bg-surface-container text-on-surface text-xs rounded px-1 py-1"
               >
                 <option value="">All stages</option>
                 {stages.map((s) => (
@@ -484,14 +510,14 @@ export default function Timeline() {
               </select>
             </label>
           )}
-          <div className="flex items-center gap-1.5 bg-slate-800 rounded p-1 border border-slate-700">
-            <span className="px-2 text-slate-400">Granularity:</span>
+          <div className="flex items-center gap-1.5 bg-surface-container rounded p-1 border border-subtle">
+            <span className="px-2 text-on-surface-variant">Granularity:</span>
             {GRANULARITIES.map((g) => (
               <button
                 key={g}
                 onClick={() => setGranularity(g)}
                 className={`px-2.5 py-1 rounded text-xs font-medium capitalize transition-colors ${
-                  granularity === g ? "bg-indigo-600 text-white" : "text-slate-300 hover:text-white"
+                  granularity === g ? "bg-primary-container text-on-primary" : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
                 {g}
@@ -502,8 +528,8 @@ export default function Timeline() {
             onClick={() => setShowPeriods((v) => !v)}
             className={`px-2.5 py-1.5 rounded border text-xs font-medium transition-colors ${
               showPeriods
-                ? "bg-slate-800 border-indigo-500 text-indigo-200"
-                : "bg-slate-800 border-slate-700 text-slate-400"
+                ? "bg-surface-container border-primary-container text-indigo-200"
+                : "bg-surface-container border-subtle text-on-surface-variant"
             }`}
             title="Toggle per-Status period segments"
           >
@@ -513,8 +539,8 @@ export default function Timeline() {
             onClick={() => setBlockedOnly((v) => !v)}
             className={`px-2.5 py-1.5 rounded border text-xs font-medium transition-colors ${
               blockedOnly
-                ? "bg-rose-950 border-rose-700 text-rose-200"
-                : "bg-slate-800 border-slate-700 text-slate-400"
+                ? "bg-error-container border-error text-rose-200"
+                : "bg-surface-container border-subtle text-on-surface-variant"
             }`}
           >
             Blocked only: {blockedOnly ? "on" : "off"}
@@ -523,33 +549,33 @@ export default function Timeline() {
         <div className="flex items-center gap-2">
           <button
             onClick={jumpToday}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 font-medium transition-colors"
+            className="px-3 py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface rounded border border-subtle font-medium transition-colors"
             title={todayDueCount > 0 ? `${todayDueCount} task(s) due today` : "Scroll to the Today marker"}
           >
             Jump Today
           </button>
           <button
             onClick={() => void exportServer("json")}
-            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-medium transition-colors"
+            className="px-3 py-1.5 bg-primary-container hover:bg-primary text-on-primary rounded font-medium transition-colors"
           >
             Export JSON
           </button>
           <button
             onClick={() => void exportServer("csv")}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 font-medium transition-colors"
+            className="px-3 py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface rounded border border-subtle font-medium transition-colors"
           >
             Export CSV
           </button>
           <button
             onClick={() => window.print()}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 font-medium transition-colors"
+            className="px-3 py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface rounded border border-subtle font-medium transition-colors"
           >
             Export PDF
           </button>
         </div>
       </div>
       {exportError && (
-        <div role="alert" className="px-6 py-1.5 bg-rose-950 text-rose-300 text-xs">
+        <div role="alert" className="px-6 py-1.5 bg-error-container text-error text-xs">
           {exportError}
         </div>
       )}
@@ -557,14 +583,14 @@ export default function Timeline() {
       {/* Split Workspace: Left WBS Table & Right Gantt Chart */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left PANE: WBS & RACI INSPECTOR TABLE (~45%) */}
-        <div className="w-1/2 border-r border-slate-800 flex flex-col bg-slate-900/30 overflow-y-auto">
-          <div className="grid grid-cols-12 bg-slate-900 border-b border-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-400 sticky top-0 z-10">
+        <div className="w-1/2 border-r border-subtle flex flex-col bg-surface-container-lowest/30 overflow-y-auto">
+          <div className="grid grid-cols-12 bg-surface-container-lowest border-b border-subtle px-4 py-2.5 text-xs font-semibold text-on-surface-variant sticky top-0 z-10">
             <div className="col-span-2">WBS</div>
             <div className="col-span-5">Task Name</div>
             <div className="col-span-3">Status</div>
             <div className="col-span-2 text-right">Due Date</div>
           </div>
-          <div className="divide-y divide-slate-800/60">
+          <div className="divide-y divide-border-subtle">
             {visibleTasks.map((t) => {
               const wbsCode = t.wbs || getWbsNumber(tasks.indexOf(t), tasks);
               const kids = childrenMap.get(t.task_id) || [];
@@ -613,11 +639,11 @@ export default function Timeline() {
                   className={`grid grid-cols-12 px-4 py-3 text-xs items-center cursor-pointer transition-colors ${
                     canReorder ? "cursor-grab active:cursor-grabbing" : ""
                   } ${
-                    isSelected ? "bg-indigo-950/40 border-l-2 border-indigo-500" : "hover:bg-slate-900/60"
+                    isSelected ? "bg-primary-fixed/40 border-l-2 border-primary-container" : "hover:bg-surface-container-low"
                   }`}
                 >
-                  <div className="col-span-2 font-mono text-slate-400 font-semibold">{wbsCode}</div>
-                  <div className={`col-span-5 font-medium text-slate-200 truncate flex items-center gap-1.5 ${indentClass}`}>
+                  <div className="col-span-2 font-mono text-on-surface-variant font-semibold">{wbsCode}</div>
+                  <div className={`col-span-5 font-medium text-on-surface truncate flex items-center gap-1.5 ${indentClass}`}>
                     {hasKids ? (
                       <button
                         onClick={(e) => {
@@ -629,7 +655,7 @@ export default function Timeline() {
                             return next;
                           });
                         }}
-                        className="w-4 h-4 text-slate-400 hover:text-white shrink-0 font-mono text-[10px] flex items-center justify-center bg-slate-800 rounded border border-slate-700"
+                        className="w-4 h-4 text-on-surface-variant hover:text-on-surface shrink-0 font-mono text-[10px] flex items-center justify-center bg-surface-container rounded border border-subtle"
                         aria-label={isCollapsed ? "Expand" : "Collapse"}
                       >
                         {isCollapsed ? "▸" : "▾"}
@@ -637,36 +663,36 @@ export default function Timeline() {
                     ) : (
                       <span className="w-4 shrink-0" />
                     )}
-                    {t.is_blocked && <span className="text-rose-400 mr-1" title="Blocked">⚠️</span>}
+                    {t.is_blocked && <span className="text-rose-400 mr-1 font-bold" title="Blocked" role="img" aria-label="Blocked">!</span>}
                     <span className="truncate">{t.title}</span>
                     {stats && (
-                      <span className="ml-2 font-mono text-[10px] text-indigo-300 bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-900 shrink-0">
+                      <span className="ml-2 font-mono text-[10px] text-primary bg-primary-fixed/60 px-1.5 py-0.5 rounded border border-primary shrink-0">
                         +{stats.total} children, {stats.completed} Complete
                       </span>
                     )}
                   </div>
                   <div className="col-span-3">
-                    <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 text-[11px]">
+                    <span className="px-2 py-0.5 rounded bg-surface-container border border-subtle text-on-surface-variant text-[11px]">
                       {t.status_name || "Status"}
                     </span>
                   </div>
-                  <div className="col-span-2 text-right font-mono text-slate-400 text-[11px]">
+                  <div className="col-span-2 text-right font-mono text-on-surface-variant text-[11px]">
                     {t.due_date || "No due date"}
                   </div>
                 </div>
               );
             })}
             {visibleTasks.length === 0 && !loading && (
-              <div className="py-12 text-center text-slate-500 text-sm">No tasks found for the current tree view filter.</div>
+              <div className="py-12 text-center text-outline text-sm">No tasks found for the current tree view filter.</div>
             )}
           </div>
         </div>
 
         {/* Right PANE: Timeline Gantt & Status Period Segments (~55%) */}
-        <div ref={ganttRef} className="w-1/2 flex flex-col bg-slate-950 overflow-x-auto overflow-y-auto">
-          <div className="bg-slate-900 border-b border-slate-800 px-4 py-2.5 text-xs font-semibold text-slate-400 sticky top-0 z-10 flex items-center justify-between">
+        <div ref={ganttRef} className="w-1/2 flex flex-col bg-surface overflow-x-auto overflow-y-auto">
+          <div className="bg-surface-container-lowest border-b border-subtle px-4 py-2.5 text-xs font-semibold text-on-surface-variant sticky top-0 z-10 flex items-center justify-between">
             <span>Execution Timeline Gantt ({granularity.toUpperCase()} · {pxPerDay(granularity)}px/day)</span>
-            <div className="flex items-center gap-3 text-[11px] text-slate-400">
+            <div className="flex items-center gap-3 text-[11px] text-on-surface-variant">
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-indigo-500"></span> Planned/Active</span>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-emerald-500"></span> Done</span>
             </div>
@@ -695,18 +721,18 @@ export default function Timeline() {
                   key={t.task_id}
                   onClick={() => setSelectedTask(t)}
                   className={`p-3 rounded-lg border transition-all cursor-pointer ${
-                    isSelected ? "bg-indigo-950/20 border-indigo-500/50" : "bg-slate-900/40 border-slate-800 hover:border-slate-700"
+                    isSelected ? "bg-primary-fixed/20 border-primary-container/50" : "bg-surface-container-low border-subtle hover:border-subtle"
                   } ${isTodayDue ? "ring-1 ring-amber-500/60" : ""}`}
                 >
                   <div className="flex items-center justify-between text-xs mb-2">
-                    <span className="font-mono text-slate-400 font-semibold">{wbsCode} — <strong className="text-slate-200">{t.title}</strong></span>
-                    <span className="text-slate-400 font-mono text-[11px]">Start: {barStart}</span>
+                    <span className="font-mono text-on-surface-variant font-semibold">{wbsCode} — <strong className="text-on-surface">{t.title}</strong></span>
+                    <span className="text-on-surface-variant font-mono text-[11px]">Start: {barStart}</span>
                   </div>
                   {/* Status periods visual bar: one segment per period, same source as pipeline */}
-                  <div className="relative h-6 bg-slate-900 rounded border border-slate-800 flex items-center overflow-hidden px-2">
+                  <div className="relative h-6 bg-surface-container-lowest rounded border border-subtle flex items-center overflow-hidden px-2">
                     {isCollapsedParent ? (
                       <div
-                        className="h-4 rounded bg-indigo-700/80 border border-indigo-500/60 flex items-center justify-center text-[10px] font-mono px-2 text-white truncate w-full"
+                        className="h-4 rounded bg-indigo-700/80 border border-primary-container/60 flex items-center justify-center text-[10px] font-mono px-2 text-on-primary truncate w-full"
                         title={`Summary: ${barStart} → ${barDue || "no due"} (+${stats?.total} children, ${stats?.completed} Complete)`}
                       >
                         Summary: {barStart} → {barDue || "no due"} (+{stats?.total} children, {stats?.completed} Complete)
@@ -719,7 +745,7 @@ export default function Timeline() {
                             <div
                               key={p.id}
                               title={`Status: ${stObj?.name || p.status_id} (${p.start_date || "?"} → ${p.due_date || "?"})`}
-                              className="h-4 rounded flex items-center justify-center text-[10px] font-mono px-2 text-white truncate"
+                              className="h-4 rounded flex items-center justify-center text-[10px] font-mono px-2 text-on-primary truncate"
                               style={{ flex: 1, backgroundColor: periodBarColor(p.status_id) }}
                             >
                               {granularity === "day" || granularity === "week" ? stObj?.name || "Period" : ""}
@@ -728,10 +754,10 @@ export default function Timeline() {
                         })}
                       </div>
                     ) : showPeriods ? (
-                      <div className="text-[11px] text-slate-500 italic">No per-status periods recorded yet</div>
+                      <div className="text-[11px] text-outline italic">No per-status periods recorded yet</div>
                     ) : (
                       <div
-                        className="h-4 rounded bg-indigo-600"
+                        className="h-4 rounded bg-primary-container"
                         style={{ width: "100%" }}
                         title={`${barStart} → ${barDue || "no due"}`}
                       />
@@ -745,55 +771,62 @@ export default function Timeline() {
       </div>
 
       {/* Telemetry + backup strip */}
-      <div className="bg-slate-900/60 border-t border-slate-800 px-6 py-1.5">
+      <div className="bg-surface-container-low border-t border-subtle px-6 py-1.5">
         {id && <TelemetryBar projectId={id} />}
       </div>
 
       {/* Bottom Inspector Drawer / Card */}
       {selectedTask && (
-        <div className="bg-slate-900 border-t border-slate-800 p-4 shadow-xl">
+        <div className="bg-surface-container-lowest border-t border-subtle p-4 shadow-xl">
           <div className="max-w-7xl mx-auto flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="font-mono text-xs px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 font-semibold">
+                <span className="font-mono text-xs px-2 py-0.5 rounded bg-primary-fixed text-primary font-semibold">
                   Task #{selectedTask.task_id} (Depth {selectedTask.depth})
                 </span>
-                <span className="text-xs text-slate-400">Current Status: <strong className="text-white">{selectedTask.status_name}</strong></span>
+                <span className="text-xs text-on-surface-variant">Current Status: <strong className="text-on-primary">{selectedTask.status_name}</strong></span>
               </div>
-              <h3 className="text-base font-semibold text-slate-100">{selectedTask.title}</h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Start: <span className="text-slate-200 font-mono">{selectedTask.start_date}</span> | Due: <span className="text-slate-200 font-mono">{selectedTask.due_date || "None"}</span>
+              <h3 className="text-base font-semibold text-on-surface">{selectedTask.title}</h3>
+              <p className="text-xs text-on-surface-variant mt-1">
+                Start: <span className="text-on-surface font-mono">{selectedTask.start_date}</span> | Due: <span className="text-on-surface font-mono">{selectedTask.due_date || "None"}</span>
               </p>
             </div>
             <div className="flex items-start gap-4">
               <div>
-                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Status Periods Log ({selectedTask.periods.length})</h4>
+                <h4 className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">Status Periods Log ({selectedTask.periods.length})</h4>
                 <div className="flex gap-2 overflow-x-auto max-w-md">
                   {selectedTask.periods.map((p) => {
                     const st = statusById.get(p.status_id);
                     return (
-                      <div key={p.id} className="bg-slate-800 border border-slate-700 rounded p-2 text-[11px] shrink-0">
-                        <div className="font-semibold text-indigo-300">{st?.name || `Status #${p.status_id}`}</div>
-                        <div className="text-slate-400 font-mono text-[10px]">Start: {p.start_date || "—"}</div>
-                        <div className="text-slate-400 font-mono text-[10px]">Due: {p.due_date || "—"}</div>
+                      <div key={p.id} className="bg-surface-container border border-subtle rounded p-2 text-[11px] shrink-0">
+                        <div className="font-semibold text-primary">{st?.name || `Status #${p.status_id}`}</div>
+                        <div className="text-on-surface-variant font-mono text-[10px]">Start: {p.start_date || "—"}</div>
+                        <div className="text-on-surface-variant font-mono text-[10px]">Due: {p.due_date || "—"}</div>
                         {p.actual_end_date && <div className="text-emerald-400 font-mono text-[10px]">End: {p.actual_end_date}</div>}
                       </div>
                     );
                   })}
                   {selectedTask.periods.length === 0 && (
-                    <div className="text-[11px] text-slate-500 italic">No periods yet.</div>
+                    <div className="text-[11px] text-outline italic">No periods yet.</div>
                   )}
                 </div>
               </div>
               <button
-                onClick={() => setDrawerTaskId(selectedTask.task_id)}
-                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded text-xs font-semibold text-white mr-2"
+                onClick={() => setEditTaskId(selectedTask.task_id)}
+                className="px-3 py-1.5 bg-primary-container hover:bg-primary rounded text-xs font-semibold text-on-primary mr-2"
               >
-                Open Task Drawer
+                Edit Task
+              </button>
+              <button
+                onClick={() => setDrawerTaskId(selectedTask.task_id)}
+                className="px-3 py-1.5 bg-surface-container hover:bg-surface-container-high border border-subtle rounded text-xs font-medium text-on-surface-variant mr-2"
+                title="Advanced drawer (tags, blocked-by, attachments, custom fields)"
+              >
+                Drawer
               </button>
               <button
                 onClick={() => setSelectedTask(null)}
-                className="text-slate-400 hover:text-white text-lg font-bold px-2 py-1"
+                className="text-on-surface-variant hover:text-on-surface text-lg font-bold px-2 py-1"
                 title="Close Inspector"
               >
                 ✕
@@ -810,11 +843,20 @@ export default function Timeline() {
           onUpdated={fetchData}
         />
       )}
+      {editTaskId != null && (
+        <TaskDialog
+          projectId={id!}
+          mode="edit"
+          taskId={editTaskId}
+          onClose={() => setEditTaskId(null)}
+          onUpdated={fetchData}
+        />
+      )}
       {reorderModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true">
-          <div className="w-full max-w-md rounded-lg border border-slate-700 bg-slate-900 p-4">
-            <h2 className="text-sm font-semibold text-slate-100">Confirm Reorder</h2>
-            <p className="mt-2 text-xs font-mono text-indigo-300 bg-indigo-950/60 p-2 rounded border border-indigo-900">
+          <div className="w-full max-w-md rounded-lg border border-subtle bg-surface-container-lowest p-4">
+            <h2 className="text-sm font-semibold text-on-surface">Confirm Reorder</h2>
+            <p className="mt-2 text-xs font-mono text-primary bg-primary-fixed/60 p-2 rounded border border-primary">
               {formatReorderConfirm(
                 reorderModal.wbs,
                 reorderModal.draggedTask.title,
@@ -825,7 +867,7 @@ export default function Timeline() {
             <div className="mt-4 flex justify-end gap-2 text-xs">
               <button
                 onClick={() => setReorderModal(null)}
-                className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium"
+                className="px-3 py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-medium"
               >
                 Cancel
               </button>
@@ -855,7 +897,7 @@ export default function Timeline() {
                     setReorderModal(null);
                   }
                 }}
-                className="px-3 py-1.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium"
+                className="px-3 py-1.5 rounded bg-primary-container hover:bg-primary text-on-primary font-medium"
               >
                 Confirm
               </button>
