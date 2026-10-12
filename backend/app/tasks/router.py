@@ -123,6 +123,46 @@ def _default_status_for_project(session: Session, project_id: int) -> Status | N
     return rows[0] if rows else None
 
 
+VALID_PRIORITIES = ("urgent", "high", "normal", "low")
+
+
+def _profile_status_ids(session: Session, project_id: int) -> set[int] | None:
+    """Leaf Status ids of the Status Profile resolved for a Project.
+
+    Same live reference as _default_status_for_project: parent Category
+    first, legacy projects.status_profile_id as fallback. Returns None when
+    no Profile resolves (pre-U2 data without any profile).
+    """
+    from app.categories.models import Category
+    from app.projects.models import Project
+
+    project = session.get(Project, project_id)
+    if project is None:
+        return None
+    profile_id: int | None = None
+    cat_id = getattr(project, "category_id", None)
+    if cat_id is not None:
+        cat = session.get(Category, cat_id)
+        if cat is not None and cat.status_profile_id is not None:
+            profile_id = cat.status_profile_id
+    if profile_id is None:
+        profile_id = getattr(project, "status_profile_id", None)
+    if profile_id is None:
+        return None
+    rows = session.exec(select(Status).where(Status.profile_id == profile_id)).all()
+    return {s.id for s in rows if s.id is not None}
+
+
+def _ensure_status_in_profile(session: Session, project_id: int, status_id: int) -> None:
+    """Reject a status_id outside the Project's Category Profile (400).
+
+    Skipped when no Profile resolves, so legacy profile-less data keeps working.
+    """
+    allowed = _profile_status_ids(session, project_id)
+    if allowed is not None and status_id not in allowed:
+        raise HTTPException(status_code=400, detail="status_id not in Category profile")
+
+
 def _validate_blocked_by(
     task_id: int | None,
     blocked_by_ids: list[int],
@@ -564,6 +604,9 @@ def create_task(
     if not title:
         raise HTTPException(status_code=422, detail="Title required")
 
+    if body.priority not in VALID_PRIORITIES:
+        raise HTTPException(status_code=400, detail="Invalid priority (urgent|high|normal|low)")
+
     # U4 defaults: status_id = first leaf of first Stage, start_date = today.
     status_id = body.status_id
     if status_id is None:
@@ -574,6 +617,7 @@ def create_task(
     status_obj = session.get(Status, status_id)
     if not status_obj:
         raise HTTPException(status_code=400, detail="Invalid status_id")
+    _ensure_status_in_profile(session, body.project_id, status_id)
 
     start_date = body.start_date or date.today().isoformat()
 
@@ -648,6 +692,12 @@ def create_task(
     return _task_out(task, session)
 
 
+class TimelineAssignee(BaseModel):
+    id: int
+    name: str = ""
+    username: str = ""
+
+
 class TaskTimelineItem(BaseModel):
     task_id: int
     title: str
@@ -658,6 +708,8 @@ class TaskTimelineItem(BaseModel):
     start_date: str
     due_date: str | None = None
     assignee_ids: list[int] = []
+    assignees: list[TimelineAssignee] = []
+    priority: str = "normal"
     is_blocked: bool = False
     position: int = 0
     wbs: str = ""
@@ -744,12 +796,29 @@ def _timeline_items(
         wbs_map = _tl_svc.wbs_map_for_project(session, project_id)
     except Exception:
         wbs_map = {}
+    # Batch-load assignee display names (tree grid avatars).
+    user_map: dict[int, User] = {}
+    try:
+        all_users = session.exec(select(User)).all()
+        for u in all_users:
+            if u.id is not None:
+                user_map[u.id] = u
+    except Exception:
+        user_map = {}
     results = []
     for t in tasks:
         assert t.id is not None
         tout = _task_out(t, session, wbs_map=wbs_map)
         st = session.get(Status, t.status_id)
         st_name = st.name if st else ""
+        assignees_out = [
+            TimelineAssignee(
+                id=uid,
+                name=(user_map[uid].name if uid in user_map else ""),
+                username=(user_map[uid].username if uid in user_map else ""),
+            )
+            for uid in tout.assignee_ids
+        ]
         results.append(
             TaskTimelineItem(
                 task_id=t.id,
@@ -761,6 +830,8 @@ def _timeline_items(
                 start_date=t.start_date,
                 due_date=t.due_date,
                 assignee_ids=tout.assignee_ids,
+                assignees=assignees_out,
+                priority=t.priority or "normal",
                 is_blocked=tout.is_blocked,
                 position=t.position if t.position is not None else 0,
                 wbs=wbs_map.get(t.id, ""),
@@ -784,6 +855,7 @@ def _timeline_export_csv(items: list[TaskTimelineItem]) -> str:
             "start_date",
             "due_date",
             "assignee_ids",
+            "priority",
             "is_blocked",
             "periods",
         ]
@@ -804,6 +876,7 @@ def _timeline_export_csv(items: list[TaskTimelineItem]) -> str:
                 it.start_date,
                 it.due_date or "",
                 "|".join(str(a) for a in it.assignee_ids),
+                it.priority,
                 str(it.is_blocked),
                 periods,
             ]
@@ -1092,15 +1165,20 @@ def update_task(
 
     old_status_id = task.status_id
     if body.title is not None:
-        task.title = body.title
+        if not (body.title or "").strip():
+            raise HTTPException(status_code=422, detail="Title required")
+        task.title = (body.title or "").strip()
     if body.description_md is not None:
         task.description_md = body.description_md
     if body.priority is not None:
+        if body.priority not in VALID_PRIORITIES:
+            raise HTTPException(status_code=400, detail="Invalid priority (urgent|high|normal|low)")
         task.priority = body.priority
     if body.start_date is not None:
         task.start_date = body.start_date
     if body.due_date is not None:
-        task.due_date = body.due_date
+        # Empty string clears the due date (bulk clear); null means "don't touch".
+        task.due_date = body.due_date or None
     if body.estimate_mins is not None:
         task.estimate_mins = body.estimate_mins
     if body.time_spent_mins is not None:
@@ -1110,6 +1188,7 @@ def update_task(
         status_obj = session.get(Status, body.status_id)
         if not status_obj:
             raise HTTPException(status_code=400, detail="Invalid status_id")
+        _ensure_status_in_profile(session, task.project_id, body.status_id)
         task.status_id = body.status_id
         assert current.id is not None
         assert task.id is not None
@@ -1180,6 +1259,7 @@ def change_task_status(
     status_obj = session.get(Status, body.status_id)
     if not status_obj:
         raise HTTPException(status_code=400, detail="Invalid status_id")
+    _ensure_status_in_profile(session, task.project_id, body.status_id)
 
     old_status_id = task.status_id
     task.status_id = body.status_id
@@ -1218,6 +1298,114 @@ def change_task_status(
     session.commit()
     session.refresh(task)
     return _task_out(task, session)
+
+
+@router.delete("/{task_id}", status_code=status.HTTP_200_OK)
+def delete_task(
+    task_id: int,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Delete a Task with its Subtasks/Microtasks cascade.
+
+    Agreed grill Q7-Q9: non-guests only, custom modal client-side shows
+    live +N children counts, WBS renumbers immediately after, history
+    rows for deleted ids are removed (task row gone), sibling positions
+    compacted. No watcher notifications.
+    """
+    task = session.get(Task, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    require_project_access(task.project_id, current, session)
+    if current.role == "guest":
+        raise HTTPException(status_code=403, detail="Guest cannot delete tasks")
+
+    project_id = task.project_id
+    parent_id = task.parent_id
+    assert task.id is not None
+
+    # Collect subtree (task + descendants) via BFS.
+    subtree_ids: list[int] = [task.id]
+    subtree_set: set[int] = {task.id}
+    queue: list[int] = [task.id]
+    while queue:
+        cur = queue.pop(0)
+        kids = session.exec(select(Task).where(Task.parent_id == cur)).all()
+        for k in kids:
+            assert k.id is not None
+            if k.id not in subtree_set:
+                subtree_set.add(k.id)
+                subtree_ids.append(k.id)
+                queue.append(k.id)
+
+    from app.tasks import service as _del_svc
+
+    try:
+        old_wbs_map = _del_svc.wbs_map_for_project(session, project_id)
+    except Exception:
+        old_wbs_map = {}
+    deleted_wbs = old_wbs_map.get(task.id, "")
+
+    # Delete related rows for all subtree ids.
+    for tid in subtree_ids:
+        for a in session.exec(select(TaskAssignee).where(TaskAssignee.task_id == tid)).all():
+            session.delete(a)
+        for w in session.exec(select(TaskWatcher).where(TaskWatcher.task_id == tid)).all():
+            session.delete(w)
+        for tt in session.exec(select(TaskTag).where(TaskTag.task_id == tid)).all():
+            session.delete(tt)
+        for b in session.exec(select(TaskBlockedBy).where(TaskBlockedBy.task_id == tid)).all():
+            session.delete(b)
+        for p in session.exec(select(TaskStatusPeriod).where(TaskStatusPeriod.task_id == tid)).all():
+            session.delete(p)
+        for h in session.exec(select(TaskHistory).where(TaskHistory.task_id == tid)).all():
+            session.delete(h)
+        for v in session.exec(select(CustomFieldValue).where(CustomFieldValue.task_id == tid)).all():
+            session.delete(v)
+        comments = session.exec(select(TaskComment).where(TaskComment.task_id == tid)).all()
+        for c in comments:
+            assert c.id is not None
+            for m in session.exec(
+                select(TaskCommentMention).where(TaskCommentMention.comment_id == c.id)
+            ).all():
+                session.delete(m)
+            session.delete(c)
+        atts = session.exec(select(TaskAttachment).where(TaskAttachment.task_id == tid)).all()
+        for att in atts:
+            fpath = att.path
+            session.delete(att)
+            try:
+                if fpath and os.path.isfile(fpath):
+                    os.remove(fpath)
+            except OSError:
+                pass
+    # Clean dangling blocked-by refs from surviving tasks pointing at deleted ids.
+    for tid in subtree_ids:
+        for link in session.exec(
+            select(TaskBlockedBy).where(TaskBlockedBy.blocked_by_task_id == tid)
+        ).all():
+            if link.task_id not in subtree_set:
+                session.delete(link)
+    # Delete Task rows children-first (depth desc) to satisfy parent FK.
+    raw_to_del = [session.get(Task, tid) for tid in subtree_ids]
+    tasks_to_del: list[Task] = [t for t in raw_to_del if t is not None]
+    tasks_to_del.sort(key=lambda t: t.depth, reverse=True)
+    for t in tasks_to_del:
+        session.delete(t)
+    session.commit()
+
+    # Compact sibling positions under same parent.
+    siblings = _del_svc.ordered_siblings(session, project_id, parent_id)
+    for idx, sib in enumerate(siblings, start=1):
+        sib.position = idx
+        session.add(sib)
+    session.commit()
+
+    publish(
+        "task.deleted",
+        {"task_id": task_id, "project_id": project_id, "wbs": deleted_wbs, "deleted_ids": subtree_ids},
+    )
+    return {"deleted_ids": subtree_ids, "project_id": project_id, "wbs": deleted_wbs}
 
 
 @router.get("/{task_id}/history", response_model=list[TaskHistoryOut])
@@ -1346,6 +1534,85 @@ def create_comment(
         mentions=list(body.mentions),
         created_at=comment.created_at,
     )
+
+
+class CommentUpdate(BaseModel):
+    body_md: str
+
+
+@router.put("/{task_id}/comments/{comment_id}", response_model=CommentOut)
+def update_comment(
+    task_id: int,
+    comment_id: int,
+    body: CommentUpdate,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Edit own comment (author or admin/manager). Guests cannot edit."""
+    task = session.get(Task, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    require_project_access(task.project_id, current, session)
+    if current.role == "guest":
+        raise HTTPException(status_code=403, detail="Guest cannot edit comments")
+    comment = session.get(TaskComment, comment_id)
+    if not comment or comment.task_id != task_id:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    assert current.id is not None
+    if comment.author_id != current.id and current.role not in ("admin", "manager"):
+        raise HTTPException(status_code=403, detail="Can only edit own comments")
+    text = (body.body_md or "").strip()
+    if not text:
+        raise HTTPException(status_code=422, detail="Comment body required")
+    comment.body_md = text
+    session.add(comment)
+    session.commit()
+    session.refresh(comment)
+    assert comment.id is not None
+    return CommentOut(
+        id=comment.id,
+        task_id=comment.task_id,
+        parent_id=comment.parent_id,
+        author_id=comment.author_id,
+        body_md=comment.body_md,
+        mentions=_mention_ids_for_comment(comment.id, session),
+        created_at=comment.created_at,
+    )
+
+
+@router.delete("/{task_id}/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_comment(
+    task_id: int,
+    comment_id: int,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Delete own comment (author or admin/manager). Guests cannot delete."""
+    task = session.get(Task, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    require_project_access(task.project_id, current, session)
+    if current.role == "guest":
+        raise HTTPException(status_code=403, detail="Guest cannot delete comments")
+    comment = session.get(TaskComment, comment_id)
+    if not comment or comment.task_id != task_id:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    assert current.id is not None
+    if comment.author_id != current.id and current.role not in ("admin", "manager"):
+        raise HTTPException(status_code=403, detail="Can only delete own comments")
+    for m in session.exec(
+        select(TaskCommentMention).where(TaskCommentMention.comment_id == comment.id)
+    ).all():
+        session.delete(m)
+    # Detach replies (keep them, clear parent) so delete never orphans threads.
+    for reply in session.exec(
+        select(TaskComment).where(TaskComment.parent_id == comment.id)
+    ).all():
+        reply.parent_id = None
+        session.add(reply)
+    session.delete(comment)
+    session.commit()
+    return None
 
 
 @router.get("/{task_id}/attachments", response_model=list[AttachmentOut])

@@ -32,6 +32,17 @@ interface StageInfo {
   active: boolean;
 }
 
+interface CustomFieldDefInfo {
+  id: number;
+  profile_id: number | null;
+  project_id: number | null;
+  key: string;
+  type: string;
+  label: string;
+  required: boolean;
+  order: number;
+}
+
 interface StatusProfile {
   id: number;
   name: string;
@@ -41,6 +52,7 @@ interface StatusProfile {
   created_at: string;
   stages: StageInfo[];
   statuses: StatusInfo[];
+  custom_field_defs: CustomFieldDefInfo[];
 }
 
 // Q4: 12 distinct Tier-1 colors (names + hex, from status2.html).
@@ -135,6 +147,12 @@ export default function GlobalSettings() {
   const [editingStatusStage, setEditingStatusStage] = useState<string>("");
   const [dragStageId, setDragStageId] = useState<number | null>(null);
   const [dragStatusId, setDragStatusId] = useState<number | null>(null);
+
+  // T3: Template custom field definitions (defined once in Template, copied on apply-profile).
+  const [newFieldKey, setNewFieldKey] = useState("");
+  const [newFieldLabel, setNewFieldLabel] = useState("");
+  const [newFieldType, setNewFieldType] = useState("text");
+  const [newFieldRequired, setNewFieldRequired] = useState(false);
 
   // User Profile (self-service) state
   const [me, setMe] = useState<MeInfo | null>(null);
@@ -487,6 +505,54 @@ export default function GlobalSettings() {
       setNotice("Tier-2 Statuses reordered — shades recascaded.");
       fetchProfiles();
     });
+  };
+
+  // ---- T3: Template custom field defs (copied to Project on apply-profile) ----
+  const FIELD_TYPES = ["text", "number", "url", "date", "dropdown", "checkbox", "user"];
+
+  const addFieldDef = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!auth.accessToken || !selectedProfile) return;
+    const key = newFieldKey.trim();
+    const label = newFieldLabel.trim() || key;
+    if (!key) {
+      setError("Field key is required (e.g. vendor, invoice_no).");
+      return;
+    }
+    setError("");
+    const order = (selectedProfile.custom_field_defs?.length ?? 0) + 1;
+    fetch(`/api/v1/status-profiles/${selectedProfile.id}/custom-field-defs`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ key, type: newFieldType, label, required: newFieldRequired, order }),
+    })
+      .then(async (r) => {
+        if (!r.ok) throw new Error("Add custom field failed");
+        return r.json();
+      })
+      .then(() => {
+        setNewFieldKey("");
+        setNewFieldLabel("");
+        setNewFieldType("text");
+        setNewFieldRequired(false);
+        setNotice("Custom field added — copied to Projects on Apply Profile.");
+        fetchProfiles();
+      })
+      .catch((e) => setError(e.message));
+  };
+
+  const deleteFieldDef = (defId: number) => {
+    if (!auth.accessToken || !selectedProfile) return;
+    if (!confirm("Delete this custom field definition?")) return;
+    fetch(`/api/v1/status-profiles/${selectedProfile.id}/custom-field-defs/${defId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${auth.accessToken}` },
+    })
+      .then(() => {
+        setNotice("Custom field removed.");
+        fetchProfiles();
+      })
+      .catch((e) => setError(e.message));
   };
 
   const isMeDirty = !!me && draftName.trim() !== "" && draftName.trim() !== me.name;
@@ -1249,6 +1315,80 @@ export default function GlobalSettings() {
                   </div>
                 </form>
               )}
+
+              {/* T3: Template custom field definitions */}
+              <div className="mt-4 border border-subtle rounded-lg overflow-hidden">
+                <div className="px-3 py-2 bg-surface border-b border-subtle flex items-center justify-between flex-wrap gap-2">
+                  <h3 className="text-sm font-semibold">
+                    Template Custom Fields ({selectedProfile.custom_field_defs?.length ?? 0})
+                  </h3>
+                  <span className="text-[11px] text-on-surface-variant">
+                    Defined once here · copied to Project on Apply Profile
+                  </span>
+                </div>
+                <ul className="divide-y divide-border-subtle">
+                  {(selectedProfile.custom_field_defs ?? []).map((f) => (
+                    <li key={f.id} className="px-3 py-2 text-xs flex items-center justify-between gap-2 flex-wrap">
+                      <span className="font-mono">
+                        {f.key} <span className="text-on-surface-variant">· {f.type} · {f.label}</span>
+                        {f.required && <span className="ml-1 text-error">*</span>}
+                      </span>
+                      {canManage && (
+                        <button
+                          onClick={() => deleteFieldDef(f.id)}
+                          className="px-2 py-1 rounded text-error text-[11px]"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                  {(selectedProfile.custom_field_defs?.length ?? 0) === 0 && (
+                    <li className="px-3 py-2 text-[11px] text-on-surface-variant">
+                      No custom fields yet — e.g. Procurement adds Vendor, Monthly Repetitive adds Invoice No.
+                    </li>
+                  )}
+                </ul>
+                {canManage && (
+                  <form onSubmit={addFieldDef} className="p-3 flex flex-wrap items-center gap-2 border-t border-subtle">
+                    <input
+                      aria-label="field key"
+                      placeholder="key (e.g. vendor)"
+                      value={newFieldKey}
+                      onChange={(e) => setNewFieldKey(e.target.value)}
+                      className="px-2 py-1.5 rounded border border-subtle text-xs w-36"
+                    />
+                    <input
+                      aria-label="field label"
+                      placeholder="Label (e.g. Vendor)"
+                      value={newFieldLabel}
+                      onChange={(e) => setNewFieldLabel(e.target.value)}
+                      className="px-2 py-1.5 rounded border border-subtle text-xs w-40"
+                    />
+                    <select
+                      aria-label="field type"
+                      value={newFieldType}
+                      onChange={(e) => setNewFieldType(e.target.value)}
+                      className="px-2 py-1.5 rounded border border-subtle text-xs"
+                    >
+                      {FIELD_TYPES.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                    <label className="flex items-center gap-1 text-[11px]">
+                      <input
+                        type="checkbox"
+                        checked={newFieldRequired}
+                        onChange={(e) => setNewFieldRequired(e.target.checked)}
+                      />
+                      Required
+                    </label>
+                    <button type="submit" className="px-3 py-1.5 rounded bg-primary-container text-on-primary text-xs">
+                      + Add Field
+                    </button>
+                  </form>
+                )}
+              </div>
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center text-sm">Select or create a Status Profile.</div>
