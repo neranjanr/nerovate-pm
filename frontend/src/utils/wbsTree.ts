@@ -9,6 +9,12 @@ export interface StatusPeriod {
   created_at: string;
 }
 
+export interface TreeAssignee {
+  id: number;
+  name?: string;
+  username?: string;
+}
+
 export interface TreeTask {
   task_id: number;
   title: string;
@@ -19,6 +25,8 @@ export interface TreeTask {
   start_date: string;
   due_date?: string | null;
   assignee_ids: number[];
+  assignees?: TreeAssignee[];
+  priority?: string;
   is_blocked: boolean;
   position?: number;
   wbs?: string;

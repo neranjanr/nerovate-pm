@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "secondary-fixed": "#c9e6ff", "secondary-fixed-dim": "#89ceff", "primary-fixed-dim": "#c3c0ff", "surface-bright": "#f8f9ff", "tertiary": "#005338", "on-tertiary-container": "#67f4b7", "error": "#ba1a1a", "surface-container-high": "#dce9ff", "surface-container-lowest": "#ffffff", "on-error-container": "#93000a", "tertiary-fixed": "#6ffbbe", "on-primary": "#ffffff", "primary-container": "#4f46e5", "tertiary-fixed-dim": "#4edea3", "on-tertiary": "#ffffff", "on-secondary-container": "#004666", "on-secondary-fixed-variant": "#004c6e", "on-tertiary-fixed": "#002113", "surface-dim": "#cbdbf5", "inverse-surface": "#213145", "on-secondary-fixed": "#001e2f", "surface-tint": "#4d44e3", "tertiary-container": "#006e4b", "on-primary-fixed": "#0f0069", "secondary-container": "#39b8fd", "error-container": "#ffdad6", "on-error": "#ffffff", "on-secondary": "#ffffff", "surface-container-low": "#eff4ff", "surface": "#f8f9ff", "outline-variant": "#c7c4d8", "on-surface-variant": "#464555", "on-background": "#0b1c30", "surface-container": "#e5eeff", "inverse-on-surface": "#eaf1ff", "surface-variant": "#d3e4fe", "secondary": "#006591", "on-primary-fixed-variant": "#3323cc", "on-tertiary-fixed-variant": "#005236", "outline": "#777587", "background": "#f8f9ff", "primary-fixed": "#e2dfff", "surface-container-highest": "#d3e4fe", "on-primary-container": "#dad7ff", "primary": "#3525cd", "on-surface": "#0b1c30", "inverse-primary": "#c3c0ff" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-sm": "0.5rem", "space-xl": "2rem", "margin": "1.5rem", "space-xs": "0.25rem", "gutter": "1rem", "space-md": "0.75rem", "space-lg": "1.25rem" }, "fontFamily": { "body-sm": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "body-md": ["Inter"], "label-sm": ["Inter"], "headline-xl": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "headline-md": ["Plus Jakarta Sans"], "code-sm": ["JetBrains Mono"], "label-md": ["Inter"] }, "fontSize": { "body-sm": ["0.8125rem", {"lineHeight": "1.125rem", "fontWeight": "400"}], "headline-lg": ["1.5rem", {"lineHeight": "2rem", "fontWeight": "600"}], "headline-sm": ["1rem", {"lineHeight": "1.5rem", "fontWeight": "600"}], "body-md": ["0.875rem", {"lineHeight": "1.25rem", "fontWeight": "400"}], "label-sm": ["0.6875rem", {"lineHeight": "0.875rem", "letterSpacing": "0.025em", "fontWeight": "600"}], "headline-xl": ["2rem", {"lineHeight": "2.5rem", "fontWeight": "700"}], "body-lg": ["1rem", {"lineHeight": "1.5rem", "fontWeight": "400"}], "headline-md": ["1.25rem", {"lineHeight": "1.75rem", "fontWeight": "600"}], "code-sm": ["0.75rem", {"lineHeight": "1rem", "fontWeight": "500"}], "label-md": ["0.8125rem", {"lineHeight": "1rem", "fontWeight": "500"}] } } } }</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-screen w-72 bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between select-none"><div class="flex flex-col h-full overflow-hidden"><div class="h-14 px-space-md flex items-center justify-between shrink-0 bg-surface-container-lowest"><div class="flex items-center gap-space-sm"><img alt="Neravate PM Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1Wk-U0qOguWDsbUW-Lhygk1DRGGLlywdts99YKGnU2kkIxTwoa_WTD4tS6Nu1LerGhbEkcXTufUYzI_EvN6fH_AXrQeZRjbn3TKm1Dy3bWMai-pSy5CZr10kCxkYkyVWdp9THR8X91yQogvtXxSCcCbOya2r8XvalafCGTXRp33SlnaCosIi6xqi4gq_M1IBts256TXwIYwdmAgwoGvxDTn3p29qA5KhRxHoOGGHIX8ule_iAxLUWmSinUJ"/><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Neravate PM</span></div><button class="h-8 w-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">keyboard_double_arrow_left</span></button></div><div class="flex-1 overflow-y-auto px-space-sm py-space-sm space-y-space-md"><div class="space-y-space-xs"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase text-on-surface-variant">Favorites &amp; Quick Access</div><nav class="space-y-0.5" data-active-classes="bg-primary-container text-on-primary font-medium rounded-lg"><a class="group flex items-center justify-between px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="my-tasks" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">check_circle</span><span class="font-body-md text-body-md">My Tasks</span></div><span class="px-1.5 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">24</span></a><a class="group flex items-center justify-between px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="assigned-to-me" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">assignment_ind</span><span class="font-body-md text-body-md">Assigned to Me</span></div></a><a class="group flex items-center justify-between px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="recent" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">schedule</span><span class="font-body-md text-body-md">Recent</span></div></a></nav></div><div class="space-y-space-xs"><div class="flex items-center justify-between px-space-sm py-1"><span class="font-label-sm text-label-sm uppercase text-on-surface-variant">Categories &amp; Workspaces</span><button class="h-5 w-5 rounded flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[16px]">add</span></button></div><div class="space-y-1"><div class="space-y-0.5"><div class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface hover:bg-surface-container-low cursor-pointer transition-colors"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span><span class="material-symbols-outlined text-[18px] text-primary">folder_open</span><span class="font-body-sm text-body-sm font-semibold text-on-surface">IT Branch</span></div><span class="font-label-sm text-label-sm text-on-surface-variant">4</span></div><nav class="pl-6 space-y-0.5" data-active-classes="bg-primary-container text-on-primary font-medium rounded-lg"><a class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="procurements" href="#"><span class="font-body-sm text-body-sm truncate">Procurements</span></a><a class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="recurrent-payments" href="#"><span class="font-body-sm text-body-sm truncate">Recurrent Payments</span><span class="px-1.5 py-0.2 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">9</span></a><a class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="day-to-day-tasks" href="#"><span class="font-body-sm text-body-sm truncate">Day to Day Tasks</span><span class="px-1.5 py-0.2 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">14</span></a><a class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="project-implementation" href="#"><span class="font-body-sm text-body-sm truncate">Project Implementation</span></a></nav></div><div class="space-y-0.5"><div class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface cursor-pointer transition-colors"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">chevron_right</span><span class="material-symbols-outlined text-[18px]">folder</span><span class="font-body-sm text-body-sm">Product &amp; Design</span></div><span class="font-label-sm text-label-sm">2</span></div></div><div class="space-y-0.5"><div class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface cursor-pointer transition-colors"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">chevron_right</span><span class="material-symbols-outlined text-[18px]">folder</span><span class="font-body-sm text-body-sm">Operations &amp; SecOps</span></div><span class="font-label-sm text-label-sm">2</span></div></div><button class="w-full flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface font-body-sm text-body-sm transition-colors"><span class="material-symbols-outlined text-[18px]">add_circle</span><span class="">Add Category</span></button></div></div></div><div class="p-space-sm bg-surface-container-low shrink-0 space-y-space-xs"><div class="px-space-sm py-space-xs bg-surface-container-lowest rounded-lg"><div class="flex items-center justify-between mb-1"><span class="font-label-sm text-label-sm text-on-surface-variant">Team Storage</span><span class="font-code-sm text-code-sm text-on-surface font-semibold">78%</span></div><div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full bg-primary rounded-full w-[78%]"></div></div><div class="mt-1 text-right"><span class="font-label-sm text-label-sm text-primary hover:underline cursor-pointer">Upgrade Plan</span></div></div><nav class="space-y-0.5" data-active-classes="bg-primary-container text-on-primary font-medium rounded-lg"><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="global-settings" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span class="font-body-md text-body-md">Global Settings</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="help-resources" href="#"><span class="material-symbols-outlined text-[18px]">help_outline</span><span class="font-body-md text-body-md">Help &amp; Resources</span></a></nav></div></div></aside><div class="pl-72 min-h-screen flex flex-col bg-surface"><header class="fixed top-0 left-72 right-0 h-14 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-space-lg"><div class="flex items-center gap-space-md"><div class="flex items-center gap-1.5 px-space-sm py-1 rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container transition-colors cursor-pointer"><span class="material-symbols-outlined text-primary text-[18px]">workspaces</span><span class="font-body-sm text-body-sm font-semibold">Neravate Core / Engineering</span><span class="material-symbols-outlined text-[16px] text-on-surface-variant">unfold_more</span></div><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-2.5 text-on-surface-variant text-[18px]">search</span><input class="w-80 h-9 pl-8 pr-16 bg-surface-container-low hover:bg-surface-container focus:bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant font-body-sm text-body-sm rounded-lg outline-none transition-all focus:ring-2 focus:ring-primary-container" placeholder="Search tasks, docs, commands..." type="text"/><kbd class="absolute right-2 font-code-sm text-code-sm px-1.5 py-0.5 bg-surface-container text-on-surface-variant rounded border border-outline-variant/30">Ctrl+K</kbd></div></div><div class="flex items-center gap-space-sm"><button class="h-9 px-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center gap-1.5 font-label-md text-label-md transition-colors"><span class="material-symbols-outlined text-secondary text-[18px]">auto_awesome</span><span class="">Ask AI</span></button><button class="relative h-9 w-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error ring-2 ring-surface"></span></button><button class="h-9 px-space-md bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md rounded-lg flex items-center gap-1 shadow-sm transition-all"><span class="material-symbols-outlined text-[18px]">add</span><span class="">Create</span></button><div class="relative ml-1 cursor-pointer"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-container-highest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHKiw3uH9vYNspguDhm6XOG8yP99PnPrd8fzZiHtOS-bMNM9Eq6enfggaGgvbw_LJvCyauIe_Wx4gMPeTkxK6MAjVRkpzFaD-hjX6IQGQahAR5uELy08_hPvE4wOtT1_K8o1q1m1BHj3gFES9E-Yp75tQf0pgL9d4doK2Ji7idtKkU-yM3Ao4Mk2WTThUDy2peZ3l9m04C6bRNvp4Par6lt8Q4x0u1kLqRjXKCEzVQtxAWN_7-7Z4HGw"/><span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-tertiary-container ring-2 ring-surface"></span></div></div></header><main class="w-full pt-14 px-space-lg flex-1 bg-surface"><div class="flex flex-col w-full relative">
+<!-- Backdrop Background Settings Page (Simulated Context) -->
+<div class="w-full pb-16 filter blur-[2px] opacity-40 pointer-events-none select-none transition-all duration-300">
+<div class="flex items-center justify-between py-space-md mb-space-sm">
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Global Settings</span>
+<span class="text-on-surface-variant font-headline-lg text-headline-lg">/</span>
+<span class="font-headline-lg text-headline-lg text-primary tracking-tight">Status Profiles</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Create and customize Status Profiles, stages, leaf statuses, and colors. Visible across all linked workspace projects.</p>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="px-2.5 py-1 rounded-full bg-tertiary-container/15 text-tertiary-container font-label-md text-label-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">sync</span> Live Sync Active
+        </span>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-space-lg">
+<div class="col-span-4 bg-surface-container-lowest p-space-md rounded-xl shadow-sm space-y-3">
+<div class="font-headline-sm text-headline-sm text-on-surface">Profiles (6)</div>
+<div class="p-3 bg-primary-fixed/30 rounded-lg">#3 Procurements · 3 stages · 15 statuses</div>
+<div class="p-3 bg-surface-container rounded-lg">#1 Procurement Core · 1 stage · 4 statuses</div>
+<div class="p-3 bg-surface-container rounded-lg">#2 Monthly Repetitive · 1 stage · 4 statuses</div>
+</div>
+<div class="col-span-8 bg-surface-container-lowest p-space-lg rounded-xl shadow-sm">
+<div class="h-64 bg-surface-container-low rounded-lg"></div>
+</div>
+</div>
+</div>
+<!-- MODAL DIALOG CONTAINER OVERLAY -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-inverse-surface/40 backdrop-blur-sm overflow-hidden">
+<!-- Modal Card (max-w-5xl, max-h-[92vh], flex flex-col, rounded-2xl) -->
+<div class="relative w-full max-w-5xl my-auto bg-surface-container-lowest rounded-2xl shadow-2xl border border-outline-variant/30 flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+<!-- 1. MODAL HEADER -->
+<div class="px-space-xl py-4 bg-surface-container-lowest flex items-center justify-between shrink-0 border-b border-outline-variant/25 z-20">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="h-10 w-10 rounded-xl bg-primary-container text-on-primary flex items-center justify-center shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[22px]">account_tree</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-2.5 flex-wrap">
+<h1 class="font-headline-md text-headline-md text-on-surface tracking-tight">Edit Status Profile: Procurements &amp; Vendor Lifecycle</h1>
+<span class="font-code-sm text-code-sm px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface font-semibold">ID #3</span>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-tertiary-container/15 text-tertiary font-label-sm text-label-sm font-semibold">
+<span class="h-1.5 w-1.5 rounded-full bg-tertiary animate-pulse"></span> Active Profile
+</span>
+<div class="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary-fixed/60 text-on-secondary-fixed font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-secondary">link</span>
+<span class="font-semibold">14 Linked Projects</span>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate mt-0.5">Manage 2-tier lifecycle hierarchy (Tier 1: Stages &amp; Tier 2: Leaf Statuses) with automatic monochromatic color cascade.</p>
+</div>
+</div>
+<!-- Top Quick Actions -->
+<div class="flex items-center gap-2 shrink-0">
+<div class="hidden sm:flex items-center gap-2 mr-1">
+<label class="relative inline-flex items-center cursor-pointer select-none">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-container-lowest after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
+<span class="ml-2 font-label-sm text-label-sm text-on-surface font-medium">Active</span>
+</label>
+</div>
+<button class="h-8 px-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md flex items-center gap-1.5 transition-colors" title="Clone Profile">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+<span>Clone</span>
+</button>
+<button class="h-8 px-3.5 bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md rounded-lg flex items-center gap-1.5 shadow-sm transition-all">
+<span class="material-symbols-outlined text-[16px]">save</span>
+<span>Save</span>
+</button>
+<div class="h-4 w-px bg-outline-variant/30 mx-1"></div>
+<button aria-label="Close dialog" class="h-8 w-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+</div>
+<!-- 2. SCROLLABLE MODAL BODY -->
+<div class="flex-1 overflow-y-auto max-h-[calc(92vh-140px)] px-space-xl py-space-lg space-y-space-lg bg-surface-bright">
+<!-- A. COLOR CASCADE SYSTEM BANNER -->
+<div class="p-3.5 rounded-xl bg-gradient-to-r from-primary-fixed/40 via-surface-container-low to-secondary-fixed/30 border border-primary-container/20 flex items-start sm:items-center justify-between gap-3 shadow-xs">
+<div class="flex items-center gap-3">
+<div class="h-9 w-9 rounded-lg bg-primary-container/10 text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">palette</span>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
+<span>Color Cascade System</span>
+<span class="px-2 py-0.2 rounded-full bg-primary-container text-on-primary text-[10px] font-label-sm uppercase tracking-wide">Automated Harmony</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+Choosing a Tier 1 Stage color automatically generates calibrated monochromatic tonal shades (<span class="font-medium text-on-surface">Light tint</span>, <span class="font-medium text-on-surface">Medium accent</span>, <span class="font-medium text-on-surface">Dark solid</span>, <span class="font-medium text-on-surface">Border glow</span>) for its Tier 2 statuses.
+</p>
+</div>
+</div>
+<div class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-lowest rounded-lg border border-outline-variant/30 text-on-surface-variant font-code-sm text-[11px] shrink-0">
+<span class="h-2.5 w-2.5 rounded-full bg-indigo-500"></span>
+<span>T1: Stage</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+<span class="flex items-center gap-0.5">
+<span class="h-2 w-2 rounded-xs bg-indigo-100 border border-indigo-200"></span>
+<span class="h-2 w-2 rounded-xs bg-indigo-200 border border-indigo-300"></span>
+<span class="h-2 w-2 rounded-xs bg-indigo-400"></span>
+<span class="h-2 w-2 rounded-xs bg-indigo-600"></span>
+</span>
+<span>T2: Leaf Tones</span>
+</div>
+</div>
+<!-- B. PROFILE METADATA SECTION -->
+<div class="p-space-lg bg-surface-container-lowest rounded-xl border border-outline-variant/25 shadow-xs space-y-space-md">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-md items-start">
+<div class="md:col-span-5 space-y-1.5">
+<label class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant flex items-center justify-between">
+<span>Profile Name</span>
+<span class="text-primary font-code-sm text-code-sm lowercase font-medium">required</span>
+</label>
+<input class="w-full h-9 px-space-md bg-surface-container-low hover:bg-surface-container focus:bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-lg outline-none transition-all border border-transparent focus:border-primary-container focus:ring-2 focus:ring-primary-container/20" type="text" value="Procurements &amp; Vendor Lifecycle"/>
+</div>
+<div class="md:col-span-7 space-y-1.5">
+<label class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant flex items-center justify-between">
+<span>Lifecycle Scope / Description</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Visible in workspace project settings</span>
+</label>
+<input class="w-full h-9 px-space-md bg-surface-container-low hover:bg-surface-container focus:bg-surface-container-lowest text-on-surface font-body-sm text-body-sm rounded-lg outline-none transition-all border border-transparent focus:border-primary-container focus:ring-2 focus:ring-primary-container/20" type="text" value="Standard multi-stage procurement lifecycle tracking vendor RFQ, bid evaluation, approvals, and contract delivery."/>
+</div>
+</div>
+<!-- Scope / Info Note -->
+<div class="flex items-center justify-between flex-wrap gap-2 pt-1 border-t border-outline-variant/20">
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[17px] text-tertiary-container">verified</span>
+<span><strong>Scope Note:</strong> Updates sync to all linked boards without historical log corruption.</span>
+</div>
+<div class="flex items-center gap-2 font-code-sm text-code-sm text-on-surface-variant">
+<span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+<span>Schema Engine v2.4 · Instant Propagated</span>
+</div>
+</div>
+</div>
+<!-- C. TIER 1 STAGES & NESTED TIER 2 STATUSES -->
+<div class="space-y-space-md">
+<div class="flex items-center justify-between flex-wrap gap-2">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Lifecycle Hierarchy Breakdown</h2>
+<span class="px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm font-semibold">Tier 1: Stage · Tier 2: Leaf Statuses</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Configure stages and leaf statuses. Colors cascade downward automatically.</p>
+</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">swap_vert</span>
+<span>Drag to reorder sequence</span>
+</div>
+</div>
+<!-- STAGE 1: INDIGO THEME (#4F46E5) WITH COLOR PICKER POPOVER DEMONSTRATION -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-xs overflow-visible transition-all">
+<!-- Stage 1 Header -->
+<div class="p-space-md bg-surface-container-low/80 border-b border-outline-variant/25 flex items-center justify-between gap-space-sm flex-wrap rounded-t-xl relative">
+<div class="flex items-center gap-space-sm min-w-0 flex-1">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant cursor-grab hover:text-on-surface" title="Drag stage to reorder">drag_indicator</span>
+<!-- Stage Color Badge & 12-COLOR PALETTE DROPDOWN POPOVER -->
+<div class="relative">
+<button class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-lowest border border-outline-variant/40 shadow-2xs hover:bg-surface-container transition-all" title="Stage Color (#4F46E5 Royal Indigo) - Click to change">
+<span class="w-4 h-4 rounded-full bg-[#4F46E5] ring-2 ring-[#4F46E5]/20 shadow-xs"></span>
+<span class="font-code-sm text-code-sm text-on-surface font-semibold">Indigo</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">arrow_drop_down</span>
+</button>
+<!-- 12-Color Cascade Popover Panel (Visible to satisfy user spec explicitly) -->
+<div class="absolute left-0 top-10 w-80 p-3 bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant/30 z-30 space-y-2.5">
+<div class="flex items-center justify-between pb-1.5 border-b border-outline-variant/20">
+<span class="font-label-sm text-label-sm text-on-surface font-semibold uppercase tracking-wider">12-Color Stage Palette</span>
+<span class="font-code-sm text-[10px] text-primary">Cascade Engine</span>
+</div>
+<div class="grid grid-cols-4 gap-2">
+<!-- 1. Indigo (Selected) -->
+<div class="p-1 rounded-lg bg-primary-fixed/40 ring-2 ring-[#4F46E5] flex flex-col items-center gap-0.5 cursor-pointer" title="Indigo (#4F46E5 - Royal Indigo)">
+<div class="w-6 h-6 rounded-full bg-[#4F46E5] flex items-center justify-center text-white text-[12px] font-bold">✓</div>
+<span class="text-[10px] font-label-sm text-on-surface truncate w-full text-center">Indigo</span>
+</div>
+<!-- 2. Violet -->
+<div class="p-1 rounded-lg hover:bg-surface-container flex flex-col items-center gap-0.5 cursor-pointer transition-colors" title="Violet (#8B5CF6 - Electric Violet)">
+<div class="w-6 h-6 rounded-full bg-[#8B5CF6]"></div>
+<span class="text-[10px] font-label-sm text-on-surface truncate w-full text-center">Violet</span>
+</div>
+<!-- 3. Sky -->
+<div class="p-1 rounded-lg hover:bg-surface-container flex flex-col items-center gap-0.5 cursor-pointer transition-colors" title="Sky (#0284C7 - Cerulean Sky)">
+<div class="w-6 h-6 rounded-full bg-[#0284C7]"></div>
+<span class="text-[10px] font-label-sm text-on-surface truncate w-full text-center">Sky</span>
+</div>
+<!-- 4. Cyan/Teal -->
+<div class="p-1 rounded-lg hover:bg-surface-container flex flex-col items-center gap-0.5 cursor-pointer transition-colors" title="Cyan/Teal (#0D9488 - Deep Teal)">
+<div class="w-6 h-6 rounded-full bg-[#0D9488]"></div>
+<span class="text-[10px] font-label-sm text-on-surface truncate w-full text-center">Teal</span>
+</div>
+<!-- 5. Emerald -->
+<div class="p-1 rounded-lg hover:bg-surface-container flex flex-col items-center gap-0.5 cursor-pointer transition-colors" title="Emerald (#10B981 - Emerald Green)">
+<div class="w-6 h-6 rounded-full bg-[#10B981]"></div>
+<span class="text-[10px] font-label-sm text-on-surface truncate w-full text-center">Emerald</span>
+</div>
+<!-- 6. Lime -->
+<div class="p-1 rounded-lg hover:bg-surface-container flex flex-col items-center gap-0.5 cursor-pointer transition-colors" title="Lime (#84CC16 - Bright Lime)">
+<div class="w-6 h-6 rounded-full bg-[#84CC16]"></div>
+<span class="text-[10px] font-label-sm text-on-surface truncate w-full text-center">Lime</span>
+</div>
+<!-- 7. Amber -->
+<div class="p-1 rounded-lg hover:bg-surface-container flex flex-col items-center gap-0.5 cursor-pointer transition-colors" title="Amber (#F59E0B - Warm Amber)">
+<div class="w-6 h-6 rounded-full bg-[#F59E0B]"></div>
+<span class="text-[10px] font-label-sm text-on-surface truncate w-full text-center">Amber</span>
+</div>
+<!-- 8. Orange -->
+<div class="p-1 rounded-lg hover:bg-surface-container flex flex-col items-center gap-0.5 cursor-pointer transition-colors" title="Orange (#F97316 - Solar Orange)">
+<div class="w-6 h-6 rounded-full bg-[#F97316]"></div>
+<span class="text-[10px] font-label-sm text-on-surface truncate w-full text-center">Orange</span>
+</div>
+<!-- 9. Crimson -->
+<div class="p-1 rounded-lg hover:bg-surface-container flex flex-col items-center gap-0.5 cursor-pointer transition-colors" title="Crimson (#EF4444 - Crimson Red)">
+<div class="w-6 h-6 rounded-full bg-[#EF4444]"></div>
+<span class="text-[10px] font-label-sm text-on-surface truncate w-full text-center">Crimson</span>
+</div>
+<!-- 10. Rose -->
+<div class="p-1 rounded-lg hover:bg-surface-container flex flex-col items-center gap-0.5 cursor-pointer transition-colors" title="Rose (#F43F5E - Vivid Rose)">
+<div class="w-6 h-6 rounded-full bg-[#F43F5E]"></div>
+<span class="text-[10px] font-label-sm text-on-surface truncate w-full text-center">Rose</span>
+</div>
+<!-- 11. Fuchsia -->
+<div class="p-1 rounded-lg hover:bg-surface-container flex flex-col items-center gap-0.5 cursor-pointer transition-colors" title="Fuchsia (#D946EF - Neon Fuchsia)">
+<div class="w-6 h-6 rounded-full bg-[#D946EF]"></div>
+<span class="text-[10px] font-label-sm text-on-surface truncate w-full text-center">Fuchsia</span>
+</div>
+<!-- 12. Slate -->
+<div class="p-1 rounded-lg hover:bg-surface-container flex flex-col items-center gap-0.5 cursor-pointer transition-colors" title="Slate (#64748B - Steel Slate)">
+<div class="w-6 h-6 rounded-full bg-[#64748B]"></div>
+<span class="text-[10px] font-label-sm text-on-surface truncate w-full text-center">Slate</span>
+</div>
+</div>
+<!-- Tonal Shade Preview Bar -->
+<div class="p-2 rounded-lg bg-surface-container-low text-[11px] space-y-1">
+<div class="text-on-surface-variant font-label-sm">Monochromatic Shade Cascade:</div>
+<div class="grid grid-cols-4 gap-1 text-center font-code-sm text-[10px]">
+<div class="py-1 rounded bg-[#EEF2FF] text-[#4F46E5] font-semibold border border-[#E0E7FF]">15% Tint</div>
+<div class="py-1 rounded bg-[#E0E7FF] text-[#4338CA] font-semibold border border-[#C7D2FE]">30% Tint</div>
+<div class="py-1 rounded bg-[#818CF8] text-white font-semibold">50% Accent</div>
+<div class="py-1 rounded bg-[#4F46E5] text-white font-semibold">100% Solid</div>
+</div>
+</div>
+</div>
+</div>
+<span class="font-code-sm text-code-sm text-on-surface-variant px-1.5 py-0.5 rounded bg-surface-container">01</span>
+<input class="font-headline-sm text-headline-sm text-on-surface bg-transparent hover:bg-surface-container focus:bg-surface-container-lowest px-2 py-0.5 rounded-lg outline-none w-52 md:w-64 transition-all focus:ring-1 focus:ring-primary-container" type="text" value="Prior Approval"/>
+<span class="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-label-sm text-label-sm font-semibold border border-indigo-200">
+4 Statuses (Indigo Cascade)
+</span>
+</div>
+<div class="flex items-center gap-space-xs shrink-0">
+<label class="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant mr-1 cursor-pointer select-none">
+<span>Stage Active</span>
+<input checked="" class="h-4 w-4 rounded text-primary-container focus:ring-0 cursor-pointer" type="checkbox"/>
+</label>
+<div class="h-4 w-px bg-outline-variant/30 mx-1"></div>
+<button class="h-7 w-7 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="Move Stage Up">
+<span class="material-symbols-outlined text-[18px]">arrow_upward</span>
+</button>
+<button class="h-7 w-7 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="Move Stage Down">
+<span class="material-symbols-outlined text-[18px]">arrow_downward</span>
+</button>
+<button class="h-7 px-2.5 rounded-lg bg-surface-container hover:bg-primary-container hover:text-on-primary text-on-surface font-label-sm text-label-sm flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[15px]">add</span> Add Status
+</button>
+<button class="h-7 w-7 rounded-lg text-error hover:bg-error-container/40 flex items-center justify-center transition-colors" title="Remove stage">
+<span class="material-symbols-outlined text-[17px]">delete</span>
+</button>
+</div>
+</div>
+<!-- Nested Tier 2 Statuses List for Stage 1 -->
+<div class="p-space-md pl-8 space-y-2 relative bg-surface-container-lowest">
+<!-- Tree connector line -->
+<div class="absolute left-5 top-3 bottom-6 w-px bg-outline-variant/40"></div>
+<!-- Status 1: Shade 1 (15% Tint) -->
+<div class="relative flex items-center justify-between gap-space-sm p-2 rounded-lg bg-surface-container-lowest hover:bg-surface-container-low border border-outline-variant/20 transition-all shadow-2xs group">
+<div class="absolute -left-3 top-1/2 w-3 h-px bg-outline-variant/40"></div>
+<div class="flex items-center gap-2.5 min-w-0 flex-1">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant/60 cursor-grab group-hover:text-on-surface">drag_indicator</span>
+<!-- Inherited Shade 1 Chip -->
+<span class="px-2 py-0.5 rounded text-[11px] font-code-sm font-semibold bg-[#EEF2FF] text-[#4F46E5] border border-[#E0E7FF] shrink-0" title="Inherits Shade 1: 15% Indigo Tint (#EEF2FF bg, #4F46E5 text)">
+Shade 1 (15%)
+</span>
+<span class="font-code-sm text-[11px] text-on-surface-variant">Seq 1</span>
+<input class="font-body-md text-body-md text-on-surface bg-transparent hover:bg-surface-container focus:bg-surface-container-lowest px-2 py-1 rounded outline-none flex-1 max-w-lg transition-all" type="text" value="Concept Approval Requested"/>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="px-2 py-0.5 rounded-full text-on-surface-variant hover:text-on-surface flex items-center gap-1 font-label-sm text-label-sm transition-colors border border-transparent hover:border-outline-variant/40" title="Mark as key project milestone">
+<span class="material-symbols-outlined text-[15px]">star</span>
+<span>Milestone</span>
+</button>
+<label class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant cursor-pointer">
+<input checked="" class="h-3.5 w-3.5 rounded text-primary-container" type="checkbox"/>
+<span>Active</span>
+</label>
+<select class="h-7 px-2 bg-surface-container text-on-surface font-label-sm text-label-sm rounded outline-none cursor-pointer border border-transparent hover:border-outline-variant/30">
+<option selected="">01 Prior Approval</option>
+<option>02 Procurement Stage</option>
+</select>
+<button class="h-6 w-6 rounded flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error-container/30 transition-colors" title="Delete status">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+<!-- Status 2: Shade 2 (30% Tint) [★ Milestone ACTIVE] -->
+<div class="relative flex items-center justify-between gap-space-sm p-2 rounded-lg bg-surface-container-lowest hover:bg-surface-container-low border border-indigo-200/60 transition-all shadow-2xs group">
+<div class="absolute -left-3 top-1/2 w-3 h-px bg-outline-variant/40"></div>
+<div class="flex items-center gap-2.5 min-w-0 flex-1">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant/60 cursor-grab group-hover:text-on-surface">drag_indicator</span>
+<!-- Inherited Shade 2 Chip -->
+<span class="px-2 py-0.5 rounded text-[11px] font-code-sm font-semibold bg-[#E0E7FF] text-[#4338CA] border border-[#C7D2FE] shrink-0" title="Inherits Shade 2: 30% Indigo Tint (#E0E7FF bg, #4338CA text)">
+Shade 2 (30%)
+</span>
+<span class="font-code-sm text-[11px] text-on-surface-variant">Seq 2</span>
+<input class="font-body-md text-body-md font-medium text-on-surface bg-transparent hover:bg-surface-container focus:bg-surface-container-lowest px-2 py-1 rounded outline-none flex-1 max-w-lg transition-all" type="text" value="Concept Approval Received"/>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<!-- Star Milestone Active -->
+<button class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 font-label-sm text-label-sm font-semibold shadow-xs" title="Key Project Milestone reached">
+<span class="material-symbols-outlined text-[15px] text-amber-600" style="font-variation-settings: 'FILL' 1;">star</span>
+<span>Milestone ★</span>
+</button>
+<label class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant cursor-pointer">
+<input checked="" class="h-3.5 w-3.5 rounded text-primary-container" type="checkbox"/>
+<span>Active</span>
+</label>
+<select class="h-7 px-2 bg-surface-container text-on-surface font-label-sm text-label-sm rounded outline-none cursor-pointer border border-transparent hover:border-outline-variant/30">
+<option selected="">01 Prior Approval</option>
+<option>02 Procurement Stage</option>
+</select>
+<button class="h-6 w-6 rounded flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error-container/30 transition-colors">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+<!-- Status 3: Shade 3 (50% Accent) -->
+<div class="relative flex items-center justify-between gap-space-sm p-2 rounded-lg bg-surface-container-lowest hover:bg-surface-container-low border border-outline-variant/20 transition-all shadow-2xs group">
+<div class="absolute -left-3 top-1/2 w-3 h-px bg-outline-variant/40"></div>
+<div class="flex items-center gap-2.5 min-w-0 flex-1">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant/60 cursor-grab group-hover:text-on-surface">drag_indicator</span>
+<!-- Inherited Shade 3 Chip -->
+<span class="px-2 py-0.5 rounded text-[11px] font-code-sm font-semibold bg-[#818CF8] text-white shrink-0" title="Inherits Shade 3: 50% Indigo (#818CF8 bg, white text)">
+Shade 3 (50%)
+</span>
+<span class="font-code-sm text-[11px] text-on-surface-variant">Seq 3</span>
+<input class="font-body-md text-body-md text-on-surface bg-transparent hover:bg-surface-container focus:bg-surface-container-lowest px-2 py-1 rounded outline-none flex-1 max-w-lg transition-all" type="text" value="Procurement Approval Requested"/>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="px-2 py-0.5 rounded-full text-on-surface-variant hover:text-on-surface flex items-center gap-1 font-label-sm text-label-sm transition-colors border border-transparent hover:border-outline-variant/40">
+<span class="material-symbols-outlined text-[15px]">star</span>
+<span>Milestone</span>
+</button>
+<label class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant cursor-pointer">
+<input checked="" class="h-3.5 w-3.5 rounded text-primary-container" type="checkbox"/>
+<span>Active</span>
+</label>
+<select class="h-7 px-2 bg-surface-container text-on-surface font-label-sm text-label-sm rounded outline-none cursor-pointer border border-transparent hover:border-outline-variant/30">
+<option selected="">01 Prior Approval</option>
+<option>02 Procurement Stage</option>
+</select>
+<button class="h-6 w-6 rounded flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error-container/30 transition-colors">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+<!-- Status 4: Shade 4 (100% Solid Indigo) [★ Milestone ACTIVE] -->
+<div class="relative flex items-center justify-between gap-space-sm p-2 rounded-lg bg-surface-container-lowest hover:bg-surface-container-low border border-indigo-200/60 transition-all shadow-2xs group">
+<div class="absolute -left-3 top-1/2 w-3 h-px bg-outline-variant/40"></div>
+<div class="flex items-center gap-2.5 min-w-0 flex-1">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant/60 cursor-grab group-hover:text-on-surface">drag_indicator</span>
+<!-- Inherited Shade 4 Chip -->
+<span class="px-2 py-0.5 rounded text-[11px] font-code-sm font-semibold bg-[#4F46E5] text-white shrink-0 shadow-xs" title="Inherits Shade 4: Solid Indigo (#4F46E5 bg, white text)">
+Shade 4 (Solid)
+</span>
+<span class="font-code-sm text-[11px] text-on-surface-variant">Seq 4</span>
+<input class="font-body-md text-body-md font-medium text-on-surface bg-transparent hover:bg-surface-container focus:bg-surface-container-lowest px-2 py-1 rounded outline-none flex-1 max-w-lg transition-all" type="text" value="Procurement Approval Received"/>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 font-label-sm text-label-sm font-semibold shadow-xs">
+<span class="material-symbols-outlined text-[15px] text-amber-600" style="font-variation-settings: 'FILL' 1;">star</span>
+<span>Milestone ★</span>
+</button>
+<label class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant cursor-pointer">
+<input checked="" class="h-3.5 w-3.5 rounded text-primary-container" type="checkbox"/>
+<span>Active</span>
+</label>
+<select class="h-7 px-2 bg-surface-container text-on-surface font-label-sm text-label-sm rounded outline-none cursor-pointer border border-transparent hover:border-outline-variant/30">
+<option selected="">01 Prior Approval</option>
+<option>02 Procurement Stage</option>
+</select>
+<button class="h-6 w-6 rounded flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error-container/30 transition-colors">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+<!-- INLINE "+ Add Tier 2 Status" row under Stage 1 -->
+<div class="relative flex items-center gap-2 pt-2 pb-1">
+<div class="absolute -left-3 top-5 w-3 h-px bg-outline-variant/40"></div>
+<div class="flex items-center gap-1.5 text-primary text-[12px] font-label-sm font-semibold shrink-0">
+<span class="material-symbols-outlined text-[16px]">add_circle</span>
+<span>Quick Add Status</span>
+</div>
+<input class="h-8 px-3 bg-surface-container-low hover:bg-surface-container focus:bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant font-body-sm text-body-sm rounded-lg outline-none flex-1 border border-outline-variant/25 transition-all focus:border-primary-container" placeholder="e.g. Budget Approval Sign-off" type="text"/>
+<label class="flex items-center gap-1 px-2 py-1 rounded bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm cursor-pointer select-none">
+<input class="h-3.5 w-3.5 rounded text-amber-500 focus:ring-0" type="checkbox"/>
+<span>Is Milestone (★)</span>
+</label>
+<!-- Preview of Inherited Shade Chip & Add Button -->
+<div class="flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded bg-[#EEF2FF] text-[#4F46E5] text-[10px] font-code-sm border border-[#C7D2FE]" title="Automatically inherits calculated Indigo tint">Auto Shade</span>
+<button class="h-8 px-3 rounded-lg bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md flex items-center gap-1 transition-all shadow-xs">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>Add Status (Tier 2)</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- STAGE 2: AMBER THEME (#F59E0B) WITH AMBER CASCADE IN PRACTICE -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-xs overflow-hidden transition-all">
+<!-- Stage 2 Header -->
+<div class="p-space-md bg-surface-container-low/80 border-b border-outline-variant/25 flex items-center justify-between gap-space-sm flex-wrap">
+<div class="flex items-center gap-space-sm min-w-0 flex-1">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant cursor-grab hover:text-on-surface" title="Drag stage to reorder">drag_indicator</span>
+<button class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-lowest border border-outline-variant/40 shadow-2xs hover:bg-surface-container transition-all" title="Stage Color (#F59E0B Warm Amber)">
+<span class="w-4 h-4 rounded-full bg-[#F59E0B] ring-2 ring-[#F59E0B]/20 shadow-xs"></span>
+<span class="font-code-sm text-code-sm text-on-surface font-semibold">Amber</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">arrow_drop_down</span>
+</button>
+<span class="font-code-sm text-code-sm text-on-surface-variant px-1.5 py-0.5 rounded bg-surface-container">02</span>
+<input class="font-headline-sm text-headline-sm text-on-surface bg-transparent hover:bg-surface-container focus:bg-surface-container-lowest px-2 py-0.5 rounded-lg outline-none w-52 md:w-64 transition-all focus:ring-1 focus:ring-primary-container" type="text" value="Procurement Stage"/>
+<span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-label-sm text-label-sm font-semibold border border-amber-300">
+5 Statuses (Amber Cascade)
+</span>
+</div>
+<div class="flex items-center gap-space-xs shrink-0">
+<label class="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant mr-1 cursor-pointer select-none">
+<span>Stage Active</span>
+<input checked="" class="h-4 w-4 rounded text-primary-container focus:ring-0 cursor-pointer" type="checkbox"/>
+</label>
+<div class="h-4 w-px bg-outline-variant/30 mx-1"></div>
+<button class="h-7 w-7 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px]">arrow_upward</span>
+</button>
+<button class="h-7 w-7 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[18px]">arrow_downward</span>
+</button>
+<button class="h-7 px-2.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-label-sm text-label-sm flex items-center gap-1 transition-colors shadow-2xs">
+<span class="material-symbols-outlined text-[15px]">add</span> + Add Status to Stage 02
+</button>
+<button class="h-7 w-7 rounded-lg text-error hover:bg-error-container/40 flex items-center justify-center transition-colors" title="Remove stage">
+<span class="material-symbols-outlined text-[17px]">delete</span>
+</button>
+</div>
+</div>
+<!-- Nested Tier 2 Statuses List for Stage 2 (Inherits Amber Tones) -->
+<div class="p-space-md pl-8 space-y-2 relative bg-surface-container-lowest">
+<div class="absolute left-5 top-3 bottom-6 w-px bg-outline-variant/40"></div>
+<!-- Status 1 in Stage 2 (#FEF3C7 Tint) -->
+<div class="relative flex items-center justify-between gap-space-sm p-2 rounded-lg bg-surface-container-lowest hover:bg-surface-container-low border border-outline-variant/20 transition-all shadow-2xs group">
+<div class="absolute -left-3 top-1/2 w-3 h-px bg-outline-variant/40"></div>
+<div class="flex items-center gap-2.5 min-w-0 flex-1">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant/60 cursor-grab group-hover:text-on-surface">drag_indicator</span>
+<span class="px-2 py-0.5 rounded text-[11px] font-code-sm font-semibold bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A] shrink-0" title="Inherits Amber Tint (#FEF3C7 bg, #B45309 text)">
+Amber Tint
+</span>
+<span class="font-code-sm text-[11px] text-on-surface-variant">Seq 1</span>
+<input class="font-body-md text-body-md text-on-surface bg-transparent hover:bg-surface-container focus:bg-surface-container-lowest px-2 py-1 rounded outline-none flex-1 max-w-lg transition-all" type="text" value="Invitation / RFQ Issued"/>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="px-2 py-0.5 rounded-full text-on-surface-variant hover:text-on-surface flex items-center gap-1 font-label-sm text-label-sm transition-colors border border-transparent hover:border-outline-variant/40">
+<span class="material-symbols-outlined text-[15px]">star</span>
+<span>Milestone</span>
+</button>
+<label class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant cursor-pointer">
+<input checked="" class="h-3.5 w-3.5 rounded text-primary-container" type="checkbox"/>
+<span>Active</span>
+</label>
+<select class="h-7 px-2 bg-surface-container text-on-surface font-label-sm text-label-sm rounded outline-none cursor-pointer">
+<option>01 Prior Approval</option>
+<option selected="">02 Procurement Stage</option>
+</select>
+<button class="h-6 w-6 rounded flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error-container/30 transition-colors">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+<!-- Status 2 in Stage 2 (#FDE68A Light) -->
+<div class="relative flex items-center justify-between gap-space-sm p-2 rounded-lg bg-surface-container-lowest hover:bg-surface-container-low border border-outline-variant/20 transition-all shadow-2xs group">
+<div class="absolute -left-3 top-1/2 w-3 h-px bg-outline-variant/40"></div>
+<div class="flex items-center gap-2.5 min-w-0 flex-1">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant/60 cursor-grab group-hover:text-on-surface">drag_indicator</span>
+<span class="px-2 py-0.5 rounded text-[11px] font-code-sm font-semibold bg-[#FDE68A] text-[#92400E] border border-[#FCD34D] shrink-0" title="Inherits Amber Light (#FDE68A bg, #92400E text)">
+Amber Light
+</span>
+<span class="font-code-sm text-[11px] text-on-surface-variant">Seq 2</span>
+<input class="font-body-md text-body-md text-on-surface bg-transparent hover:bg-surface-container focus:bg-surface-container-lowest px-2 py-1 rounded outline-none flex-1 max-w-lg transition-all" type="text" value="Bids Received"/>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="px-2 py-0.5 rounded-full text-on-surface-variant hover:text-on-surface flex items-center gap-1 font-label-sm text-label-sm transition-colors border border-transparent hover:border-outline-variant/40">
+<span class="material-symbols-outlined text-[15px]">star</span>
+<span>Milestone</span>
+</button>
+<label class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant cursor-pointer">
+<input checked="" class="h-3.5 w-3.5 rounded text-primary-container" type="checkbox"/>
+<span>Active</span>
+</label>
+<select class="h-7 px-2 bg-surface-container text-on-surface font-label-sm text-label-sm rounded outline-none cursor-pointer">
+<option>01 Prior Approval</option>
+<option selected="">02 Procurement Stage</option>
+</select>
+<button class="h-6 w-6 rounded flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error-container/30 transition-colors">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+<!-- Status 3 in Stage 2 (#F59E0B Solid Amber) -->
+<div class="relative flex items-center justify-between gap-space-sm p-2 rounded-lg bg-surface-container-lowest hover:bg-surface-container-low border border-amber-200 transition-all shadow-2xs group">
+<div class="absolute -left-3 top-1/2 w-3 h-px bg-outline-variant/40"></div>
+<div class="flex items-center gap-2.5 min-w-0 flex-1">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant/60 cursor-grab group-hover:text-on-surface">drag_indicator</span>
+<span class="px-2 py-0.5 rounded text-[11px] font-code-sm font-semibold bg-[#F59E0B] text-white shrink-0 shadow-2xs" title="Inherits Solid Amber (#F59E0B bg, white text)">
+Amber Solid
+</span>
+<span class="font-code-sm text-[11px] text-on-surface-variant">Seq 3</span>
+<input class="font-body-md text-body-md font-medium text-on-surface bg-transparent hover:bg-surface-container focus:bg-surface-container-lowest px-2 py-1 rounded outline-none flex-1 max-w-lg transition-all" type="text" value="Evaluation in Progress"/>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="px-2 py-0.5 rounded-full text-on-surface-variant hover:text-on-surface flex items-center gap-1 font-label-sm text-label-sm transition-colors border border-transparent hover:border-outline-variant/40">
+<span class="material-symbols-outlined text-[15px]">star</span>
+<span>Milestone</span>
+</button>
+<label class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant cursor-pointer">
+<input checked="" class="h-3.5 w-3.5 rounded text-primary-container" type="checkbox"/>
+<span>Active</span>
+</label>
+<select class="h-7 px-2 bg-surface-container text-on-surface font-label-sm text-label-sm rounded outline-none cursor-pointer">
+<option>01 Prior Approval</option>
+<option selected="">02 Procurement Stage</option>
+</select>
+<button class="h-6 w-6 rounded flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error-container/30 transition-colors">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+<!-- Status 4 in Stage 2 (#B45309 Deep Gold) [★ Milestone ACTIVE] -->
+<div class="relative flex items-center justify-between gap-space-sm p-2 rounded-lg bg-surface-container-lowest hover:bg-surface-container-low border border-amber-300 transition-all shadow-2xs group">
+<div class="absolute -left-3 top-1/2 w-3 h-px bg-outline-variant/40"></div>
+<div class="flex items-center gap-2.5 min-w-0 flex-1">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant/60 cursor-grab group-hover:text-on-surface">drag_indicator</span>
+<span class="px-2 py-0.5 rounded text-[11px] font-code-sm font-semibold bg-[#B45309] text-white shrink-0 shadow-2xs" title="Inherits Deep Gold (#B45309 bg, white text)">
+Amber Deep
+</span>
+<span class="font-code-sm text-[11px] text-on-surface-variant">Seq 4</span>
+<input class="font-body-md text-body-md font-medium text-on-surface bg-transparent hover:bg-surface-container focus:bg-surface-container-lowest px-2 py-1 rounded outline-none flex-1 max-w-lg transition-all" type="text" value="Award in Progress"/>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 font-label-sm text-label-sm font-semibold shadow-xs">
+<span class="material-symbols-outlined text-[15px] text-amber-600" style="font-variation-settings: 'FILL' 1;">star</span>
+<span>Milestone ★</span>
+</button>
+<label class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant cursor-pointer">
+<input checked="" class="h-3.5 w-3.5 rounded text-primary-container" type="checkbox"/>
+<span>Active</span>
+</label>
+<select class="h-7 px-2 bg-surface-container text-on-surface font-label-sm text-label-sm rounded outline-none cursor-pointer">
+<option>01 Prior Approval</option>
+<option selected="">02 Procurement Stage</option>
+</select>
+<button class="h-6 w-6 rounded flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error-container/30 transition-colors">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- D. DEDICATED "+ ADD TIER 1 STAGE" CREATION BAR / CARD -->
+<div class="p-space-lg bg-surface-container-low/90 rounded-2xl border-2 border-dashed border-outline-variant/60 space-y-3.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container text-[22px]">library_add</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">+ Add Lifecycle Stage (Tier 1)</h3>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Stage forms the primary container for status sequence</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md items-center">
+<!-- Stage Name Input -->
+<div class="lg:col-span-5">
+<input class="w-full h-10 px-3.5 bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant font-body-md text-body-md rounded-xl outline-none shadow-2xs border border-outline-variant/30 focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all" placeholder="e.g. Implementation &amp; Testing" type="text"/>
+</div>
+<!-- 12-Color Circular Swatches Selector -->
+<div class="lg:col-span-7 flex flex-wrap items-center gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium mr-1">Stage Color:</span>
+<div class="flex items-center gap-1.5 p-1.5 bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-2xs">
+<!-- 1. Indigo -->
+<button class="w-6 h-6 rounded-full bg-[#4F46E5] ring-2 ring-[#4F46E5] ring-offset-1 flex items-center justify-center text-white text-[12px] font-bold shadow-xs" title="1. Indigo (#4F46E5 - Royal Indigo)">✓</button>
+<!-- 2. Violet -->
+<button class="w-6 h-6 rounded-full bg-[#8B5CF6] hover:scale-110 transition-transform" title="2. Violet (#8B5CF6 - Electric Violet)"></button>
+<!-- 3. Sky -->
+<button class="w-6 h-6 rounded-full bg-[#0284C7] hover:scale-110 transition-transform" title="3. Sky (#0284C7 - Cerulean Sky)"></button>
+<!-- 4. Cyan/Teal -->
+<button class="w-6 h-6 rounded-full bg-[#0D9488] hover:scale-110 transition-transform" title="4. Cyan/Teal (#0D9488 - Deep Teal)"></button>
+<!-- 5. Emerald -->
+<button class="w-6 h-6 rounded-full bg-[#10B981] hover:scale-110 transition-transform" title="5. Emerald (#10B981 - Emerald Green)"></button>
+<!-- 6. Lime -->
+<button class="w-6 h-6 rounded-full bg-[#84CC16] hover:scale-110 transition-transform" title="6. Lime (#84CC16 - Bright Lime)"></button>
+<!-- 7. Amber -->
+<button class="w-6 h-6 rounded-full bg-[#F59E0B] hover:scale-110 transition-transform" title="7. Amber (#F59E0B - Warm Amber)"></button>
+<!-- 8. Orange -->
+<button class="w-6 h-6 rounded-full bg-[#F97316] hover:scale-110 transition-transform" title="8. Orange (#F97316 - Solar Orange)"></button>
+<!-- 9. Crimson -->
+<button class="w-6 h-6 rounded-full bg-[#EF4444] hover:scale-110 transition-transform" title="9. Crimson (#EF4444 - Crimson Red)"></button>
+<!-- 10. Rose -->
+<button class="w-6 h-6 rounded-full bg-[#F43F5E] hover:scale-110 transition-transform" title="10. Rose (#F43F5E - Vivid Rose)"></button>
+<!-- 11. Fuchsia -->
+<button class="w-6 h-6 rounded-full bg-[#D946EF] hover:scale-110 transition-transform" title="11. Fuchsia (#D946EF - Neon Fuchsia)"></button>
+<!-- 12. Slate -->
+<button class="w-6 h-6 rounded-full bg-[#64748B] hover:scale-110 transition-transform" title="12. Slate (#64748B - Steel Slate)"></button>
+</div>
+</div>
+</div>
+<!-- Live Preview Chip & Create Stage Action -->
+<div class="flex items-center justify-between flex-wrap gap-2 pt-1 border-t border-outline-variant/20">
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="font-label-sm text-label-sm uppercase font-semibold text-on-surface">Stage Color ➔ 4 Tier 2 Inherited Shades Preview:</span>
+<div class="flex items-center gap-1 font-code-sm text-[10px]">
+<span class="px-2 py-0.5 rounded bg-[#EEF2FF] text-[#4F46E5] border border-[#E0E7FF]">15% Tint</span>
+<span class="px-2 py-0.5 rounded bg-[#E0E7FF] text-[#4338CA] border border-[#C7D2FE]">30% Tint</span>
+<span class="px-2 py-0.5 rounded bg-[#818CF8] text-white">50% Accent</span>
+<span class="px-2 py-0.5 rounded bg-[#4F46E5] text-white font-semibold">100% Solid</span>
+</div>
+</div>
+<button class="h-10 px-space-lg bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md rounded-xl flex items-center gap-1.5 shadow-sm transition-all">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>+ Create Stage</span>
+</button>
+</div>
+</div>
+</div>
+<!-- 3. MODAL FOOTER -->
+<div class="px-space-xl py-3.5 bg-surface-container-lowest flex items-center justify-between gap-space-md flex-wrap border-t border-outline-variant/25 shrink-0 z-20">
+<div class="flex items-center gap-space-sm text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">history</span>
+<span>Last modified by <strong class="text-on-surface font-medium">Neranjan R.</strong> on Oct 24, 2024 · 2 stages displayed, 9 statuses configured</span>
+</div>
+<div class="flex items-center gap-2.5">
+<button class="h-9 px-space-md rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-label-md text-label-md transition-colors">
+Cancel
+</button>
+<button class="h-9 px-space-md rounded-lg text-error hover:bg-error-container/30 font-label-md text-label-md transition-colors">
+Revert Changes
+</button>
+<button class="h-9 px-space-lg bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md rounded-lg flex items-center gap-2 shadow-sm transition-all group">
+<span class="material-symbols-outlined text-[18px]">check</span>
+<span>Save Status Profile</span>
+<kbd class="font-code-sm text-code-sm px-1.5 py-0.2 bg-on-primary/20 rounded text-on-primary group-hover:bg-on-primary/30 ml-1">⌘S</kbd>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div></main></div>
+</body></html>

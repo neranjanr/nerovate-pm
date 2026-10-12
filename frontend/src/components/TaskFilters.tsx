@@ -55,17 +55,17 @@ export default function TaskFilters({ filters, onChange, statuses, stages }: Pro
     ? statuses.filter((s) => String(s.stage_id ?? "") === filters.stageId)
     : statuses;
   return (
-    <div className="flex flex-wrap items-center gap-2 bg-slate-900/60 border border-slate-800 rounded p-2 text-xs">
+    <div className="flex flex-wrap items-center gap-2 bg-surface-container-low border border-subtle rounded p-2 text-xs">
       <input
         aria-label="search tasks"
         placeholder="Search title/description..."
-        className="px-2.5 py-1.5 rounded bg-slate-800 border border-slate-700 text-slate-200 w-52"
+        className="px-2.5 py-1.5 rounded bg-surface-container border border-subtle text-on-surface w-52"
         value={filters.search}
         onChange={(e) => set({ search: e.target.value })}
       />
       <select
         aria-label="filter by status"
-        className="px-2 py-1.5 rounded bg-slate-800 border border-slate-700 text-slate-200"
+        className="px-2 py-1.5 rounded bg-surface-container border border-subtle text-on-surface"
         value={filters.statusId}
         onChange={(e) => set({ statusId: e.target.value })}
       >
@@ -79,7 +79,7 @@ export default function TaskFilters({ filters, onChange, statuses, stages }: Pro
       {stages !== undefined && stages.length > 0 && (
         <select
           aria-label="filter by stage"
-          className="px-2 py-1.5 rounded bg-slate-800 border border-slate-700 text-slate-200"
+          className="px-2 py-1.5 rounded bg-surface-container border border-subtle text-on-surface"
           value={filters.stageId}
           onChange={(e) => set({ stageId: e.target.value, statusId: "" })}
         >
@@ -95,7 +95,7 @@ export default function TaskFilters({ filters, onChange, statuses, stages }: Pro
         aria-label="filter by assignee"
         placeholder="Assignee id"
         inputMode="numeric"
-        className="px-2 py-1.5 rounded bg-slate-800 border border-slate-700 text-slate-200 w-28"
+        className="px-2 py-1.5 rounded bg-surface-container border border-subtle text-on-surface w-28"
         value={filters.assigneeId}
         onChange={(e) => set({ assigneeId: e.target.value.replace(/[^0-9]/g, "") })}
       />
@@ -103,20 +103,20 @@ export default function TaskFilters({ filters, onChange, statuses, stages }: Pro
         aria-label="filter by watcher"
         placeholder="Watcher id"
         inputMode="numeric"
-        className="px-2 py-1.5 rounded bg-slate-800 border border-slate-700 text-slate-200 w-28"
+        className="px-2 py-1.5 rounded bg-surface-container border border-subtle text-on-surface w-28"
         value={filters.watcherId}
         onChange={(e) => set({ watcherId: e.target.value.replace(/[^0-9]/g, "") })}
       />
       <input
         aria-label="filter by tag"
         placeholder="Tag"
-        className="px-2 py-1.5 rounded bg-slate-800 border border-slate-700 text-slate-200 w-28"
+        className="px-2 py-1.5 rounded bg-surface-container border border-subtle text-on-surface w-28"
         value={filters.tag}
         onChange={(e) => set({ tag: e.target.value })}
       />
       <select
         aria-label="filter by depth"
-        className="px-2 py-1.5 rounded bg-slate-800 border border-slate-700 text-slate-200"
+        className="px-2 py-1.5 rounded bg-surface-container border border-subtle text-on-surface"
         value={filters.depth}
         onChange={(e) => set({ depth: e.target.value })}
       >
@@ -127,7 +127,7 @@ export default function TaskFilters({ filters, onChange, statuses, stages }: Pro
       </select>
       <select
         aria-label="filter blocked"
-        className="px-2 py-1.5 rounded bg-slate-800 border border-slate-700 text-slate-200"
+        className="px-2 py-1.5 rounded bg-surface-container border border-subtle text-on-surface"
         value={filters.blocked}
         onChange={(e) => set({ blocked: e.target.value })}
       >
@@ -137,7 +137,7 @@ export default function TaskFilters({ filters, onChange, statuses, stages }: Pro
       </select>
       <select
         aria-label="filter overdue"
-        className="px-2 py-1.5 rounded bg-slate-800 border border-slate-700 text-slate-200"
+        className="px-2 py-1.5 rounded bg-surface-container border border-subtle text-on-surface"
         value={filters.overdue}
         onChange={(e) => set({ overdue: e.target.value })}
       >
@@ -147,7 +147,7 @@ export default function TaskFilters({ filters, onChange, statuses, stages }: Pro
       </select>
       <button
         onClick={() => onChange({ ...EMPTY_FILTERS })}
-        className="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300"
+        className="px-2.5 py-1.5 rounded bg-surface-container hover:bg-surface-container-high border border-subtle text-on-surface-variant"
       >
         Reset
       </button>

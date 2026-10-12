@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"tertiary":"#000000","surface-bright":"#f8f9ff","on-tertiary-container":"#069669","tertiary-fixed-dim":"#68dba9","surface":"#f8f9ff","on-primary-fixed-variant":"#3f465c","inverse-surface":"#213145","surface-container-lowest":"#ffffff","surface-container-low":"#eff4ff","outline":"#76777d","tertiary-fixed":"#85f8c4","secondary-fixed-dim":"#b4c5ff","surface-container-highest":"#d3e4fe","on-error":"#ffffff","error":"#ba1a1a","on-secondary-fixed-variant":"#003ea8","surface-dim":"#cbdbf5","primary-container":"#131b2e","on-tertiary":"#ffffff","surface-container-high":"#dce9ff","on-error-container":"#93000a","surface-container":"#e5eeff","on-surface":"#0b1c30","on-tertiary-fixed":"#002114","on-surface-variant":"#45464d","outline-variant":"#c6c6cd","surface-variant":"#d3e4fe","on-tertiary-fixed-variant":"#005137","on-primary":"#ffffff","inverse-primary":"#bec6e0","on-secondary-container":"#fefcff","on-secondary-fixed":"#00174b","primary":"#000000","secondary":"#0051d5","surface-tint":"#565e74","on-primary-container":"#7c839b","secondary-container":"#316bf3","inverse-on-surface":"#eaf1ff","on-primary-fixed":"#131b2e","on-secondary":"#ffffff","primary-fixed-dim":"#bec6e0","error-container":"#ffdad6","background":"#f8f9ff","tertiary-container":"#002114","on-background":"#0b1c30","primary-fixed":"#dae2fd","secondary-fixed":"#dbe1ff"},borderRadius:{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},spacing:{"space-sm":"0.5rem","space-2xs":"0.125rem","space-md":"0.75rem","space-3xl":"3rem","space-2xl":"2rem","margin-desktop":"2rem","space-xl":"1.5rem","margin":"1rem","space-xs":"0.25rem","gutter":"1rem","space-lg":"1rem","gutter-desktop":"1.5rem"},fontFamily:{"headline-xl-mobile":["Inter"],"body-lg":["Inter"],"code-sm":["Inter"],"label-sm":["Inter"],"label-lg":["Inter"],"body-md":["Inter"],"body-sm":["Inter"],"headline-sm":["Inter"],"label-md":["Inter"],"headline-lg":["Inter"],"headline-xl":["Inter"],"headline-md":["Inter"]},fontSize:{"headline-xl-mobile":["28px",{"lineHeight":"36px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"code-sm":["12px",{"lineHeight":"16px","fontWeight":"500"}],"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.02em","fontWeight":"600"}],"label-lg":["14px",{"lineHeight":"20px","letterSpacing":"-0.005em","fontWeight":"600"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"body-sm":["13px",{"lineHeight":"18px","fontWeight":"400"}],"headline-sm":["18px",{"lineHeight":"26px","letterSpacing":"-0.01em","fontWeight":"600"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.01em","fontWeight":"600"}],"headline-lg":["28px",{"lineHeight":"36px","letterSpacing":"-0.02em","fontWeight":"600"}],"headline-xl":["36px",{"lineHeight":"44px","letterSpacing":"-0.025em","fontWeight":"700"}],"headline-md":["22px",{"lineHeight":"30px","letterSpacing":"-0.015em","fontWeight":"600"}]}}}}</script></head><body class="bg-surface text-on-surface min-h-screen"><aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between select-none"><div class="flex flex-col flex-1 min-h-0"><div class="h-14 px-space-lg flex items-center gap-space-sm bg-surface-container-lowest"><div class="w-7 h-7 rounded-lg bg-primary-container flex items-center justify-center"><span class="material-symbols-outlined text-surface text-[18px]">layers</span></div><div class="flex flex-col"><span class="font-label-lg text-label-lg text-on-surface tracking-tight leading-none">Neravate PM</span><span class="font-label-sm text-label-sm text-on-surface-variant font-normal leading-none mt-1">Executive Edition</span></div></div><div class="px-space-md py-space-xs"><div class="flex items-center justify-between px-space-sm py-space-xs rounded-lg bg-surface-container-low text-on-surface"><div class="flex items-center gap-space-xs min-w-0"><span class="material-symbols-outlined text-secondary text-[16px]">corporate_fare</span><span class="font-label-sm text-label-sm truncate">Client Portal Web</span></div><span class="material-symbols-outlined text-on-surface-variant text-[16px]">unfold_more</span></div></div><div class="flex-1 overflow-y-auto px-space-md py-space-sm space-y-space-md"><div class="space-y-space-2xs"><div class="px-space-sm py-space-2xs font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Categories</div><nav class="space-y-space-2xs" data-active-classes="bg-primary-container text-on-primary font-label-lg rounded-lg"><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="overview" href="#"><span class="material-symbols-outlined text-[18px]">dashboard</span>Overview</a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="all-tasks" href="#"><span class="material-symbols-outlined text-[18px]">check_circle</span>All Tasks</a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="sprints" href="#"><span class="material-symbols-outlined text-[18px]">cycle</span>Sprints</a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="backlog" href="#"><span class="material-symbols-outlined text-[18px]">inventory_2</span>Backlog</a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="milestones" href="#"><span class="material-symbols-outlined text-[18px]">flag</span>Milestones</a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="reports" href="#"><span class="material-symbols-outlined text-[18px]">bar_chart</span>Reports</a></nav></div><div class="space-y-space-2xs"><div class="flex items-center justify-between px-space-sm py-space-2xs"><span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Projects</span><span class="material-symbols-outlined text-on-surface-variant text-[16px] cursor-pointer hover:text-on-surface">add</span></div><nav class="space-y-space-2xs" data-active-classes="bg-primary-container text-on-primary font-label-lg rounded-lg"><a class="flex items-center justify-between px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="project-alpha" href="#"><span class="truncate">Project Alpha Core</span><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span></a><a class="flex items-center justify-between px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="project-client-portal" href="#"><span class="truncate">Client Portal Web</span><span class="w-1.5 h-1.5 rounded-full bg-tertiary-fixed-dim"></span></a><a class="flex items-center justify-between px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="project-mobile-sync" href="#"><span class="truncate">Mobile Sync SDK</span><span class="w-1.5 h-1.5 rounded-full bg-outline-variant"></span></a></nav></div></div></div><div class="p-space-md bg-surface-container-low"><nav class="space-y-space-2xs" data-active-classes="bg-primary-container text-on-primary font-label-lg rounded-lg"><a aria-current="page" class="flex items-center gap-space-sm px-space-sm py-1.5 transition-colors bg-primary-container text-on-primary font-label-lg rounded-lg" data-path="global-settings" href="#"><span class="material-symbols-outlined text-[18px]">settings</span>Global Settings</a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md" data-path="help-support" href="#"><span class="material-symbols-outlined text-[18px]">help_outline</span>Help & Support</a></nav></div></aside><div class="pl-64"><header class="fixed top-0 left-64 right-0 h-14 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-space-xl"><div class="flex items-center gap-space-md w-96"><div class="flex items-center w-full bg-surface-container-lowest px-space-sm py-1.5 rounded-lg shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><span class="material-symbols-outlined text-on-surface-variant text-[18px] mr-2">search</span><span class="font-body-sm text-body-sm text-on-surface-variant flex-1">Ctrl K</span><kbd class="px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-code-sm text-code-sm">⌘K</kbd></div></div><div class="flex items-center gap-space-md"><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="Views"><span class="material-symbols-outlined text-[20px]">grid_view</span></button><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors relative" title="Notifications"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-error"></span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="w-full pt-14 px-gutter-desktop min-h-screen bg-surface"><div class="flex flex-col w-full pb-space-3xl">
+<!-- Top Breadcrumb & Executive Header -->
+<div class="py-space-xl flex flex-col md:flex-row md:items-end justify-between gap-space-lg">
+<div class="flex flex-col space-y-space-xs">
+<div class="flex items-center gap-space-xs font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
+<span>System</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-secondary font-label-md">Global Settings</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">Global Settings</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">
+        Manage organizational workflows, user authentication & security, automated snapshots, and cluster telemetry across your enterprise portfolio.
+      </p>
+</div>
+<!-- Executive Action Bar -->
+<div class="flex items-center gap-space-sm self-start md:self-auto">
+<button class="flex items-center gap-space-xs h-9 px-space-md rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">history</span>
+<span>Audit Logs</span>
+</button>
+<button class="h-9 px-space-md rounded-lg bg-surface-container-lowest hover:bg-surface-container-low text-on-surface font-label-md text-label-md transition-colors shadow-sm" type="button">
+        Discard
+      </button>
+<button class="flex items-center gap-space-xs h-9 px-space-lg rounded-lg bg-primary-container text-on-primary hover:opacity-95 font-label-md text-label-md shadow-sm transition-all active:scale-[0.99]" type="button">
+<span class="material-symbols-outlined text-[18px]">save</span>
+<span>Save Changes</span>
+</button>
+</div>
+</div>
+<!-- Segmented Horizontal Tab Navigation Bar -->
+<div class="w-full bg-surface-container-lowest rounded-xl p-1.5 shadow-[0_1px_3px_rgba(15,23,42,0.05)] mb-space-xl">
+<nav class="flex items-center gap-1 overflow-x-auto text-nowrap" id="settings-tabs">
+<button class="tab-btn flex items-center gap-space-xs px-space-md py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low font-label-md text-label-md transition-colors" data-tab="tab-status-profiles" type="button">
+<span class="material-symbols-outlined text-[18px]">alt_route</span>
+<span>Status Profiles</span>
+<span class="ml-1 px-1.5 py-0.5 rounded text-[11px] font-label-sm bg-surface-container text-on-surface-variant">6</span>
+</button>
+<button class="tab-btn active flex items-center gap-space-xs px-space-md py-2 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md shadow-sm transition-colors" data-tab="tab-user-profile" type="button">
+<span class="material-symbols-outlined text-[18px]">shield_person</span>
+<span>User Profile & Security</span>
+<span class="ml-1 flex h-2 w-2 rounded-full bg-tertiary-fixed-dim"></span>
+</button>
+<button class="tab-btn flex items-center gap-space-xs px-space-md py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low font-label-md text-label-md transition-colors" data-tab="tab-backup-settings" type="button">
+<span class="material-symbols-outlined text-[18px]">cloud_sync</span>
+<span>Backup Settings</span>
+<span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-label-sm bg-surface-container text-secondary font-semibold">Configured</span>
+</button>
+<button class="tab-btn flex items-center gap-space-xs px-space-md py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low font-label-md text-label-md transition-colors" data-tab="tab-server-health" type="button">
+<span class="material-symbols-outlined text-[18px]">monitoring</span>
+<span>Server Health</span>
+<span class="flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded text-[10px] font-label-sm bg-surface-container text-on-tertiary-container font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-on-tertiary-container animate-pulse"></span>
+          Operational
+        </span>
+</button>
+</nav>
+</div>
+<!-- TAB PANELS CONTAINER -->
+<div class="w-full">
+<!-- ============================================== -->
+<!-- TAB 1: STATUS PROFILES (Rich Management View) -->
+<!-- ============================================== -->
+<div class="tab-pane hidden flex-col space-y-space-xl" id="tab-status-profiles">
+<!-- Live Notice Banner -->
+<div class="flex items-center justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-sm">
+<div class="flex items-center gap-space-sm text-on-tertiary-container">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+<span class="font-body-sm text-body-sm">Status Stage updated (live — portfolio history preserved & synchronized).</span>
+</div>
+<div class="flex items-center gap-space-xs font-code-sm text-code-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">sync</span> Synced to 14 active projects
+        </div>
+</div>
+<!-- Main Layout: Profiles Left List + Stage Editor Right -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl">
+<!-- Left Side: Profile Navigator -->
+<div class="lg:col-span-4 flex flex-col space-y-space-md">
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col space-y-space-md">
+<div class="flex items-center justify-between">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Profiles</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">6 Workflow templates active</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">tune</span>
+</div>
+<!-- Profile Cards List -->
+<div class="flex flex-col space-y-space-xs">
+<!-- Item 1 -->
+<div class="p-space-md rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-colors flex items-center justify-between">
+<div>
+<div class="font-label-md text-label-md text-on-surface">#1 Procurement</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">1 stage • 4 statuses</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">chevron_right</span>
+</div>
+<!-- Item 2 -->
+<div class="p-space-md rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-colors flex items-center justify-between">
+<div>
+<div class="font-label-md text-label-md text-on-surface">#2 Monthly Repetitive</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">1 stage • 4 statuses</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">chevron_right</span>
+</div>
+<!-- Item 3: SELECTED / ACTIVE -->
+<div class="p-space-md rounded-lg bg-surface-container-highest shadow-sm cursor-pointer flex items-center justify-between">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface font-semibold">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span>#3 Procurements</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">3 stages • 15 statuses</div>
+</div>
+<span class="px-2 py-0.5 rounded text-[11px] font-label-sm bg-secondary text-on-secondary">Active Target</span>
+</div>
+<!-- Item 4 -->
+<div class="p-space-md rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-colors flex items-center justify-between">
+<div>
+<div class="font-label-md text-label-md text-on-surface">#4 proc Profile</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">1 stage • 4 statuses</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">chevron_right</span>
+</div>
+<!-- Item 5 -->
+<div class="p-space-md rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-colors flex items-center justify-between">
+<div>
+<div class="font-label-md text-label-md text-on-surface">#5 proc Profile Standard</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">1 stage • 4 statuses</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">chevron_right</span>
+</div>
+<!-- Item 6 -->
+<div class="p-space-md rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-colors flex items-center justify-between">
+<div>
+<div class="font-label-md text-label-md text-on-surface">#6 To_Dos Core</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">3 stages • 0 statuses</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">chevron_right</span>
+</div>
+</div>
+<!-- Add Profile Input Group -->
+<div class="pt-space-sm flex items-center gap-space-xs">
+<input class="flex-1 h-9 px-space-sm bg-surface-container-lowest rounded-lg font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant shadow-sm focus:outline-none focus:ring-1 focus:ring-secondary" placeholder="New profile name..." type="text"/>
+<button class="h-9 px-space-md rounded-lg bg-secondary text-on-secondary font-label-sm text-label-sm flex items-center gap-1 hover:opacity-90 transition-opacity" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>Add</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Right Side: Profile Details & Stage / Leaf Status Canvas -->
+<div class="lg:col-span-8 flex flex-col space-y-space-lg">
+<div class="p-space-xl rounded-xl bg-surface-container-lowest shadow-sm flex flex-col space-y-space-xl">
+<!-- Header for Selected Profile -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-space-md gap-space-md bg-surface-container-low p-space-md rounded-lg">
+<div class="flex items-center gap-space-sm">
+<span class="font-code-sm text-code-sm uppercase px-2 py-1 rounded bg-surface-container text-on-surface-variant">Profile ID #3</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Procurements Lifecycle</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="h-8 px-space-md rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors" type="button">
+                  Clone Profile
+                </button>
+<button class="h-8 px-space-md rounded-lg bg-error-container hover:opacity-90 text-on-error-container font-label-sm text-label-sm transition-colors" type="button">
+                  Delete Profile
+                </button>
+</div>
+</div>
+<!-- Status Stages Section -->
+<div class="flex flex-col space-y-space-md">
+<div class="flex flex-col space-y-space-2xs">
+<h4 class="font-label-lg text-label-lg text-on-surface flex items-center gap-space-xs">
+<span>Status Stages</span>
+<span class="text-on-surface-variant font-normal">— rename, recolor, drag to reorder</span>
+</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                  Live reference affects all linked Categories & Projects. Reordering shifts stage progression milestones.
+                </p>
+</div>
+<!-- Stage Rows -->
+<div class="flex flex-col space-y-space-xs">
+<!-- Stage 1 -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors shadow-sm">
+<div class="flex items-center gap-space-md min-w-0">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px] cursor-grab">drag_indicator</span>
+<span class="w-3.5 h-3.5 rounded-full bg-secondary"></span>
+<span class="font-label-md text-label-md text-on-surface">Prior Approval</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant">order 1</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-2 py-1 rounded hover:bg-surface-container font-label-sm text-label-sm text-on-surface-variant">Rename</button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">arrow_upward</span></button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">arrow_downward</span></button>
+<button class="px-2 py-1 rounded bg-error-container/40 text-on-error-container font-label-sm text-label-sm">Remove</button>
+</div>
+</div>
+<!-- Stage 2 -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors shadow-sm">
+<div class="flex items-center gap-space-md min-w-0">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px] cursor-grab">drag_indicator</span>
+<span class="w-3.5 h-3.5 rounded-full bg-secondary-container"></span>
+<span class="font-label-md text-label-md text-on-surface">Procurement Execution</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant">order 2</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-2 py-1 rounded hover:bg-surface-container font-label-sm text-label-sm text-on-surface-variant">Rename</button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">arrow_upward</span></button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">arrow_downward</span></button>
+<button class="px-2 py-1 rounded bg-error-container/40 text-on-error-container font-label-sm text-label-sm">Remove</button>
+</div>
+</div>
+<!-- Stage 3 -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors shadow-sm">
+<div class="flex items-center gap-space-md min-w-0">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px] cursor-grab">drag_indicator</span>
+<span class="w-3.5 h-3.5 rounded-full bg-tertiary-fixed-dim"></span>
+<span class="font-label-md text-label-md text-on-surface">Post Approval & Fulfillment</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant">order 3</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-2 py-1 rounded hover:bg-surface-container font-label-sm text-label-sm text-on-surface-variant">Rename</button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">arrow_upward</span></button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">arrow_downward</span></button>
+<button class="px-2 py-1 rounded bg-error-container/40 text-on-error-container font-label-sm text-label-sm">Remove</button>
+</div>
+</div>
+</div>
+<!-- Add Stage Control Strip -->
+<div class="flex flex-wrap items-center gap-space-sm pt-space-xs">
+<input class="flex-1 min-w-[220px] h-9 px-space-md rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-secondary" placeholder="Stage name (e.g. In Review, QA Complete)" type="text"/>
+<div class="flex items-center gap-1.5 px-space-sm py-1 rounded-lg bg-surface-container-low">
+<span class="w-4 h-4 rounded-full bg-outline-variant cursor-pointer hover:scale-110 transition-transform"></span>
+<span class="w-4 h-4 rounded-full bg-secondary cursor-pointer hover:scale-110 transition-transform"></span>
+<span class="w-4 h-4 rounded-full bg-tertiary-fixed-dim cursor-pointer hover:scale-110 transition-transform"></span>
+<span class="w-4 h-4 rounded-full bg-secondary-container cursor-pointer hover:scale-110 transition-transform"></span>
+<span class="w-4 h-4 rounded-full bg-error cursor-pointer hover:scale-110 transition-transform"></span>
+</div>
+<button class="h-9 px-space-md rounded-lg bg-secondary text-on-secondary font-label-sm text-label-sm flex items-center gap-1 shadow-sm hover:opacity-90" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>Add Stage</span>
+</button>
+</div>
+</div>
+<!-- Leaf Statuses Section -->
+<div class="flex flex-col space-y-space-md pt-space-sm">
+<div class="flex flex-col space-y-space-2xs">
+<h4 class="font-label-lg text-label-lg text-on-surface flex items-center gap-space-xs">
+<span>Leaf Statuses</span>
+<span class="text-on-surface-variant font-normal">— rename, recolor, drag within Stage</span>
+</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                  Detailed sub-status flags nested under Stages. Use the Stage pill to assign items to specific governance cycles.
+                </p>
+</div>
+<div class="flex flex-col space-y-space-xs">
+<!-- Leaf Item 1 -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors shadow-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px] cursor-grab">drag_indicator</span>
+<span class="w-3 h-3 rounded-sm bg-secondary"></span>
+<span class="font-body-sm text-body-sm text-on-surface truncate">Concept approval to be requested</span>
+<span class="px-2 py-0.5 rounded text-[11px] font-label-sm bg-surface-container text-on-surface-variant">Stage: Prior Approval</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant hidden sm:inline">order 1</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-2 py-1 rounded hover:bg-surface-container font-label-sm text-label-sm text-on-surface-variant">Rename</button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">arrow_upward</span></button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">arrow_downward</span></button>
+<button class="px-2 py-1 rounded bg-error-container/40 text-on-error-container font-label-sm text-label-sm">Delete</button>
+</div>
+</div>
+<!-- Leaf Item 2 -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors shadow-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px] cursor-grab">drag_indicator</span>
+<span class="w-3 h-3 rounded-sm bg-secondary"></span>
+<span class="font-body-sm text-body-sm text-on-surface truncate">Pending concept approval committee</span>
+<span class="px-2 py-0.5 rounded text-[11px] font-label-sm bg-surface-container text-on-surface-variant">Stage: Prior Approval</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant hidden sm:inline">order 2</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-2 py-1 rounded hover:bg-surface-container font-label-sm text-label-sm text-on-surface-variant">Rename</button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">arrow_upward</span></button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">arrow_downward</span></button>
+<button class="px-2 py-1 rounded bg-error-container/40 text-on-error-container font-label-sm text-label-sm">Delete</button>
+</div>
+</div>
+<!-- Leaf Item 3 -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors shadow-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px] cursor-grab">drag_indicator</span>
+<span class="w-3 h-3 rounded-sm bg-secondary-container"></span>
+<span class="font-body-sm text-body-sm text-on-surface truncate">Concept approval ok - procurement kickoff</span>
+<span class="px-2 py-0.5 rounded text-[11px] font-label-sm bg-surface-container text-on-surface-variant">Stage: Procurement Execution</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant hidden sm:inline">order 3</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-2 py-1 rounded hover:bg-surface-container font-label-sm text-label-sm text-on-surface-variant">Rename</button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">arrow_upward</span></button>
+<button class="w-7 h-7 flex items-center justify-center rounded hover:bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">arrow_downward</span></button>
+<button class="px-2 py-1 rounded bg-error-container/40 text-on-error-container font-label-sm text-label-sm">Delete</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ============================================== -->
+<!-- TAB 2: USER PROFILE & ENTERPRISE SECURITY (ACTIVE) -->
+<!-- ============================================== -->
+<div class="tab-pane flex flex-col space-y-space-xl" id="tab-user-profile">
+<!-- Top Row Bento: Identity & Password -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl">
+<!-- CARD: Identity & Profile Details (7 Cols) -->
+<div class="lg:col-span-7 p-space-xl rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[22px]">badge</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Identity & Organization</h3>
+</div>
+<span class="px-2 py-0.5 rounded text-[11px] font-label-sm bg-surface-container text-on-surface-variant">
+                ID: USR-9042
+              </span>
+</div>
+<!-- Avatar + Key Meta Banner -->
+<div class="flex items-center gap-space-lg p-space-md rounded-lg bg-surface-container-low mb-space-lg">
+<div class="relative">
+<div class="w-16 h-16 rounded-xl bg-primary-container text-on-primary flex items-center justify-center text-headline-sm font-headline-sm shadow-sm">
+                  NR
+                </div>
+<button class="absolute -bottom-1 -right-1 w-6 h-6 rounded-md bg-secondary text-on-secondary flex items-center justify-center shadow-sm hover:scale-105 transition-transform" title="Change Avatar" type="button">
+<span class="material-symbols-outlined text-[14px]">photo_camera</span>
+</button>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-lg text-label-lg text-on-surface">Neranjan Rajasinghe</span>
+<span class="px-2 py-0.5 rounded text-[11px] font-label-sm bg-secondary text-on-secondary font-semibold">Enterprise Admin</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Global Operations & Program Architecture</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant mt-1">Tenant: Neravate Cloud Global HQ</span>
+</div>
+</div>
+<!-- Profile Form Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<div class="flex flex-col space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant">Full Name</label>
+<input class="h-9 px-space-sm rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-secondary" type="text" value="Neranjan Rajasinghe"/>
+</div>
+<div class="flex flex-col space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant">Username / Handle</label>
+<div class="flex items-center h-9 px-space-sm rounded-lg bg-surface-container-low text-on-surface shadow-sm">
+<span class="text-on-surface-variant font-code-sm text-code-sm mr-1">@</span>
+<input class="bg-transparent flex-1 font-body-sm text-body-sm text-on-surface focus:outline-none" type="text" value="neranjan.r"/>
+</div>
+</div>
+<div class="flex flex-col space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant">Work Email</label>
+<input class="h-9 px-space-sm rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-secondary" type="email" value="neranjan@neravate.io"/>
+</div>
+<div class="flex flex-col space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant">Department</label>
+<input class="h-9 px-space-sm rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-secondary" type="text" value="Executive Systems Architecture"/>
+</div>
+</div>
+</div>
+<!-- Bottom Meta & Quick Sync -->
+<div class="pt-space-lg flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm">
+<span class="flex items-center gap-1 font-code-sm text-code-sm">
+<span class="material-symbols-outlined text-[16px]">schedule</span> Last profile update: 14 hours ago
+            </span>
+<button class="px-space-md py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors" type="button">
+              Update Identity
+            </button>
+</div>
+</div>
+<!-- CARD: Security & Password Protocol (5 Cols) -->
+<div class="lg:col-span-5 p-space-xl rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[22px]">lock_reset</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Password Protocol</h3>
+</div>
+<span class="px-2 py-0.5 rounded text-[11px] font-label-sm bg-surface-container text-on-tertiary-container font-semibold">
+                Compliant
+              </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Enterprise policy mandates 14+ characters, cryptographic entropy, and 90-day rotation.
+            </p>
+<div class="flex flex-col space-y-space-sm pt-space-xs">
+<div class="flex flex-col space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant">Current Password</label>
+<input class="h-9 px-space-sm rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-secondary" type="password" value="••••••••••••••••"/>
+</div>
+<div class="flex flex-col space-y-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant">New Password</label>
+<input class="h-9 px-space-sm rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-secondary" placeholder="Enter high-entropy passphrase" type="password"/>
+</div>
+<!-- Password Strength Meter -->
+<div class="space-y-1.5 pt-1">
+<div class="flex items-center justify-between text-[11px] font-label-sm text-on-surface-variant">
+<span>Entropy Score: High</span>
+<span class="text-on-tertiary-container font-semibold">94% Strength</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden flex">
+<div class="w-1/4 bg-on-tertiary-container h-full"></div>
+<div class="w-1/4 bg-on-tertiary-container h-full ml-0.5"></div>
+<div class="w-1/4 bg-on-tertiary-container h-full ml-0.5"></div>
+<div class="w-1/6 bg-on-tertiary-container h-full ml-0.5"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-space-lg flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-on-surface-variant">Rotated 22 days ago</span>
+<button class="h-9 px-space-md rounded-lg bg-primary-container text-on-primary hover:opacity-95 font-label-md text-label-md shadow-sm transition-all" type="button">
+              Update Password
+            </button>
+</div>
+</div>
+</div>
+<!-- Federated SSO & Google Integration Row -->
+<div class="p-space-xl rounded-xl bg-surface-container-lowest shadow-sm flex flex-col space-y-space-lg">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[22px]">vpn_key</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Single Sign-On (SSO) & Federated Identity</h3>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Centralized SAML 2.0 and OAuth2 enterprise credentials linked to your corporate workspace directory.
+            </p>
+</div>
+<button class="h-8 px-space-md rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm self-start sm:self-auto transition-colors" type="button">
+            Identity Provider Logs
+          </button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-lg">
+<!-- SSO Card: Google Workspace -->
+<div class="p-space-lg rounded-xl bg-surface-container-low flex flex-col justify-between space-y-space-md shadow-sm">
+<div class="flex flex-col space-y-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<!-- Google G Minimal Mono Icon -->
+<div class="w-8 h-8 rounded-lg bg-surface-container-lowest flex items-center justify-center shadow-sm">
+<span class="font-headline-sm font-bold text-secondary">G</span>
+</div>
+<div>
+<h4 class="font-label-lg text-label-lg text-on-surface">Google Workspace Enterprise</h4>
+<span class="font-code-sm text-code-sm text-on-surface-variant">OAuth 2.0 / OpenID Connect</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-[11px] font-label-sm bg-surface-container text-on-tertiary-container font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-on-tertiary-container"></span>
+                  Connected
+                </span>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-lowest space-y-1">
+<div class="font-label-sm text-label-sm text-on-surface-variant">Linked Corporate Account</div>
+<div class="font-body-md text-body-md text-on-surface font-medium flex items-center justify-between">
+<span>neranjan@neravate.io</span>
+<span class="material-symbols-outlined text-on-tertiary-container text-[18px]">verified_user</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-code-sm text-code-sm text-on-surface-variant">Sync: Hourly background sync</span>
+<div class="flex items-center gap-space-xs">
+<button class="px-space-md py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors" type="button">
+                  Re-authenticate
+                </button>
+<button class="px-space-md py-1.5 rounded-lg bg-error-container/40 hover:bg-error-container text-on-error-container font-label-sm text-label-sm transition-colors" type="button">
+                  Disconnect
+                </button>
+</div>
+</div>
+</div>
+<!-- SSO Card: Okta / SAML 2.0 -->
+<div class="p-space-lg rounded-xl bg-surface-container-low flex flex-col justify-between space-y-space-md shadow-sm">
+<div class="flex flex-col space-y-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-container-lowest flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-secondary text-[20px]">hub</span>
+</div>
+<div>
+<h4 class="font-label-lg text-label-lg text-on-surface">Okta Enterprise SSO (SAML 2.0)</h4>
+<span class="font-code-sm text-code-sm text-on-surface-variant">IdP Entity: sso.neravate.internal</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-[11px] font-label-sm bg-surface-container text-on-tertiary-container font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-on-tertiary-container"></span>
+                  Active
+                </span>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-lowest space-y-1">
+<div class="font-label-sm text-label-sm text-on-surface-variant">ACS Endpoint URL</div>
+<div class="font-code-sm text-code-sm text-on-surface truncate">
+                  https://auth.neravate.io/saml/v2/tenant-9902/callback
+                </div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-code-sm text-code-sm text-on-surface-variant">Cert expires: Jan 2028</span>
+<button class="px-space-md py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors" type="button">
+                Configure SAML
+              </button>
+</div>
+</div>
+</div>
+</div>
+<!-- 2FA & Multi-Device Session Management Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl">
+<!-- Two-Factor Authentication (6 Cols) -->
+<div class="lg:col-span-6 p-space-xl rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between space-y-space-md">
+<div class="space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[22px]">security</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Two-Factor Authentication (2FA)</h3>
+</div>
+<span class="px-2 py-0.5 rounded text-[11px] font-label-sm bg-surface-container text-on-tertiary-container font-semibold">
+                Enforced
+              </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Required for all executive accounts with access to financial portfolios and deployment clusters.
+            </p>
+<div class="space-y-space-sm pt-space-xs">
+<!-- Method 1: TOTP Authenticator -->
+<div class="p-space-md rounded-lg bg-surface-container-low flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">phone_android</span>
+<div>
+<div class="font-label-md text-label-md text-on-surface">Authenticator App (TOTP)</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Google Authenticator, 1Password, or YubiKey</div>
+</div>
+</div>
+<button class="px-space-md py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors" type="button">
+                  Manage
+                </button>
+</div>
+<!-- Method 2: Hardware Security Key -->
+<div class="p-space-md rounded-lg bg-surface-container-low flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">key</span>
+<div>
+<div class="font-label-md text-label-md text-on-surface">FIDO2 / WebAuthn Security Key</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Yubico 5C NFC registered</div>
+</div>
+</div>
+<button class="px-space-md py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors" type="button">
+                  Config
+                </button>
+</div>
+<!-- Recovery Codes Notice -->
+<div class="p-space-md rounded-lg bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-space-xs font-body-sm text-body-sm text-on-surface">
+<span class="material-symbols-outlined text-secondary text-[18px]">lock</span>
+<span>8 of 10 Emergency Recovery Codes Remaining</span>
+</div>
+<button class="font-label-sm text-label-sm text-secondary hover:underline" type="button">
+                  View Codes
+                </button>
+</div>
+</div>
+</div>
+<div class="pt-space-md flex items-center justify-between text-on-surface-variant font-code-sm text-code-sm">
+<span>Last 2FA verification: 28 mins ago</span>
+<span class="text-secondary font-semibold">Strict Mode Enabled</span>
+</div>
+</div>
+<!-- Active Sessions Manager (6 Cols) -->
+<div class="lg:col-span-6 p-space-xl rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between space-y-space-md">
+<div class="space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[22px]">devices</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Active Sessions & Devices</h3>
+</div>
+<button class="px-space-md py-1 rounded-lg bg-error-container/40 hover:bg-error-container text-on-error-container font-label-sm text-label-sm transition-colors" type="button">
+                Revoke All Others
+              </button>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Hardware footprint and IP geolocation tracking for active tokens currently authorized.
+            </p>
+<div class="space-y-space-xs pt-space-xs">
+<!-- Current Session -->
+<div class="p-space-md rounded-lg bg-surface-container-low flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<span class="material-symbols-outlined text-secondary text-[20px]">laptop_mac</span>
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md text-on-surface truncate">macOS Sonoma • Chrome 124</span>
+<span class="px-1.5 py-0.2 rounded text-[10px] font-label-sm bg-on-tertiary-container text-on-primary font-semibold">This Device</span>
+</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">
+                      IP: 142.250.190.46 • Zurich, Switzerland
+                    </div>
+</div>
+</div>
+<span class="font-code-sm text-code-sm text-on-tertiary-container font-medium">Active Now</span>
+</div>
+<!-- Other Session 1 -->
+<div class="p-space-md rounded-lg bg-surface-container-low flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">smartphone</span>
+<div class="min-w-0">
+<div class="font-label-md text-label-md text-on-surface truncate">iPhone 15 Pro • Neravate iOS v4.2</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">
+                      IP: 178.62.204.11 • London, United Kingdom
+                    </div>
+</div>
+</div>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high font-label-sm text-label-sm text-on-surface-variant" type="button">
+                  Revoke
+                </button>
+</div>
+<!-- Other Session 2 -->
+<div class="p-space-md rounded-lg bg-surface-container-low flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-space-sm min-w-0">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">desktop_windows</span>
+<div class="min-w-0">
+<div class="font-label-md text-label-md text-on-surface truncate">Windows 11 Workstation • Edge Enterprise</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">
+                      IP: 89.144.20.10 • Frankfurt, Germany
+                    </div>
+</div>
+</div>
+<button class="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high font-label-sm text-label-sm text-on-surface-variant" type="button">
+                  Revoke
+                </button>
+</div>
+</div>
+</div>
+<div class="pt-space-sm text-on-surface-variant font-code-sm text-code-sm flex items-center justify-between">
+<span>Automatic idle logout: 4 hours</span>
+<span class="text-on-surface">3 devices verified</span>
+</div>
+</div>
+</div>
+</div>
+<!-- ============================================== -->
+<!-- TAB 3: BACKUP SETTINGS (DUMMY / PREVIEW CARD) -->
+<!-- ============================================== -->
+<div class="tab-pane hidden flex-col space-y-space-xl" id="tab-backup-settings">
+<div class="p-space-xl rounded-xl bg-surface-container-lowest shadow-sm flex flex-col space-y-space-lg">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md pb-space-md bg-surface-container-low p-space-md rounded-lg">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-lowest flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-secondary text-[24px]">cloud_sync</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Automated Backup Schedules & Cloud Storage</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Draft / Configuration Mode — Nightly automated snapshots to S3 bucket</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded text-label-sm font-label-sm bg-surface-container text-secondary font-semibold">
+            Status: Fully Configured
+          </span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-lg">
+<div class="p-space-lg rounded-xl bg-surface-container-low space-y-space-xs shadow-sm">
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Primary Database Engine</div>
+<div class="font-headline-sm text-headline-sm text-on-surface">SQLite 3 (WAL Mode)</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Current active file size: 224 KB. Auto-vacuum scheduled weekly.</p>
+</div>
+<div class="p-space-lg rounded-xl bg-surface-container-low space-y-space-xs shadow-sm">
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Cold Storage Destination</div>
+<div class="font-headline-sm text-headline-sm text-on-surface">AWS S3 / Zurich Region</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Encrypted with AES-256-GCM. Bucket: neravate-vault-prod-zh.</p>
+</div>
+<div class="p-space-lg rounded-xl bg-surface-container-low space-y-space-xs shadow-sm">
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Retention & Cadence</div>
+<div class="font-headline-sm text-headline-sm text-on-surface">30-Day Rolling</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Nightly snapshot taken at 02:00 UTC. Zero portfolio downtime.</p>
+</div>
+</div>
+<!-- Preview Dummy Table -->
+<div class="flex flex-col space-y-space-sm pt-space-md">
+<div class="flex items-center justify-between">
+<span class="font-label-lg text-label-lg text-on-surface">Recent Snapshots</span>
+<button class="px-space-md py-1 rounded bg-secondary text-on-secondary font-label-sm text-label-sm" type="button">
+              Trigger Manual Backup
+            </button>
+</div>
+<div class="overflow-x-auto rounded-lg bg-surface-container-low p-space-sm">
+<table class="w-full text-left font-body-sm text-body-sm">
+<thead class="text-on-surface-variant font-label-sm text-label-sm border-b border-surface-container">
+<tr>
+<th class="py-2 px-space-sm">Snapshot File</th>
+<th class="py-2 px-space-sm">Timestamp</th>
+<th class="py-2 px-space-sm">Size</th>
+<th class="py-2 px-space-sm">Checksum (SHA256)</th>
+<th class="py-2 px-space-sm text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container">
+<tr>
+<td class="py-2.5 px-space-sm font-code-sm text-code-sm text-on-surface font-medium">neravate_db_20250518_0200.sqlite.zst</td>
+<td class="py-2.5 px-space-sm text-on-surface-variant">Today at 02:00 UTC</td>
+<td class="py-2.5 px-space-sm font-code-sm text-code-sm">224 KB</td>
+<td class="py-2.5 px-space-sm font-code-sm text-code-sm text-on-surface-variant">e3b0c442...98fc</td>
+<td class="py-2.5 px-space-sm text-right">
+<button class="font-label-sm text-label-sm text-secondary hover:underline">Download</button>
+</td>
+</tr>
+<tr>
+<td class="py-2.5 px-space-sm font-code-sm text-code-sm text-on-surface font-medium">neravate_db_20250517_0200.sqlite.zst</td>
+<td class="py-2.5 px-space-sm text-on-surface-variant">Yesterday at 02:00 UTC</td>
+<td class="py-2.5 px-space-sm font-code-sm text-code-sm">218 KB</td>
+<td class="py-2.5 px-space-sm font-code-sm text-code-sm text-on-surface-variant">f142a781...112b</td>
+<td class="py-2.5 px-space-sm text-right">
+<button class="font-label-sm text-label-sm text-secondary hover:underline">Download</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<!-- ============================================== -->
+<!-- TAB 4: SERVER HEALTH (TELEMETRY PREVIEW CARD) -->
+<!-- ============================================== -->
+<div class="tab-pane hidden flex-col space-y-space-xl" id="tab-server-health">
+<div class="p-space-xl rounded-xl bg-surface-container-lowest shadow-sm flex flex-col space-y-space-lg">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md pb-space-md bg-surface-container-low p-space-md rounded-lg">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-lowest flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-secondary text-[24px]">speed</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Core Infrastructure Telemetry</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">High-frequency health probes across application nodes & edge proxies.</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-on-tertiary-container animate-ping"></span>
+<span class="font-label-sm text-label-sm text-on-tertiary-container font-semibold">Cluster Green (All Nodes Stable)</span>
+</div>
+</div>
+<!-- Telemetry Gauges Bento Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-lg">
+<!-- Metric 1: Latency -->
+<div class="p-space-lg rounded-xl bg-surface-container-low space-y-space-xs shadow-sm">
+<div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span>API P99 Latency</span>
+<span class="material-symbols-outlined text-[16px]">timer</span>
+</div>
+<div class="font-headline-lg text-headline-lg text-on-surface">24ms</div>
+<div class="flex items-center gap-1 font-code-sm text-code-sm text-on-tertiary-container">
+<span class="material-symbols-outlined text-[14px]">arrow_downward</span>
+<span>-4ms vs 7-day average</span>
+</div>
+</div>
+<!-- Metric 2: Uptime -->
+<div class="p-space-lg rounded-xl bg-surface-container-low space-y-space-xs shadow-sm">
+<div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span>Rolling SLA Uptime</span>
+<span class="material-symbols-outlined text-[16px]">verified</span>
+</div>
+<div class="font-headline-lg text-headline-lg text-on-surface">99.98%</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">
+              0 unplanned downtime events
+            </div>
+</div>
+<!-- Metric 3: CPU Load -->
+<div class="p-space-lg rounded-xl bg-surface-container-low space-y-space-xs shadow-sm">
+<div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span>CPU Core Allocation</span>
+<span class="material-symbols-outlined text-[16px]">memory</span>
+</div>
+<div class="font-headline-lg text-headline-lg text-on-surface">18.4%</div>
+<!-- Simple SVG Mini Sparkline -->
+<div class="h-4 w-full flex items-end gap-1 pt-1">
+<span class="h-2 w-1/6 bg-secondary/30 rounded-xs"></span>
+<span class="h-3 w-1/6 bg-secondary/50 rounded-xs"></span>
+<span class="h-2 w-1/6 bg-secondary/40 rounded-xs"></span>
+<span class="h-3.5 w-1/6 bg-secondary/60 rounded-xs"></span>
+<span class="h-2.5 w-1/6 bg-secondary/50 rounded-xs"></span>
+<span class="h-3 w-1/6 bg-secondary rounded-xs"></span>
+</div>
+</div>
+<!-- Metric 4: RAM -->
+<div class="p-space-lg rounded-xl bg-surface-container-low space-y-space-xs shadow-sm">
+<div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span>Memory Footprint</span>
+<span class="material-symbols-outlined text-[16px]">storage</span>
+</div>
+<div class="font-headline-lg text-headline-lg text-on-surface">1.2 / 8 GB</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">
+              WAL Journal Cache: 64 MB
+            </div>
+</div>
+</div>
+<!-- Node & SQLite State Summary -->
+<div class="p-space-md rounded-lg bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm text-on-surface-variant font-body-sm text-body-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[20px]">database</span>
+<span>SQLite WAL Engine Status: <strong class="text-on-surface">Synchronous NORMAL • Auto-checkpoint PASS</strong></span>
+</div>
+<span class="font-code-sm text-code-sm text-on-surface-variant">Telemetry interval: 5000ms</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Simple, robust client-side segmented tab switcher
+  document.querySelectorAll('#settings-tabs .tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Deactivate all buttons
+      document.querySelectorAll('#settings-tabs .tab-btn').forEach(b => {
+        b.classList.remove('bg-primary-container', 'text-on-primary', 'shadow-sm');
+        b.classList.add('text-on-surface-variant');
+      });
+
+      // Activate clicked button
+      btn.classList.add('bg-primary-container', 'text-on-primary', 'shadow-sm');
+      btn.classList.remove('text-on-surface-variant');
+
+      // Hide all panels
+      document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.add('hidden');
+        pane.classList.remove('flex');
+      });
+
+      // Show targeted panel
+      const targetId = btn.getAttribute('data-tab');
+      const targetPane = document.getElementById(targetId);
+      if (targetPane) {
+        targetPane.classList.remove('hidden');
+        targetPane.classList.add('flex');
+      }
+    });
+  });
+</script></main></div></body></html>

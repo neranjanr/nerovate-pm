@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-tertiary":"#ffffff","secondary-fixed":"#dbe1ff","inverse-surface":"#213145","surface":"#f8f9ff","on-primary-container":"#7c839b","on-primary-fixed-variant":"#3f465c","primary-fixed":"#dae2fd","primary-container":"#131b2e","on-tertiary-fixed":"#002114","surface-dim":"#cbdbf5","on-secondary-container":"#fefcff","on-error":"#ffffff","on-primary":"#ffffff","surface-container-high":"#dce9ff","secondary":"#0051d5","on-surface-variant":"#45464d","primary":"#000000","on-background":"#0b1c30","on-surface":"#0b1c30","surface-container-lowest":"#ffffff","on-tertiary-container":"#069669","surface-container":"#e5eeff","outline-variant":"#c6c6cd","secondary-fixed-dim":"#b4c5ff","primary-fixed-dim":"#bec6e0","on-primary-fixed":"#131b2e","surface-bright":"#f8f9ff","background":"#f8f9ff","surface-container-low":"#eff4ff","on-secondary":"#ffffff","outline":"#76777d","secondary-container":"#316bf3","tertiary-container":"#002114","tertiary":"#000000","on-secondary-fixed-variant":"#003ea8","on-error-container":"#93000a","surface-tint":"#565e74","on-secondary-fixed":"#00174b","on-tertiary-fixed-variant":"#005137","error-container":"#ffdad6","surface-variant":"#d3e4fe","inverse-primary":"#bec6e0","error":"#ba1a1a","surface-container-highest":"#d3e4fe","tertiary-fixed-dim":"#68dba9","inverse-on-surface":"#eaf1ff","tertiary-fixed":"#85f8c4"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"space-md":"0.75rem","margin":"1rem","gutter-desktop":"1.5rem","margin-desktop":"2rem","space-2xs":"0.125rem","space-sm":"0.5rem","space-xs":"0.25rem","space-lg":"1rem","gutter":"1rem","space-xl":"1.5rem","space-3xl":"3rem","space-2xl":"2rem"},"fontFamily":{"label-lg":["Inter"],"headline-lg":["Inter"],"body-sm":["Inter"],"body-lg":["Inter"],"label-sm":["Inter"],"headline-xl-mobile":["Inter"],"headline-xl":["Inter"],"headline-sm":["Inter"],"code-sm":["Inter"],"label-md":["Inter"],"body-md":["Inter"],"headline-md":["Inter"]},"fontSize":{"label-lg":["14px",{"lineHeight":"20px","letterSpacing":"-0.005em","fontWeight":"600"}],"headline-lg":["28px",{"lineHeight":"36px","letterSpacing":"-0.02em","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"18px","fontWeight":"400"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.02em","fontWeight":"600"}],"headline-xl-mobile":["28px",{"lineHeight":"36px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-xl":["36px",{"lineHeight":"44px","letterSpacing":"-0.025em","fontWeight":"700"}],"headline-sm":["18px",{"lineHeight":"26px","letterSpacing":"-0.01em","fontWeight":"600"}],"code-sm":["12px",{"lineHeight":"16px","fontWeight":"500"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.01em","fontWeight":"600"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"headline-md":["22px",{"lineHeight":"30px","letterSpacing":"-0.015em","fontWeight":"600"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface"><aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-low shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between"><div class="flex flex-col"><div class="h-14 px-gutter-desktop flex items-center justify-between bg-surface-container-low"><div class="flex items-center gap-space-sm"><div class="w-7 h-7 bg-primary flex items-center justify-center rounded"><span class="material-symbols-outlined text-on-primary text-[18px]">corporate_fare</span></div><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Neravate PM</span></div><span class="material-symbols-outlined text-on-surface-variant text-[18px]">unfold_more</span></div><div class="px-space-md py-space-sm"><div class="px-space-sm py-space-2xs text-label-sm font-label-sm uppercase tracking-wider text-outline">Categories</div><nav class="flex flex-col gap-space-2xs mt-space-2xs" data-active-classes="bg-surface-container-high text-on-surface font-label-md"><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="proc-category" href="#"><span class="material-symbols-outlined text-[18px]">account_tree</span>proc</a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="to-do" href="#"><span class="material-symbols-outlined text-[18px]">check_circle</span>To_Do</a></nav></div><div class="px-space-md py-space-sm"><div class="px-space-sm py-space-2xs text-label-sm font-label-sm uppercase tracking-wider text-outline">Projects</div><nav class="flex flex-col gap-space-2xs mt-space-2xs" data-active-classes="bg-surface-container-high text-on-surface font-label-md"><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="project-laptop" href="#"><span class="material-symbols-outlined text-[18px]">laptop_chromebook</span>laptop</a><a aria-current="page" class="flex items-center gap-space-sm px-space-sm py-space-xs rounded transition-colors bg-surface-container-high text-on-surface font-label-md" data-path="project-proc" href="#"><span class="material-symbols-outlined text-[18px]">terminal</span>proc</a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="project-tedsd" href="#"><span class="material-symbols-outlined text-[18px]">layers</span>tedsd</a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="project-test-1" href="#"><span class="material-symbols-outlined text-[18px]">science</span>test 1</a></nav></div></div><div class="p-space-md bg-surface-container-low"><div class="px-space-sm py-space-2xs text-label-sm font-label-sm uppercase tracking-wider text-outline">System</div><nav class="flex flex-col gap-space-2xs mt-space-2xs" data-active-classes="bg-surface-container-high text-on-surface font-label-md"><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="global-settings" href="#"><span class="material-symbols-outlined text-[18px]">tune</span>Global Settings</a><a class="flex items-center gap-space-sm px-space-sm py-space-xs rounded font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="help-and-docs" href="#"><span class="material-symbols-outlined text-[18px]">help_outline</span>Help & Docs</a></nav></div></aside><div class="pl-64"><header class="fixed top-0 left-64 right-0 h-14 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-gutter-desktop"><div class="flex items-center gap-space-xl"><div class="flex items-center gap-space-sm bg-surface-container-lowest px-space-sm py-space-xs rounded"><span class="material-symbols-outlined text-[16px] text-secondary">domain</span><span class="font-label-md text-label-md text-on-surface">Executive Suite</span><span class="material-symbols-outlined text-[16px] text-outline">keyboard_arrow_down</span></div><div class="flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant"><span class="hover:text-on-surface transition-colors">Workspaces</span><span class="material-symbols-outlined text-[14px] text-outline">chevron_right</span><span class="text-on-surface font-label-md text-label-md">Portfolio</span></div><div class="flex items-center bg-surface-container p-space-2xs rounded"><button class="px-space-sm py-space-2xs rounded bg-surface-container-lowest shadow-[0_1px_2px_rgba(0,0,0,0.04)] font-label-sm text-label-sm text-on-surface flex items-center gap-space-xs" type="button"><span class="material-symbols-outlined text-[14px]">view_kanban</span>Board</button><button class="px-space-sm py-space-2xs rounded font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface flex items-center gap-space-xs" type="button"><span class="material-symbols-outlined text-[14px]">table_chart</span>Grid</button><button class="px-space-sm py-space-2xs rounded font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface flex items-center gap-space-xs" type="button"><span class="material-symbols-outlined text-[14px]">timeline</span>Timeline</button></div></div><div class="flex items-center gap-space-md"><div class="relative flex items-center w-64"><span class="material-symbols-outlined absolute left-space-sm text-[18px] text-outline">search</span><input class="w-full h-8 pl-8 pr-space-sm bg-surface-container-low rounded font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container-lowest transition-colors" placeholder="Search tasks, projects..." type="search"/></div><button class="w-8 h-8 rounded flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="w-full pt-14 bg-surface min-h-screen px-gutter-desktop py-space-lg"><div class="flex flex-col w-full">
+<!-- View Switcher Tabs Ribbon -->
+<div class="flex items-center justify-between pb-space-md">
+<div class="flex items-center gap-space-2xs bg-surface-container-low p-space-2xs rounded-lg shadow-sm">
+<button class="px-space-md py-space-xs rounded font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors flex items-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-[16px]">view_list</span>List View
+      </button>
+<button class="px-space-md py-space-xs rounded font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors flex items-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-[16px]">table_rows</span>Table View
+      </button>
+<button class="px-space-md py-space-xs rounded font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors flex items-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-[16px]">view_kanban</span>Board View
+      </button>
+<button class="px-space-md py-space-xs rounded font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors flex items-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-[16px]">waterfall_chart</span>Gantt View
+      </button>
+<button class="px-space-md py-space-xs rounded font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors flex items-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-[16px]">fact_check</span>Status Profiles
+      </button>
+<button class="px-space-md py-space-xs rounded bg-surface-container-lowest shadow-sm font-label-md text-label-md text-secondary flex items-center gap-space-xs" type="button">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">hub</span>Mind Map
+      </button>
+</div>
+<!-- Active Scope Badge & Node Volume Metric Ribbon -->
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-space-sm bg-surface-container-lowest px-space-md py-space-xs rounded-lg shadow-sm">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Root Scope</span>
+<span class="font-label-md text-label-md text-on-surface">IT Branch / Procurements</span>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container px-space-md py-space-xs rounded-lg font-code-sm text-code-sm text-on-surface-variant">
+<span class="font-label-md text-label-md text-on-surface">3</span> Projects
+        <span class="text-outline">·</span>
+<span class="font-label-md text-label-md text-on-surface">14</span> Tasks
+        <span class="text-outline">·</span>
+<span class="font-label-md text-label-md text-on-surface">8</span> Sub Tasks
+      </div>
+</div>
+</div>
+<!-- Breadcrumbs & Context Header Strip -->
+<div class="flex items-end justify-between py-space-sm">
+<div class="flex flex-col gap-space-2xs">
+<div class="flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant">
+<span class="hover:text-on-surface transition-colors cursor-pointer">IT Branch</span>
+<span class="material-symbols-outlined text-[12px] text-outline">chevron_right</span>
+<span class="hover:text-on-surface transition-colors cursor-pointer">Procurements</span>
+<span class="material-symbols-outlined text-[12px] text-outline">chevron_right</span>
+<span class="hover:text-on-surface transition-colors cursor-pointer">LAPTOP-894</span>
+<span class="material-symbols-outlined text-[12px] text-outline">chevron_right</span>
+<span class="text-secondary font-label-md text-label-md">Mind Map Hierarchy</span>
+</div>
+<div class="flex items-baseline gap-space-md">
+<h1 class="font-headline-md text-headline-md text-on-surface tracking-tight">Mind Map Hierarchy</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Visual work decomposition across Category → Projects → Tasks → Sub Tasks → Micro Tasks
+        </p>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="h-8 px-space-md bg-surface-container-lowest hover:bg-surface-container text-on-surface rounded shadow-sm font-label-sm text-label-sm flex items-center gap-space-xs transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">file_download</span>Export Vector
+      </button>
+<button class="h-8 px-space-md bg-secondary text-on-secondary rounded shadow-sm font-label-sm text-label-sm flex items-center gap-space-xs hover:bg-secondary-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>Add Work Node
+      </button>
+</div>
+</div>
+<!-- Mind Map Master Toolbar (Section 12 Compliant) -->
+<div class="mt-space-sm bg-surface-container-lowest rounded-lg shadow-sm p-space-xs flex items-center justify-between gap-space-md z-20">
+<!-- View Scale & Viewport Controls -->
+<div class="flex items-center gap-space-2xs">
+<button class="h-8 px-space-sm rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors font-label-sm text-label-sm flex items-center gap-space-2xs" title="Fit to Canvas" type="button">
+<span class="material-symbols-outlined text-[16px]">crop_free</span>Fit View
+      </button>
+<div class="h-4 w-px bg-surface-container-high mx-space-2xs"></div>
+<button class="w-8 h-8 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors flex items-center justify-center" id="zoomOutBtn" title="Zoom Out" type="button">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+</button>
+<span class="px-space-xs font-code-sm text-code-sm text-on-surface min-w-[50px] text-center" id="zoomLevelDisplay">100%</span>
+<button class="w-8 h-8 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors flex items-center justify-center" id="zoomInBtn" title="Zoom In" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</button>
+<button class="w-8 h-8 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors flex items-center justify-center" id="resetZoomBtn" title="Reset View" type="button">
+<span class="material-symbols-outlined text-[16px]">restart_alt</span>
+</button>
+</div>
+<!-- Hierarchy Depth & Layout Selectors -->
+<div class="flex items-center gap-space-sm">
+<div class="relative flex items-center">
+<select class="appearance-none h-8 pl-space-md pr-7 bg-surface-container-low hover:bg-surface-container rounded font-label-sm text-label-sm text-on-surface cursor-pointer focus:outline-none transition-colors">
+<option>Depth: Sub Tasks (L3)</option>
+<option>Depth: Overview (L1)</option>
+<option>Depth: Tasks (L2)</option>
+<option selected="">Depth: Full Hierarchy (L4)</option>
+</select>
+<span class="material-symbols-outlined absolute right-space-xs pointer-events-none text-[16px] text-outline">unfold_more</span>
+</div>
+<div class="relative flex items-center">
+<select class="appearance-none h-8 pl-space-md pr-7 bg-surface-container-low hover:bg-surface-container rounded font-label-sm text-label-sm text-on-surface cursor-pointer focus:outline-none transition-colors">
+<option selected="">Layout: Horizontal (L→R)</option>
+<option>Layout: Top-Down Tree</option>
+<option>Layout: Radial Outward</option>
+</select>
+<span class="material-symbols-outlined absolute right-space-xs pointer-events-none text-[16px] text-outline">unfold_more</span>
+</div>
+<div class="relative flex items-center">
+<select class="appearance-none h-8 pl-space-md pr-7 bg-surface-container-low hover:bg-surface-container rounded font-label-sm text-label-sm text-on-surface cursor-pointer focus:outline-none transition-colors">
+<option selected="">All Statuses</option>
+<option>Active / In Progress</option>
+<option>Attention Required</option>
+<option>Blocked Items</option>
+</select>
+<span class="material-symbols-outlined absolute right-space-xs pointer-events-none text-[16px] text-outline">tune</span>
+</div>
+</div>
+<!-- Quick Operations & Map Search -->
+<div class="flex items-center gap-space-xs">
+<div class="relative flex items-center w-52">
+<span class="material-symbols-outlined absolute left-space-xs text-[16px] text-outline">search</span>
+<input class="w-full h-8 pl-7 pr-space-xs bg-surface-container-low rounded font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container transition-colors" placeholder="Search node... (Ctrl+F)" type="search"/>
+</div>
+<div class="h-4 w-px bg-surface-container-high mx-space-2xs"></div>
+<button class="h-8 px-space-sm rounded hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm flex items-center gap-space-2xs transition-colors" title="Expand All Branches" type="button">
+<span class="material-symbols-outlined text-[16px]">unfold_more</span>Expand
+      </button>
+<button class="h-8 px-space-sm rounded hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm flex items-center gap-space-2xs transition-colors" title="Collapse All Branches" type="button">
+<span class="material-symbols-outlined text-[16px]">unfold_less</span>Collapse
+      </button>
+<button class="h-8 px-space-sm rounded bg-surface-container text-on-surface font-label-sm text-label-sm flex items-center gap-space-2xs hover:bg-surface-container-high transition-colors" id="toggleInspectorBtn" title="Toggle RHS Node Inspector" type="button">
+<span class="material-symbols-outlined text-[16px]">dock_to_right</span>Inspector
+      </button>
+</div>
+</div>
+<!-- Interactive Mind Map Stage Container (Canvas & RHS Inspector) -->
+<div class="relative w-full h-[760px] mt-space-md rounded-xl overflow-hidden bg-surface-container-lowest shadow-sm flex">
+<!-- Canvas Pan & Zoom Viewport -->
+<div class="relative flex-1 h-full overflow-hidden cursor-grab active:cursor-grabbing select-none" id="mindmapCanvasViewport" style="background-image: radial-gradient(#dce9ff 1.25px, transparent 1.25px); background-size: 24px 24px;">
+<!-- Transform Canvas Wrapper -->
+<div class="absolute left-0 top-0 w-[2400px] h-[1200px] transition-transform duration-75 origin-top-left" id="mindmapGraphLayer" style="transform: translate(60px, 40px) scale(1);">
+<!-- SVG Bezier Connector Mesh -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none z-0" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<lineargradient id="curveRootToLaptop" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" stop-color="#131b2e" stop-opacity="0.75"></stop>
+<stop offset="100%" stop-color="#069669" stop-opacity="0.85"></stop>
+</lineargradient>
+<lineargradient id="curveRootToServer" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" stop-color="#131b2e" stop-opacity="0.75"></stop>
+<stop offset="100%" stop-color="#0051d5" stop-opacity="0.85"></stop>
+</lineargradient>
+<lineargradient id="curveRootToOptical" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" stop-color="#131b2e" stop-opacity="0.75"></stop>
+<stop offset="100%" stop-color="#ba1a1a" stop-opacity="0.45"></stop>
+</lineargradient>
+</defs>
+<!-- Root (X: 300, Y: 360) -> Project 1 LAPTOP-894 (X: 420, Y: 180) -->
+<path d="M 300 360 C 360 360, 360 180, 420 180" fill="none" stroke="url(#curveRootToLaptop)" stroke-linecap="round" stroke-width="2.5"></path>
+<!-- Root (X: 300, Y: 360) -> Project 2 PROC-309 (X: 420, Y: 460) -->
+<path d="M 300 360 C 360 360, 360 460, 420 460" fill="none" stroke="url(#curveRootToServer)" stroke-linecap="round" stroke-width="2"></path>
+<!-- Root (X: 300, Y: 360) -> Project 3 NET-301 (X: 420, Y: 640) -->
+<path d="M 300 360 C 360 360, 360 640, 420 640" fill="none" stroke="url(#curveRootToOptical)" stroke-linecap="round" stroke-width="2"></path>
+<!-- Project 1 (X: 720, Y: 180) -> Tasks -->
+<!-- Task 1 ARCH-410 (X: 840, Y: 90) -->
+<path d="M 720 180 C 780 180, 780 90, 840 90" fill="none" stroke="#069669" stroke-linecap="round" stroke-width="2"></path>
+<!-- Task 2 FIN-104 (X: 840, Y: 210) -->
+<path d="M 720 180 C 780 180, 780 210, 840 210" fill="none" stroke="#dce9ff" stroke-linecap="round" stroke-width="2"></path>
+<!-- Task 3 SEC-092 (X: 840, Y: 310) -->
+<path d="M 720 180 C 780 180, 780 310, 840 310" fill="none" stroke="#dce9ff" stroke-linecap="round" stroke-width="2"></path>
+<!-- Task 4 LOG-502 (X: 840, Y: 410) -->
+<path d="M 720 180 C 780 180, 780 410, 840 410" fill="none" stroke="#ffdad6" stroke-dasharray="4,4" stroke-linecap="round" stroke-width="2"></path>
+<!-- Task 1 ARCH-410 (X: 1140, Y: 90) -> Subtasks -->
+<!-- Subtask 1.1 Power & Cooling (X: 1260, Y: 70) -->
+<path d="M 1140 90 C 1200 90, 1200 70, 1260 70" fill="none" stroke="#069669" stroke-linecap="round" stroke-width="2"></path>
+<!-- Subtask 1.2 Dual 10GbE (X: 1260, Y: 175) -->
+<path d="M 1140 90 C 1200 90, 1200 175, 1260 175" fill="none" stroke="#dce9ff" stroke-linecap="round" stroke-width="1.75"></path>
+<!-- Subtask 1.1 (X: 1560, Y: 70) -> Microtasks -->
+<!-- Microtask 1.1.1 PDU Load (X: 1680, Y: 50) -->
+<path d="M 1560 70 C 1620 70, 1620 50, 1680 50" fill="none" stroke="#069669" stroke-linecap="round" stroke-width="1.75"></path>
+<!-- Microtask 1.1.2 Sensor Calibration [ACTIVE] (X: 1680, Y: 135) -->
+<path d="M 1560 70 C 1620 70, 1620 135, 1680 135" fill="none" stroke="#0051d5" stroke-linecap="round" stroke-width="2.5"></path>
+</svg>
+<!-- LEVEL 0: ROOT CATEGORY NODE -->
+<div class="absolute left-[50px] top-[315px] w-[250px] z-10">
+<div class="bg-primary-container text-on-primary rounded-xl p-space-md shadow-xl flex flex-col gap-space-sm transition-transform hover:scale-[1.01]">
+<div class="flex items-center justify-between">
+<span class="inline-flex items-center gap-space-2xs bg-on-primary-container/20 text-on-primary font-label-sm text-label-sm px-space-xs py-space-2xs rounded">
+<span class="material-symbols-outlined text-[13px]">folder_managed</span>ROOT NODE
+              </span>
+<div class="flex items-center gap-space-2xs text-tertiary-fixed font-code-sm text-code-sm">
+<span class="material-symbols-outlined text-[14px]">donut_large</span>64%
+              </div>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-on-primary leading-tight">Procurements</div>
+<div class="font-body-sm text-body-sm text-on-primary-container">IT Infrastructure Division</div>
+</div>
+<div class="pt-space-xs flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-primary-container">3 Project Trees</span>
+<span class="bg-surface-container-lowest/10 px-space-xs py-space-2xs rounded text-on-primary">Active Scope</span>
+</div>
+</div>
+<!-- Collapse Toggle Pin -->
+<button class="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-primary-container text-on-primary shadow flex items-center justify-center hover:bg-secondary transition-colors" title="Toggle Root Branch" type="button">
+<span class="material-symbols-outlined text-[14px]">remove</span>
+</button>
+</div>
+<!-- LEVEL 1: PROJECT BRANCHES -->
+<!-- Project 1 (LAPTOP-894) - Expanded / Primary Focus -->
+<div class="absolute left-[420px] top-[125px] w-[300px] z-10">
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-md flex flex-col gap-space-xs transition-transform hover:scale-[1.01] bg-gradient-to-r from-surface-container-lowest to-surface-container-low/40">
+<div class="flex items-center justify-between">
+<span class="inline-flex items-center gap-space-2xs bg-surface-container text-secondary font-label-sm text-label-sm px-space-xs py-space-2xs rounded">
+<span class="material-symbols-outlined text-[13px]">laptop_chromebook</span>LAPTOP-894
+              </span>
+<span class="bg-surface-container-high text-on-tertiary-container font-label-sm text-label-sm px-space-xs py-space-2xs rounded">M2 Milestone</span>
+</div>
+<div>
+<div class="font-label-lg text-label-lg text-on-surface">Laptop Fleet Refresh - Batch A</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Tier 1: Enterprise Hardware Procurement</div>
+</div>
+<!-- Progress Ribbon -->
+<div class="pt-space-xs">
+<div class="flex items-center justify-between font-code-sm text-code-sm text-on-surface-variant mb-space-2xs">
+<span>9 Tasks Tracked</span>
+<span class="font-label-md text-label-md text-on-surface">45%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="bg-on-tertiary-container h-full rounded-full" style="width: 45%;"></div>
+</div>
+</div>
+</div>
+<!-- Branch Node Output Port -->
+<button class="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-surface-container-lowest text-on-surface shadow-md flex items-center justify-center hover:bg-surface-container transition-colors" title="Branch Expanded" type="button">
+<span class="material-symbols-outlined text-[14px]">remove</span>
+</button>
+</div>
+<!-- Project 2 (PROC-309) - Collapsed Secondary Project -->
+<div class="absolute left-[420px] top-[415px] w-[300px] z-10">
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-xs opacity-90 hover:opacity-100 transition-all">
+<div class="flex items-center justify-between">
+<span class="inline-flex items-center gap-space-2xs bg-surface-container-low text-secondary font-label-sm text-label-sm px-space-xs py-space-2xs rounded">
+<span class="material-symbols-outlined text-[13px]">dns</span>PROC-309
+              </span>
+<span class="bg-surface-container text-secondary font-label-sm text-label-sm px-space-xs py-space-2xs rounded">M1 Done</span>
+</div>
+<div>
+<div class="font-label-lg text-label-lg text-on-surface">High-Velocity Server Cluster</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Tier 1: DC Compute Deployment</div>
+</div>
+<div class="pt-space-xs flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
+<span>3 Tasks • 70% Velocity</span>
+<span class="text-secondary font-label-md text-label-md">Deployment</span>
+</div>
+</div>
+<button class="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-surface-container-lowest text-on-surface-variant shadow flex items-center justify-center hover:bg-surface-container transition-colors" title="Expand Branch" type="button">
+<span class="material-symbols-outlined text-[14px]">add</span>
+</button>
+</div>
+<!-- Project 3 (NET-301) - Collapsed Secondary Project -->
+<div class="absolute left-[420px] top-[595px] w-[300px] z-10">
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-xs opacity-85 hover:opacity-100 transition-all">
+<div class="flex items-center justify-between">
+<span class="inline-flex items-center gap-space-2xs bg-surface-container-low text-outline font-label-sm text-label-sm px-space-xs py-space-2xs rounded">
+<span class="material-symbols-outlined text-[13px]">router</span>NET-301
+              </span>
+<span class="bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm px-space-xs py-space-2xs rounded">Planning</span>
+</div>
+<div>
+<div class="font-label-lg text-label-lg text-on-surface">Backbone Optical Switches</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Core Ring 400G Uplink Refresh</div>
+</div>
+<div class="pt-space-xs flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
+<span>2 Tasks • 25% Progress</span>
+<span class="font-code-sm text-code-sm text-outline">Q1 FY25</span>
+</div>
+</div>
+<button class="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-surface-container-lowest text-on-surface-variant shadow flex items-center justify-center hover:bg-surface-container transition-colors" title="Expand Branch" type="button">
+<span class="material-symbols-outlined text-[14px]">add</span>
+</button>
+</div>
+<!-- LEVEL 2: TASKS UNDER LAPTOP-894 -->
+<!-- Task 1 (ARCH-410) - Has Children -->
+<div class="absolute left-[840px] top-[45px] w-[300px] z-10">
+<div class="bg-surface-container-lowest rounded-lg p-space-md shadow-md flex flex-col gap-space-2xs">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-secondary font-label-md">ARCH-410</span>
+<span class="bg-surface-container-high text-on-tertiary-container font-label-sm text-label-sm px-space-xs py-space-2xs rounded">Sign-off 40%</span>
+</div>
+<div class="font-label-lg text-label-lg text-on-surface">Core Infrastructure Blueprint</div>
+<div class="flex items-center justify-between pt-space-xs font-body-sm text-body-sm text-on-surface-variant">
+<span class="flex items-center gap-space-2xs"><span class="material-symbols-outlined text-[14px] text-outline">person</span>S. Chen</span>
+<span class="flex items-center gap-space-2xs font-code-sm text-code-sm"><span class="material-symbols-outlined text-[14px] text-outline">calendar_today</span>18 Oct</span>
+</div>
+</div>
+<button class="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-surface-container-lowest text-on-surface shadow-sm flex items-center justify-center hover:bg-surface-container transition-colors" title="Subtasks Expanded" type="button">
+<span class="material-symbols-outlined text-[14px]">remove</span>
+</button>
+</div>
+<!-- Task 2 (FIN-104) - Attention Required -->
+<div class="absolute left-[840px] top-[180px] w-[300px] z-10">
+<div class="bg-surface-container-lowest rounded-lg p-space-md shadow-sm flex flex-col gap-space-2xs">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-on-surface font-label-md">FIN-104</span>
+<span class="bg-surface-container text-on-surface-variant font-label-sm text-label-sm px-space-xs py-space-2xs rounded flex items-center gap-space-2xs">
+<span class="material-symbols-outlined text-[13px] text-outline">priority_high</span>Attention Req (10%)
+              </span>
+</div>
+<div class="font-label-lg text-label-lg text-on-surface">Capital Allocation FY25-Q1</div>
+<div class="flex items-center justify-between pt-space-xs font-body-sm text-body-sm text-on-surface-variant">
+<span class="flex items-center gap-space-2xs"><span class="material-symbols-outlined text-[14px] text-outline">person</span>M. Ramos</span>
+<span class="flex items-center gap-space-2xs font-code-sm text-code-sm"><span class="material-symbols-outlined text-[14px] text-outline">calendar_today</span>22 Oct</span>
+</div>
+</div>
+</div>
+<!-- Task 3 (SEC-092) - Normal Planned -->
+<div class="absolute left-[840px] top-[280px] w-[300px] z-10">
+<div class="bg-surface-container-lowest rounded-lg p-space-md shadow-sm flex flex-col gap-space-2xs">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-on-surface font-label-md">SEC-092</span>
+<span class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm px-space-xs py-space-2xs rounded">Scope Def (25%)</span>
+</div>
+<div class="font-label-lg text-label-lg text-on-surface">Vendor Risk Assessment</div>
+<div class="flex items-center justify-between pt-space-xs font-body-sm text-body-sm text-on-surface-variant">
+<span class="flex items-center gap-space-2xs"><span class="material-symbols-outlined text-[14px] text-outline">person</span>A. Kapoor</span>
+<span class="flex items-center gap-space-2xs font-code-sm text-code-sm"><span class="material-symbols-outlined text-[14px] text-outline">calendar_today</span>15 Nov</span>
+</div>
+</div>
+</div>
+<!-- Task 4 (LOG-502) - Blocked Alert -->
+<div class="absolute left-[840px] top-[380px] w-[300px] z-10">
+<div class="bg-surface-container-lowest rounded-lg p-space-md shadow-sm flex flex-col gap-space-2xs">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-error font-label-md">LOG-502</span>
+<span class="bg-error-container text-on-error-container font-label-sm text-label-sm px-space-xs py-space-2xs rounded flex items-center gap-space-2xs">
+<span class="material-symbols-outlined text-[13px]">block</span>Blocked (45%)
+              </span>
+</div>
+<div class="font-label-lg text-label-lg text-on-surface">Customs Clearance & Freight</div>
+<div class="flex items-center justify-between pt-space-xs font-body-sm text-body-sm text-error">
+<span class="flex items-center gap-space-2xs font-label-sm text-label-sm">Requires Port Agent Sign</span>
+<span class="font-code-sm text-code-sm">Delayed</span>
+</div>
+</div>
+</div>
+<!-- LEVEL 3: SUB-TASKS UNDER ARCH-410 -->
+<!-- Sub Task 1.1: Power & Rack Cooling (Expanded to Micro Tasks) -->
+<div class="absolute left-[1260px] top-[30px] w-[300px] z-10">
+<div class="bg-surface-container-lowest rounded-lg p-space-md shadow-md flex flex-col gap-space-2xs">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-on-surface-variant font-label-md">SUB-1.1</span>
+<span class="bg-surface-container-high text-on-tertiary-container font-label-sm text-label-sm px-space-xs py-space-2xs rounded flex items-center gap-space-2xs">
+<span class="material-symbols-outlined text-[12px]">check_circle</span>Completed 100%
+              </span>
+</div>
+<div class="font-label-lg text-label-lg text-on-surface">Site Power & Rack Cooling Spec</div>
+<div class="flex items-center justify-between pt-space-xs font-body-sm text-body-sm text-on-surface-variant">
+<span class="flex items-center gap-space-2xs"><span class="material-symbols-outlined text-[14px] text-outline">person</span>B. Miller</span>
+<span class="font-code-sm text-code-sm text-on-tertiary-container">2 Micro Tasks</span>
+</div>
+</div>
+<button class="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-surface-container-lowest text-on-surface shadow-sm flex items-center justify-center hover:bg-surface-container transition-colors" title="Microtasks Expanded" type="button">
+<span class="material-symbols-outlined text-[14px]">remove</span>
+</button>
+</div>
+<!-- Sub Task 1.2: Dual 10GbE Uplink -->
+<div class="absolute left-[1260px] top-[145px] w-[300px] z-10">
+<div class="bg-surface-container-lowest rounded-lg p-space-md shadow-sm flex flex-col gap-space-2xs">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-on-surface-variant font-label-md">SUB-1.2</span>
+<span class="bg-surface-container text-secondary font-label-sm text-label-sm px-space-xs py-space-2xs rounded">In Progress (50%)</span>
+</div>
+<div class="font-label-lg text-label-lg text-on-surface">Dual 10GbE Uplink Architecture</div>
+<div class="flex items-center justify-between pt-space-xs font-body-sm text-body-sm text-on-surface-variant">
+<span class="flex items-center gap-space-2xs"><span class="material-symbols-outlined text-[14px] text-outline">person</span>T. Hansen</span>
+<span class="font-code-sm text-code-sm text-outline">Leaf-Spine Tier</span>
+</div>
+</div>
+</div>
+<!-- LEVEL 4: MICRO-TASKS UNDER SUB-TASK 1.1 -->
+<!-- Micro Task 1.1.1: PDU Load Validation Run -->
+<div class="absolute left-[1680px] top-[15px] w-[280px] z-10">
+<div class="bg-surface-container-lowest rounded-lg p-space-md shadow-sm flex flex-col gap-space-2xs">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-outline">MIC-8840</span>
+<span class="text-on-tertiary-container font-label-sm text-label-sm flex items-center gap-space-2xs">
+<span class="material-symbols-outlined text-[13px]">done</span>Pass 100%
+              </span>
+</div>
+<div class="font-label-md text-label-md text-on-surface">PDU Load Validation Run</div>
+<div class="flex items-center justify-between pt-space-2xs font-code-sm text-code-sm text-on-surface-variant">
+<span>Owner: B. Miller</span>
+<span>Signed Oct 14</span>
+</div>
+</div>
+</div>
+<!-- Micro Task 1.1.2: Sensor Calibration (ACTIVE SELECTED NODE) -->
+<div class="absolute left-[1680px] top-[100px] w-[280px] z-20">
+<div class="bg-surface-container-lowest rounded-lg p-space-md shadow-xl ring-2 ring-secondary flex flex-col gap-space-2xs relative">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-secondary font-label-md flex items-center gap-space-2xs">
+<span class="w-2 h-2 rounded-full bg-secondary animate-ping"></span>MIC-8841
+              </span>
+<span class="bg-secondary text-on-secondary font-label-sm text-label-sm px-space-xs py-space-2xs rounded">Selected Node</span>
+</div>
+<div class="font-label-lg text-label-lg text-on-surface">Thermal Chamber Sensor Calibration</div>
+<div class="flex items-center justify-between pt-space-xs font-body-sm text-body-sm text-on-surface-variant">
+<span class="text-secondary font-label-md text-label-md">Active in Inspector</span>
+<span class="font-code-sm text-code-sm text-on-surface">60% Run</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Minimap Viewport Overlay in Corner -->
+<div class="absolute bottom-space-md left-space-md w-56 h-36 bg-surface-container-lowest/90 backdrop-blur-md rounded-lg shadow-xl p-space-xs pointer-events-auto z-30">
+<div class="flex items-center justify-between pb-space-2xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Hierarchy Radar</span>
+<span class="material-symbols-outlined text-[14px] text-outline">explore</span>
+</div>
+<div class="relative w-full h-[98px] bg-surface-container-low rounded overflow-hidden flex items-center justify-center">
+<!-- Abstract Mini Node Representations -->
+<div class="absolute left-3 top-10 w-4 h-3 bg-primary rounded-[1px]"></div>
+<div class="absolute left-10 top-4 w-7 h-3 bg-secondary rounded-[1px]"></div>
+<div class="absolute left-10 top-11 w-7 h-3 bg-surface-container-high rounded-[1px]"></div>
+<div class="absolute left-10 top-18 w-7 h-3 bg-surface-container-high rounded-[1px]"></div>
+<div class="absolute left-20 top-3 w-6 h-2.5 bg-secondary rounded-[1px]"></div>
+<div class="absolute left-20 top-7 w-6 h-2.5 bg-surface-container-high rounded-[1px]"></div>
+<div class="absolute left-28 top-2 w-5 h-2 bg-secondary rounded-[1px]"></div>
+<div class="absolute left-36 top-1 w-5 h-2 bg-secondary rounded-[1px]"></div>
+<div class="absolute left-36 top-4 w-5 h-2 bg-secondary ring-1 ring-secondary rounded-[1px]"></div>
+<!-- Minimap Viewport Frustum Box -->
+<div class="absolute inset-y-1 left-2 right-12 bg-secondary/10 rounded pointer-events-none"></div>
+</div>
+</div>
+</div>
+<!-- Interactive RHS Node Inspector Panel (Docked Specification Panel) -->
+<aside class="w-[380px] h-full bg-surface-container-lowest shadow-2xl z-30 flex flex-col justify-between transition-all duration-200" id="nodeInspectorPanel">
+<div class="flex flex-col overflow-y-auto">
+<!-- Inspector Title Header -->
+<div class="p-space-md bg-surface-container-low/60 flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-secondary">analytics</span>
+<span class="font-label-md text-label-md text-on-surface">Node Inspector</span>
+</div>
+<div class="flex items-center gap-space-2xs">
+<button class="w-7 h-7 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors flex items-center justify-center" title="Collapse Panel" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+<div class="p-space-md flex flex-col gap-space-lg">
+<!-- Node Classification Badge & Path -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-code-sm text-secondary font-label-md px-space-xs py-space-2xs bg-surface-container rounded">
+                MIC-8841 · Level 4
+              </span>
+<span class="bg-surface-container-high text-on-tertiary-container font-label-sm text-label-sm px-space-xs py-space-2xs rounded">Micro Task</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Thermal Chamber Sensor Calibration</h2>
+<!-- Decomposition Breadcrumb Track -->
+<div class="p-space-xs bg-surface-container-low rounded text-label-sm font-label-sm text-on-surface-variant flex flex-col gap-space-2xs">
+<span class="text-outline uppercase tracking-wider text-[10px]">Ancestry Trace</span>
+<div class="flex flex-wrap items-center gap-1">
+<span class="text-on-surface">Procurements</span>
+<span class="text-outline">›</span>
+<span class="text-on-surface">LAPTOP-894</span>
+<span class="text-outline">›</span>
+<span class="text-on-surface">ARCH-410</span>
+<span class="text-outline">›</span>
+<span class="text-on-surface">SUB-1.1</span>
+<span class="text-outline">›</span>
+<span class="text-secondary font-label-md">MIC-8841</span>
+</div>
+</div>
+</div>
+<!-- Metric Matrix Grid -->
+<div class="grid grid-cols-2 gap-space-sm">
+<div class="p-space-sm bg-surface-container-low rounded flex flex-col gap-space-2xs">
+<span class="font-label-sm text-label-sm text-outline">State Metric</span>
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-label-md text-label-md text-on-surface">In Progress</span>
+</div>
+<span class="font-code-sm text-code-sm text-on-surface-variant">exec.in_progress</span>
+</div>
+<div class="p-space-sm bg-surface-container-low rounded flex flex-col gap-space-2xs">
+<span class="font-label-sm text-label-sm text-outline">Completion</span>
+<div class="flex items-center justify-between">
+<span class="font-label-lg text-label-lg text-on-surface">60%</span>
+<span class="material-symbols-outlined text-[16px] text-secondary">donut_large</span>
+</div>
+<div class="w-full h-1 bg-surface-container-high rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 60%;"></div>
+</div>
+</div>
+<div class="p-space-sm bg-surface-container-low rounded flex flex-col gap-space-2xs">
+<span class="font-label-sm text-label-sm text-outline">Priority</span>
+<div class="flex items-center gap-space-2xs font-label-md text-label-md text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-error">flag</span>High (P1)
+              </div>
+<span class="font-code-sm text-code-sm text-on-surface-variant">Pre-rack sign</span>
+</div>
+<div class="p-space-sm bg-surface-container-low rounded flex flex-col gap-space-2xs">
+<span class="font-label-sm text-label-sm text-outline">Milestone Link</span>
+<div class="flex items-center gap-space-2xs font-label-md text-label-md text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-secondary">bookmark</span>Target M1
+              </div>
+<span class="font-code-sm text-code-sm text-on-surface-variant">Sprint Cycle 42</span>
+</div>
+</div>
+<!-- Execution Assignment Block -->
+<div class="flex flex-col gap-space-xs bg-surface-container-low p-space-sm rounded">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Execution Context</span>
+<div class="flex items-center justify-between pt-space-2xs">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center font-label-md text-label-md text-on-surface">
+                  BM
+                </div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface">Brendan Miller</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant">Lead Facility Systems</span>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface p-space-2xs rounded hover:bg-surface-container" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+</div>
+<div class="flex items-center justify-between pt-space-xs text-body-sm font-body-sm text-on-surface-variant">
+<span>Target Delivery Date</span>
+<span class="font-label-md text-label-md text-on-surface flex items-center gap-space-2xs">
+<span class="material-symbols-outlined text-[14px] text-outline">event</span>Oct 28, 2025
+              </span>
+</div>
+</div>
+<!-- Dependency Diagnostics -->
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Preceding Dependencies</span>
+<div class="p-space-xs bg-surface-container-low rounded flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-on-tertiary-container">check_circle</span>
+<span class="font-label-md text-label-md text-on-surface">PDU Load Validation Run</span>
+</div>
+<span class="font-code-sm text-code-sm text-outline">MIC-8840</span>
+</div>
+</div>
+<!-- Direct Operational Actions -->
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Operational Actions</span>
+<div class="grid grid-cols-2 gap-space-xs">
+<button class="h-8 px-space-sm bg-surface-container hover:bg-surface-container-high text-on-surface rounded font-label-sm text-label-sm flex items-center justify-center gap-space-2xs transition-colors" type="button">
+<span class="material-symbols-outlined text-[15px]">center_focus_strong</span>Focus Node
+              </button>
+<button class="h-8 px-space-sm bg-surface-container hover:bg-surface-container-high text-on-surface rounded font-label-sm text-label-sm flex items-center justify-center gap-space-2xs transition-colors" type="button">
+<span class="material-symbols-outlined text-[15px]">add_circle</span>Add Child
+              </button>
+<button class="h-8 px-space-sm bg-surface-container hover:bg-surface-container-high text-on-surface rounded font-label-sm text-label-sm flex items-center justify-center gap-space-2xs transition-colors" type="button">
+<span class="material-symbols-outlined text-[15px]">drive_file_rename_outline</span>Edit Title
+              </button>
+<button class="h-8 px-space-sm bg-surface-container hover:bg-surface-container-high text-on-surface rounded font-label-sm text-label-sm flex items-center justify-center gap-space-2xs transition-colors" type="button">
+<span class="material-symbols-outlined text-[15px]">low_priority</span>Change Tier
+              </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer CTA Buttons -->
+<div class="p-space-md bg-surface-container-low/70 flex items-center gap-space-sm">
+<button class="flex-1 h-9 bg-secondary hover:bg-secondary-container text-on-secondary rounded font-label-md text-label-md flex items-center justify-center gap-space-xs shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">open_in_new</span>Open Full Modal
+        </button>
+<button class="h-9 px-space-md bg-surface-container-lowest hover:bg-surface-container text-on-surface rounded font-label-md text-label-md flex items-center justify-center transition-colors" type="button">
+          Dismiss
+        </button>
+</div>
+</aside>
+</div>
+</div>
+<script>
+  (function initMindMapStage() {
+    const viewport = document.getElementById('mindmapCanvasViewport');
+    const graphLayer = document.getElementById('mindmapGraphLayer');
+    const zoomInBtn = document.getElementById('zoomInBtn');
+    const zoomOutBtn = document.getElementById('zoomOutBtn');
+    const resetZoomBtn = document.getElementById('resetZoomBtn');
+    const zoomDisplay = document.getElementById('zoomLevelDisplay');
+    const toggleInspectorBtn = document.getElementById('toggleInspectorBtn');
+    const inspectorPanel = document.getElementById('nodeInspectorPanel');
+
+    let scale = 1.0;
+    let translateX = 60;
+    let translateY = 40;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+
+    function updateTransform() {
+      graphLayer.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+      zoomDisplay.textContent = Math.round(scale * 100) + '%';
+    }
+
+    // Zoom Controls
+    zoomInBtn?.addEventListener('click', () => {
+      scale = Math.min(scale + 0.1, 1.8);
+      updateTransform();
+    });
+
+    zoomOutBtn?.addEventListener('click', () => {
+      scale = Math.max(scale - 0.1, 0.4);
+      updateTransform();
+    });
+
+    resetZoomBtn?.addEventListener('click', () => {
+      scale = 1.0;
+      translateX = 60;
+      translateY = 40;
+      updateTransform();
+    });
+
+    // Panning interaction
+    viewport?.addEventListener('mousedown', (e) => {
+      if (e.target.closest('button') || e.target.closest('select') || e.target.closest('#nodeInspectorPanel')) return;
+      isDragging = true;
+      startX = e.clientX - translateX;
+      startY = e.clientY - translateY;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      translateX = e.clientX - startX;
+      translateY = e.clientY - startY;
+      updateTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    // Toggle Inspector Drawer
+    toggleInspectorBtn?.addEventListener('click', () => {
+      if (!inspectorPanel) return;
+      if (inspectorPanel.style.display === 'none') {
+        inspectorPanel.style.display = 'flex';
+      } else {
+        inspectorPanel.style.display = 'none';
+      }
+    });
+  })();
+</script></main></div></body></html>

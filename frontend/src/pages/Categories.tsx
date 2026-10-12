@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../stores/auth";
 import { useTheme } from "../stores/theme";
+
+export const PROJECT_STATUSES = ["Not Started", "Active", "Complete"] as const;
+
+export function projectStatusColor(s?: string | null) {
+  if (s === "Complete") return "#10b981";
+  if (s === "Not Started") return "#6b7280";
+  return "#3b82f6";
+}
 
 interface Category {
   id: number;
@@ -13,31 +21,6 @@ interface Category {
   profile_name?: string | null;
 }
 
-interface Member {
-  category_id: number;
-  user_id: number;
-  role: string;
-}
-
-interface Stage {
-  id: number;
-  profile_id: number;
-  name: string;
-  order: number;
-  color_base: string;
-}
-
-interface ProfileStatus {
-  id: number;
-  profile_id: number;
-  stage_id?: number | null;
-  name: string;
-  color: string;
-  shade?: string | null;
-  order: number;
-  is_done?: boolean;
-}
-
 interface Profile {
   id: number;
   name: string;
@@ -45,32 +28,28 @@ interface Profile {
 
 export default function Categories() {
   const auth = useAuth();
+  const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const isSample = theme === "sample";
+  const isSample = theme !== "legacy";
   const [categories, setCategories] = useState<Category[]>([]);
   const [q, setQ] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
   const [color, setColor] = useState("#6b7280");
+  const [customColor, setCustomColor] = useState("#6b7280");
+  const CATEGORY_COLORS = [
+    "#6b7280",
+    "#3b82f6",
+    "#10b981",
+    "#f59e0b",
+    "#ef4444",
+    "#8b5cf6",
+    "#ec4899",
+    "#06b6d4",
+  ];
   const [error, setError] = useState("");
-  const [selected, setSelected] = useState<Category | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [memberUserId, setMemberUserId] = useState("");
-  const [rename, setRename] = useState("");
-  const [catProjects, setCatProjects] = useState<{ id: number; code: string; name: string }[]>([]);
-  const [showAddProject, setShowAddProject] = useState(false);
-  const [projName, setProjName] = useState("");
-  const [projCode, setProjCode] = useState("");
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [profileId, setProfileId] = useState("");
-  const [stages, setStages] = useState<Stage[]>([]);
-  const [profileStatuses, setProfileStatuses] = useState<ProfileStatus[]>([]);
-  const [newStageName, setNewStageName] = useState("");
-  const [newStageColor, setNewStageColor] = useState("#6b7280");
-  const [newStatusName, setNewStatusName] = useState("");
-  const [newStatusStage, setNewStatusStage] = useState("");
-  const [replacementId, setReplacementId] = useState("");
-  const [stageNotice, setStageNotice] = useState("");
+  const [createProfileId, setCreateProfileId] = useState("");
 
   const fetchCategories = () => {
     if (!auth.accessToken) return;
@@ -82,29 +61,8 @@ export default function Categories() {
       .catch(() => setCategories([]));
   };
 
-  useEffect(() => {
-    fetchCategories();
-  }, [auth.accessToken]);
-
-  const fetchMembers = (id: number) => {
-    fetch(`/api/v1/categories/${id}/members`, {
-      headers: { Authorization: `Bearer ${auth.accessToken}` },
-    })
-      .then((r) => (r.ok ? r.json() : []))
-      .then(setMembers)
-      .catch(() => setMembers([]));
-  };
-
-  const fetchCatProjects = (id: number) => {
-    fetch(`/api/v1/categories/${id}/projects`, {
-      headers: { Authorization: `Bearer ${auth.accessToken}` },
-    })
-      .then((r) => (r.ok ? r.json() : []))
-      .then(setCatProjects)
-      .catch(() => setCatProjects([]));
-  };
-
   const fetchProfiles = () => {
+    if (!auth.accessToken) return;
     fetch(`/api/v1/status-profiles`, {
       headers: { Authorization: `Bearer ${auth.accessToken}` },
     })
@@ -113,48 +71,35 @@ export default function Categories() {
       .catch(() => setProfiles([]));
   };
 
-  const fetchStages = (pid: number) => {
-    fetch(`/api/v1/status-profiles/${pid}/stages`, {
-      headers: { Authorization: `Bearer ${auth.accessToken}` },
-    })
-      .then((r) => (r.ok ? r.json() : []))
-      .then(setStages)
-      .catch(() => setStages([]));
-    fetch(`/api/v1/status-profiles/${pid}/statuses`, {
-      headers: { Authorization: `Bearer ${auth.accessToken}` },
-    })
-      .then((r) => (r.ok ? r.json() : []))
-      .then(setProfileStatuses)
-      .catch(() => setProfileStatuses([]));
-  };
-
-  const handleSelect = (c: Category) => {
-    setSelected(c);
-    setRename(c.name);
-    setProfileId(c.status_profile_id ? String(c.status_profile_id) : "");
-    setStageNotice("");
-    fetchMembers(c.id);
-    fetchCatProjects(c.id);
+  useEffect(() => {
+    fetchCategories();
     fetchProfiles();
-    if (c.status_profile_id) fetchStages(c.status_profile_id);
-    else {
-      setStages([]);
-      setProfileStatuses([]);
-    }
-  };
+  }, [auth.accessToken]);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    const payload: { name: string; color: string; status_profile_id?: number } = {
+      name,
+      color,
+    };
+    if (createProfileId && createProfileId !== "__new__") {
+      payload.status_profile_id = Number(createProfileId);
+    }
     fetch("/api/v1/categories", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${auth.accessToken}`,
       },
-      body: JSON.stringify({ name, color }),
+      body: JSON.stringify(payload),
     })
       .then(async (r) => {
+        if (r.status === 401) {
+          auth.logout();
+          window.location.href = "/login";
+          throw new Error("Session expired — please log in again.");
+        }
         if (!r.ok) {
           const body = await r.json().catch(() => ({}));
           throw new Error(body.detail || "Failed to create category");
@@ -164,563 +109,210 @@ export default function Categories() {
       .then(() => {
         setName("");
         setColor("#6b7280");
+        setCreateProfileId("");
         setShowCreate(false);
         fetchCategories();
       })
       .catch((err) => setError(err.message));
   };
 
-  const handleRename = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selected) return;
-    setError("");
-    fetch(`/api/v1/categories/${selected.id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${auth.accessToken}`,
-      },
-      body: JSON.stringify({ name: rename }),
-    })
-      .then(async (r) => {
-        if (!r.ok) {
-          const body = await r.json().catch(() => ({}));
-          throw new Error(body.detail || "Failed to rename");
-        }
-        return r.json();
-      })
-      .then((updated: Category) => {
-        setSelected(updated);
-        fetchCategories();
-      })
-      .catch((err) => setError(err.message));
-  };
-
-  const handleSetProfile = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selected || !profileId) return;
-    setError("");
-    setStageNotice("");
-    fetch(`/api/v1/categories/${selected.id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${auth.accessToken}`,
-      },
-      body: JSON.stringify({ status_profile_id: Number(profileId) }),
-    })
-      .then(async (r) => {
-        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || "Failed to set profile");
-        return r.json();
-      })
-      .then((updated: Category) => {
-        setSelected(updated);
-        fetchCategories();
-        fetchStages(Number(profileId));
-        setStageNotice("Profile linked (live reference — edits visible to all projects).");
-      })
-      .catch((err) => setError(err.message));
-  };
-
-  const handleCreateStage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!profileId || !newStageName.trim()) return;
-    fetch(`/api/v1/status-profiles/${profileId}/stages`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${auth.accessToken}`,
-      },
-      body: JSON.stringify({ name: newStageName.trim(), color_base: newStageColor }),
-    }).then(async (r) => {
-      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || "Create stage failed");
-      setNewStageName("");
-      fetchStages(Number(profileId));
-    }).catch((err) => setError(err.message));
-  };
-
-  const handleDeleteStage = (stageId: number) => {
-    fetch(`/api/v1/stages/${stageId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${auth.accessToken}` },
-    }).then(async (r) => {
-      if (!r.ok) {
-        const body = await r.json().catch(() => ({}));
-        throw new Error(body.detail?.message || body.detail || "Delete stage failed (move statuses first)");
-      }
-      fetchStages(Number(profileId));
-    }).catch((err) => setError(err.message));
-  };
-
-  const handleCreateStatus = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!profileId || !newStatusName.trim() || !newStatusStage) return;
-    fetch(`/api/v1/status-profiles/${profileId}/statuses`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${auth.accessToken}`,
-      },
-      body: JSON.stringify({ name: newStatusName.trim(), stage_id: Number(newStatusStage) }),
-    }).then(async (r) => {
-      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || "Create status failed");
-      setNewStatusName("");
-      fetchStages(Number(profileId));
-      setStageNotice("Status added — visible immediately, history untouched.");
-    }).catch((err) => setError(err.message));
-  };
-
-  const handleDeleteStatus = (statusId: number) => {
-    setError("");
-    setStageNotice("");
-    const qs = replacementId ? `?replacement_id=${Number(replacementId)}` : "";
-    fetch(`/api/v1/statuses/${statusId}${qs}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${auth.accessToken}` },
-    }).then(async (r) => {
-      if (r.status === 409) {
-        const body = await r.json().catch(() => ({}));
-        const d = body.detail || {};
-        throw new Error(
-          `Status in use (tasks: ${d.usage_tasks ?? "?"}, periods: ${d.usage_periods ?? "?"}). Pick a replacement below and retry.`
-        );
-      }
-      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || "Delete status failed");
-      fetchStages(Number(profileId));
-      setStageNotice("Status deleted (remapped with history where a replacement was chosen).");
-    }).catch((err) => setError(err.message));
-  };
-
-  const handleAddProject = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selected) return;
-    setError("");
-    fetch("/api/v1/projects", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${auth.accessToken}`,
-      },
-      body: JSON.stringify({ name: projName, code: projCode.trim() || undefined, category_id: selected.id }),
-    })
-      .then(async (r) => {
-        if (!r.ok) {
-          const body = await r.json().catch(() => ({}));
-          throw new Error(body.detail || "Failed to create project");
-        }
-        return r.json();
-      })
-      .then(() => {
-        setProjName("");
-        setProjCode("");
-        setShowAddProject(false);
-        fetchCatProjects(selected.id);
-        fetchCategories();
-      })
-      .catch((err) => setError(err.message));
-  };
-
-  const handleAddMember = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selected || !memberUserId) return;
-    fetch(`/api/v1/categories/${selected.id}/members`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${auth.accessToken}`,
-      },
-      body: JSON.stringify({ user_id: Number(memberUserId), role: "member" }),
-    }).then(() => {
-      setMemberUserId("");
-      fetchMembers(selected.id);
-    });
-  };
-
-  const filtered = categories.filter(
-    (c) =>
-      c.name.toLowerCase().includes(q.toLowerCase()) ||
-      c.key.toLowerCase().includes(q.toLowerCase())
-  );
+  const filtered = categories
+    .filter(
+      (c) =>
+        c.name.toLowerCase().includes(q.toLowerCase()) ||
+        c.key.toLowerCase().includes(q.toLowerCase())
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const canCreate = auth.role === "admin" || auth.role === "manager";
+  const totalProjects = categories.reduce((n, c) => n + (c.project_count ?? 0), 0);
+  const withProjects = categories.filter((c) => (c.project_count ?? 0) > 0).length;
+  const emptyCount = categories.length - withProjects;
+
+  if (!isSample) {
+    return (
+      <main className="p-6 bg-surface min-h-screen text-on-surface">
+        <h1 className="text-2xl font-semibold">Categories Directory</h1>
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((c) => (
+            <div key={c.id} onClick={() => navigate(`/categories/${c.id}`)} className="bg-surface-container-lowest border border-subtle rounded-lg p-4 cursor-pointer">
+              <h2 className="text-base font-semibold">{c.name}</h2>
+            </div>
+          ))}
+          {filtered.length === 0 && <div className="col-span-full py-12 text-center text-outline">No categories found.</div>}
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <main
-      className={
-        isSample
-          ? "p-space-lg bg-surface min-h-screen text-on-surface"
-          : "p-6 bg-slate-950 min-h-screen text-slate-100"
-      }
-    >
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className={isSample ? "text-headline-lg font-headline-lg" : "text-2xl font-semibold"}>
-            Categories Directory
-          </h1>
-          <p className={isSample ? "text-body-sm font-body-sm text-on-surface-variant mt-0.5" : "text-sm text-slate-400 mt-1"}>
-            Browse your assigned categories — <Link to="/projects" className="underline">Projects Directory</Link>
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className={isSample ? "text-label-mono font-label-mono text-outline" : "text-xs text-slate-400"}>
-            {auth.username} (<span className="capitalize">{auth.role}</span>)
-          </div>
-          <div className="flex items-center gap-1 text-xs">
-            <button
-              onClick={() => setTheme("sample")}
-              className={`px-2 py-1 rounded ${isSample ? "bg-primary-container text-on-primary-container font-semibold" : "bg-slate-800 text-slate-300"}`}
-            >
-              Sample
-            </button>
-            <button
-              onClick={() => setTheme("legacy")}
-              className={`px-2 py-1 rounded ${!isSample ? "bg-indigo-600 text-white font-semibold" : "bg-surface-container-high text-on-surface-variant"}`}
-            >
-              Legacy
-            </button>
-          </div>
-          {canCreate && (
-            <button
-              onClick={() => setShowCreate(!showCreate)}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded font-medium text-sm transition-colors"
-            >
-              {showCreate ? "Cancel" : "+Add Category"}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {showCreate && canCreate && (
-        <form onSubmit={handleCreate} className="mb-6 bg-slate-900 p-4 rounded border border-slate-800 max-w-xl">
-          <h2 className="text-lg font-medium mb-3">Create New Category</h2>
-          {error && <div className="mb-3 text-sm text-rose-400">{error}</div>}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-            <div>
-              <label className="block text-xs text-slate-400 mb-1">Category Name *</label>
-              <input
-                required
-                className="w-full px-3 py-2 rounded bg-slate-800 text-sm border border-slate-700"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Procurements"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-slate-400 mb-1">Color</label>
-              <input
-                type="color"
-                className="w-full h-10 px-1 py-1 rounded bg-slate-800 text-sm border border-slate-700"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-              />
-            </div>
-          </div>
-          <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-medium text-white">
-            Create Category
-          </button>
-        </form>
-      )}
-
-      <div className="mb-4">
-        <input
-          aria-label="search categories"
-          placeholder="Search by name or key..."
-          className={
-            isSample
-              ? "px-space-md py-1 rounded bg-surface-container-lowest border border-subtle w-full max-w-md text-body-sm font-body-sm text-on-surface"
-              : "px-3 py-2 rounded bg-slate-900 border border-slate-800 w-full max-w-md text-sm text-slate-200"
-          }
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-      </div>
-
-      <div className={isSample ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-md" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"}>
-        {filtered.map((c) => (
-          <div
-            key={c.id}
-            onClick={() => handleSelect(c)}
-            className={
-              isSample
-                ? "bg-surface-container-low border border-subtle hover:border-strong rounded p-space-md cursor-pointer transition-all flex flex-col justify-between shadow-sm"
-                : "bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg p-4 cursor-pointer transition-all flex flex-col justify-between"
-            }
-          >
-            <div>
-          <div className="mb-4 rounded border border-slate-800 bg-slate-950/60 p-3">
-            <h3 className="text-sm font-semibold mb-2">Status Profile (live reference)</h3>
-            {stageNotice && <div className="mb-2 text-xs text-emerald-300">{stageNotice}</div>}
-            {canCreate ? (
-              <form onSubmit={handleSetProfile} className="flex flex-wrap gap-2 mb-3">
-                <select
-                  aria-label="status profile"
-                  className="flex-1 min-w-40 px-3 py-2 rounded bg-slate-800 text-sm border border-slate-700"
-                  value={profileId}
-                  onChange={(e) => setProfileId(e.target.value)}
-                >
-                  <option value="">Select profile...</option>
-                  {profiles.map((p) => (
-                    <option key={p.id} value={String(p.id)}>
-                      #{p.id} {p.name}
-                    </option>
-                  ))}
-                </select>
-                <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-medium text-white">
-                  Link profile
-                </button>
-              </form>
-            ) : (
-              <p className="text-xs text-slate-400 mb-2">Profile: {selected?.profile_name || "Not set"}</p>
-            )}
-            {profileId && (
-              <div className="space-y-3">
-                {stages.map((st) => (
-                  <div key={st.id} className="rounded border border-slate-800 bg-slate-900 px-3 py-2">
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-2 text-sm">
-                        <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: st.color_base }} />
-                        <strong>{st.name}</strong>
-                        <span className="text-xs text-slate-500">order {st.order}</span>
-                      </span>
-                      {canCreate && (
-                        <button onClick={() => handleDeleteStage(st.id)} className="text-xs text-rose-400 hover:text-rose-300">
-                          Delete stage
-                        </button>
-                      )}
-                    </div>
-                    <ul className="mt-2 space-y-1">
-                      {profileStatuses
-                        .filter((s) => s.stage_id === st.id)
-                        .map((s) => (
-                          <li key={s.id} className="flex items-center justify-between bg-slate-800 px-2.5 py-1 rounded text-xs">
-                            <span>
-                              <span
-                                className="inline-block w-2.5 h-2.5 rounded-full mr-2"
-                                style={{ backgroundColor: s.shade || s.color }}
-                                title={s.shade || s.color}
-                              />
-                              {s.name}
-                            </span>
-                            {canCreate && (
-                              <button onClick={() => handleDeleteStatus(s.id)} className="text-rose-400 hover:text-rose-300">
-                                Delete
-                              </button>
-                            )}
-                          </li>
-                        ))}
-                    </ul>
-                  </div>
-                ))}
-                {canCreate && (
-                  <>
-                    <form onSubmit={handleCreateStage} className="flex flex-wrap gap-2">
-                      <input
-                        aria-label="new stage name"
-                        placeholder="New stage name"
-                        className="flex-1 min-w-40 px-3 py-2 rounded bg-slate-800 text-sm border border-slate-700"
-                        value={newStageName}
-                        onChange={(e) => setNewStageName(e.target.value)}
-                      />
-                      <input
-                        aria-label="new stage color"
-                        type="color"
-                        className="w-12 h-10 px-1 rounded bg-slate-800 border border-slate-700"
-                        value={newStageColor}
-                        onChange={(e) => setNewStageColor(e.target.value)}
-                      />
-                      <button type="submit" className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm text-white">
-                        +Add Stage
-                      </button>
-                    </form>
-                    <form onSubmit={handleCreateStatus} className="flex flex-wrap gap-2">
-                      <input
-                        aria-label="new status name"
-                        placeholder="New status name"
-                        className="flex-1 min-w-40 px-3 py-2 rounded bg-slate-800 text-sm border border-slate-700"
-                        value={newStatusName}
-                        onChange={(e) => setNewStatusName(e.target.value)}
-                      />
-                      <select
-                        aria-label="target stage"
-                        required
-                        className="px-3 py-2 rounded bg-slate-800 text-sm border border-slate-700"
-                        value={newStatusStage}
-                        onChange={(e) => setNewStatusStage(e.target.value)}
-                      >
-                        <option value="">Stage...</option>
-                        {stages.map((st) => (
-                          <option key={st.id} value={String(st.id)}>
-                            {st.name}
-                          </option>
-                        ))}
-                      </select>
-                      <button type="submit" className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm text-white">
-                        +Add Status
-                      </button>
-                    </form>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <label className="text-xs text-slate-400">Replacement for delete (same profile):</label>
-                      <select
-                        aria-label="replacement status"
-                        className="px-3 py-2 rounded bg-slate-800 text-sm border border-slate-700"
-                        value={replacementId}
-                        onChange={(e) => setReplacementId(e.target.value)}
-                      >
-                        <option value="">None (unused only)...</option>
-                        {profileStatuses.map((s) => (
-                          <option key={s.id} value={String(s.id)}>
-                            #{s.id} {s.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-          <div className="flex items-center justify-between mb-2">
-                <span className="flex items-center gap-2">
-                  <span
-                    className="inline-block w-3 h-3 rounded-full"
-                    style={{ backgroundColor: c.color }}
-                    title={c.color}
-                  />
-                  <span
-                    className={
-                      isSample
-                        ? "font-label-mono text-label-mono px-space-xs py-0.5 rounded bg-primary-container text-on-primary-container font-semibold"
-                        : "font-mono text-xs px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 font-semibold"
-                    }
-                  >
-                    {c.key}
-                  </span>
-                </span>
-                <span className={isSample ? "text-label-mono font-label-mono text-on-surface-variant" : "text-xs text-slate-400"}>
-                  Projects: <strong className={isSample ? "text-on-surface" : "text-slate-200"}>{c.project_count ?? 0}</strong>
-                </span>
-              </div>
-              <h2 className={isSample ? "text-title-sm font-title-sm text-on-surface mb-1" : "text-base font-semibold text-slate-100 mb-1"}>{c.name}</h2>
-              <p className={isSample ? "text-body-sm font-body-sm text-on-surface-variant" : "text-xs text-slate-400"}>
-                Profile: {c.profile_name || "Not set"}
-              </p>
-            </div>
-          </div>
-        ))}
-        {filtered.length === 0 && (
-          <div className="col-span-full py-12 text-center text-slate-500">
-            No categories found.
-          </div>
-        )}
-      </div>
-
-      {selected && (
-        <div className="mt-6 bg-slate-900 p-4 rounded border border-slate-800 max-w-2xl">
-          <h2 className="text-lg font-medium mb-1">Category: {selected.name}</h2>
-          <p className="text-xs text-slate-400 mb-3">Key {selected.key} (immutable — rename preserves key)</p>
-          {error && <div className="mb-3 text-sm text-rose-400">{error}</div>}
-          {canCreate && (
-            <form onSubmit={handleRename} className="flex gap-2 mb-4">
-              <input
-                aria-label="rename category"
-                className="flex-1 px-3 py-2 rounded bg-slate-800 text-sm border border-slate-700"
-                value={rename}
-                onChange={(e) => setRename(e.target.value)}
-              />
-              <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-medium text-white">
-                Rename
-              </button>
-            </form>
-          )}
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold">Projects ({catProjects.length})</h3>
+    <main className="min-h-screen bg-slate-50 text-slate-900 px-6 py-6">
+      <div className="flex flex-col w-full space-y-6">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
             <div className="flex items-center gap-2">
-              <Link to={`/projects?category_id=${selected.id}`} className="text-xs text-indigo-300 underline">
-                Open Project list
-              </Link>
-              {canCreate && (
-                <button
-                  onClick={() => setShowAddProject(!showAddProject)}
-                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded text-xs font-medium text-white"
-                >
-                  {showAddProject ? "Cancel" : "+Add Project"}
-                </button>
-              )}
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900">Categories Directory</h1>
+              <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold">
+                Active Workspace
+              </span>
             </div>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Browse your assigned categories — <Link to="/projects" className="underline text-blue-700">Projects Directory</Link>
+            </p>
           </div>
-          {showAddProject && canCreate && (
-            <form onSubmit={handleAddProject} className="flex flex-wrap gap-2 mb-3">
-              <input
-                required
-                aria-label="project name"
-                placeholder="Project name"
-                className="flex-1 min-w-40 px-3 py-2 rounded bg-slate-800 text-sm border border-slate-700"
-                value={projName}
-                onChange={(e) => setProjName(e.target.value)}
-              />
-              <input
-                aria-label="project code"
-                placeholder="Code (optional)"
-                className="w-32 px-3 py-2 rounded bg-slate-800 text-sm border border-slate-700 uppercase"
-                value={projCode}
-                onChange={(e) => setProjCode(e.target.value)}
-              />
-              <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-medium text-white">
-                Create
+          <div className="flex items-center flex-wrap gap-2">
+            <span className="text-xs text-slate-500 mr-1">
+              {auth.username} (<span className="capitalize">{auth.role}</span>)
+            </span>
+            <span className="flex items-center gap-1 text-xs mr-1">
+              <button onClick={() => setTheme("enterprise")} className={`px-2 py-1 rounded ${theme === "enterprise" ? "bg-slate-900 text-white font-semibold" : "bg-white border border-slate-200 text-slate-600"}`}>Enterprise</button>
+              <button onClick={() => setTheme("sample")} className={`px-2 py-1 rounded ${theme === "sample" ? "bg-slate-900 text-white font-semibold" : "bg-white border border-slate-200 text-slate-600"}`}>Sample</button>
+              <button onClick={() => setTheme("legacy")} className={`px-2 py-1 rounded ${!isSample ? "bg-slate-900 text-white font-semibold" : "bg-white border border-slate-200 text-slate-600"}`}>Legacy</button>
+            </span>
+            {canCreate && (
+              <button
+                onClick={() => setShowCreate(!showCreate)}
+                className="px-4 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 text-[13px] font-semibold shadow-sm flex items-center gap-1.5"
+                type="button"
+              >
+                <span className="text-[16px]">+</span> {showCreate ? "Cancel" : "New Category"}
               </button>
-            </form>
-          )}
-          <ul className="text-sm text-slate-300 mb-4 space-y-1">
-            {catProjects.map((p) => (
-              <li key={p.id} className="flex items-center justify-between bg-slate-800 px-3 py-1.5 rounded">
-                <span>
-                  <span className="font-mono text-xs text-indigo-300 font-semibold mr-2">{p.code}</span>
-                  {p.name}
-                </span>
-                <Link to={`/projects/${p.id}/timeline`} className="text-xs text-indigo-300 underline">
-                  Open
-                </Link>
-              </li>
-            ))}
-            {catProjects.length === 0 && <li className="text-slate-500">No projects yet.</li>}
-          </ul>
-          <h3 className="text-sm font-semibold mb-2">Members</h3>          <ul className="text-sm text-slate-300 mb-3 space-y-1">
-            {members.map((m) => (
-              <li key={m.user_id} className="flex items-center justify-between bg-slate-800 px-3 py-1.5 rounded">
-                <span>User #{m.user_id} ({m.role})</span>
-                {canCreate && (
-                  <button
-                    onClick={() => {
-                      fetch(`/api/v1/categories/${selected.id}/members/${m.user_id}`, {
-                        method: "DELETE",
-                        headers: { Authorization: `Bearer ${auth.accessToken}` },
-                      }).then(() => fetchMembers(selected.id));
-                    }}
-                    className="text-xs text-rose-400 hover:text-rose-300"
-                  >
-                    Remove
-                  </button>
-                )}
-              </li>
-            ))}
-            {members.length === 0 && <li className="text-slate-500">No members yet.</li>}
-          </ul>
-          {canCreate && (
-            <form onSubmit={handleAddMember} className="flex gap-2">
-              <input
-                aria-label="member user id"
-                placeholder="User ID"
-                className="w-32 px-3 py-2 rounded bg-slate-800 text-sm border border-slate-700"
-                value={memberUserId}
-                onChange={(e) => setMemberUserId(e.target.value)}
-              />
-              <button type="submit" className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-sm font-medium text-white">
-                Add member
-              </button>
-            </form>
-          )}
+            )}
+          </div>
         </div>
-      )}
+
+        {showCreate && canCreate && (
+          <form onSubmit={handleCreate} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm max-w-2xl">
+            <h2 className="text-base font-semibold text-slate-900 mb-3">Create New Category</h2>
+            {error && <div className="mb-3 text-sm text-red-600">{error}</div>}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Category Name *</label>
+                <input required className="w-full h-10 px-3 rounded-lg bg-slate-50 text-sm border border-slate-200 text-slate-900" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Procurements" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Color</label>
+                <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="category color">
+                  {CATEGORY_COLORS.map((c) => (
+                    <button key={c} type="button" role="radio" aria-checked={color === c} title={c} onClick={() => setColor(c)}
+                      className={`w-8 h-8 rounded border ${color === c ? "ring-2 ring-slate-900 ring-offset-2" : "border-slate-200 hover:border-slate-400"}`}
+                      style={{ backgroundColor: c }} />
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <input aria-label="custom color" type="color" className="w-8 h-8 rounded bg-transparent" value={/^#[0-9a-fA-F]{6}$/.test(customColor) ? customColor : "#6b7280"} onChange={(e) => { setCustomColor(e.target.value); setColor(e.target.value.toLowerCase()); }} />
+                  <span className="font-mono text-xs text-slate-500">{color}</span>
+                </div>
+              </div>
+            </div>
+            <div className="mb-3">
+              <label className="block text-xs text-slate-500 mb-1">Status Profile (optional)</label>
+              <select aria-label="status profile for new category" className="w-full h-10 px-3 rounded-lg bg-slate-50 text-sm border border-slate-200 text-slate-900" value={createProfileId} onChange={(e) => { if (e.target.value === "__new__") { window.location.href = "/settings"; } else { setCreateProfileId(e.target.value); } }}>
+                <option value="">No profile (link later)...</option>
+                {profiles.map((p) => (<option key={p.id} value={String(p.id)}>#{p.id} {p.name}</option>))}
+                <option value="__new__">+ (new) — create in Global Settings…</option>
+              </select>
+            </div>
+            <button type="submit" className="px-4 py-2 bg-slate-900 hover:bg-slate-800 rounded-lg text-sm font-semibold text-white">Create Category</button>
+          </form>
+        )}
+
+        {/* KPI strip */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">Total Categories</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">{categories.length}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{filtered.length} shown</p>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200">▦</div>
+          </div>
+          <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">Total Projects</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">{totalProjects}</p>
+              <p className="text-xs text-slate-400 mt-0.5">across categories</p>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">▤</div>
+          </div>
+          <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">With Projects</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">{withProjects}</p>
+              <p className="text-xs text-emerald-700 font-medium mt-0.5">non-empty</p>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">✓</div>
+          </div>
+          <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">Empty</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">{emptyCount}</p>
+              <p className="text-xs text-slate-400 mt-0.5">no projects yet</p>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-200">○</div>
+          </div>
+        </div>
+
+        {/* Filter toolstrip */}
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2 flex-1">
+            <div className="relative min-w-[240px] flex-1 max-w-md">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[16px] text-slate-400">⌕</span>
+              <input aria-label="search categories" placeholder="Search categories by name, key or tag..." className="w-full h-10 pl-9 pr-3 rounded-lg bg-slate-50 text-sm text-slate-900 placeholder:text-slate-400 outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-600 focus:bg-white" value={q} onChange={(e) => setQ(e.target.value)} />
+            </div>
+            <button onClick={() => setQ("")} className="h-10 px-3 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 text-[13px] flex items-center gap-1.5" type="button">Reset Filters</button>
+          </div>
+          <span className="text-xs text-slate-400 shrink-0">{filtered.length} of {categories.length} categories</span>
+        </div>
+
+        {/* Matrix */}
+        <div className="flex flex-col space-y-4">
+          <div className="bg-white px-6 py-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between text-slate-600 text-[13px]">
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Categories Matrix // Default Enterprise</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+              <span className="font-semibold text-slate-800">{withProjects} active of {categories.length} total categories</span>
+            </div>
+            <span className="text-slate-500">Sorted by: <strong className="text-slate-900 font-semibold">Name</strong></span>
+          </div>
+          <div className="flex flex-col gap-2.5">
+            {filtered.map((c) => (
+              <div
+                key={c.id}
+                onClick={() => navigate(`/categories/${c.id}`)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate(`/categories/${c.id}`); }}
+                role="button"
+                tabIndex={0}
+                aria-label={`Open category ${c.name}`}
+                style={{ borderLeftColor: c.color }}
+                className="flex items-center gap-4 py-3.5 px-5 bg-white border border-slate-200 border-l-4 rounded-xl shadow-sm hover:border-slate-300 transition-all min-h-[60px] cursor-pointer overflow-x-auto"
+              >
+                <div className="w-72 flex-shrink-0 flex flex-col justify-center">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
+                    <span className="px-2 py-0.5 rounded text-xs font-semibold shrink-0 border" style={{ backgroundColor: `${c.color}14`, color: c.color, borderColor: `${c.color}55` }}>{c.key}</span>
+                    <span className="font-semibold text-slate-900 text-sm whitespace-nowrap overflow-hidden text-ellipsis">{c.name}</span>
+                  </div>
+                  <span className="text-xs text-slate-500 mt-0.5">{c.profile_name ? `Profile: ${c.profile_name}` : "No profile linked"}</span>
+                </div>
+                <div className="w-36 flex-shrink-0">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200 flex items-center gap-1.5 w-fit">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-500" /> {c.project_count ?? 0} projects
+                  </span>
+                </div>
+                <div className="w-40 flex-shrink-0 text-xs text-slate-500">Key: {c.key} · ID {c.id}</div>
+                <div className="flex-shrink-0 ml-auto flex items-center gap-1">
+                  <span className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400">›</span>
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <div className="p-8 bg-white rounded-xl border border-slate-200 text-center text-slate-400 text-sm">No categories found.</div>
+            )}
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

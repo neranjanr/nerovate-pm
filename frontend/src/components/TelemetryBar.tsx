@@ -55,10 +55,10 @@ export default function TelemetryBar({ projectId }: { projectId: string }) {
       .catch(() => setLoading(false));
   }, [auth.accessToken, projectId]);
 
-  if (loading) return <div className="text-[11px] text-slate-500 font-mono">Loading telemetry…</div>;
-  if (!line && !backup) return <div className="text-[11px] text-slate-600 font-mono">Telemetry unavailable.</div>;
+  if (loading) return <div className="text-[11px] text-outline font-mono">Loading telemetry…</div>;
+  if (!line && !backup) return <div className="text-[11px] text-outline font-mono">Telemetry unavailable.</div>;
   return (
-    <div className="text-[11px] text-slate-500 font-mono flex flex-wrap gap-x-4 gap-y-1">
+    <div className="text-[11px] text-outline font-mono flex flex-wrap gap-x-4 gap-y-1">
       {line && <span>{line}</span>}
       {backup && <span>{backup}</span>}
     </div>

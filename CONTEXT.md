@@ -91,3 +91,15 @@ _Avoid_: Owner (owner is Project-level), Member
 **Watcher**:
 A User following a Task without assignment.
 _Avoid_: Follower, Subscriber
+
+**Mind Map View**:
+A visual decomposition Category → Project → Task → Subtask → Microtask, rooted by the current selection.
+_Avoid_: Mindmap, Graph view
+
+**Mind Map Node**:
+One Category, Project, Task, Subtask, or Microtask box in the Mind Map View with its Status signal.
+_Avoid_: Card, Tile (in map)
+
+**Node Inspector**:
+The RHS dock in the Mind Map View showing the selected node's ancestry, signals, and execution context.
+_Avoid_: Detail panel, Side sheet

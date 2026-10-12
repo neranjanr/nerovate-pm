@@ -413,96 +413,96 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
   if (!task && loading) {
     return (
       <div className="fixed inset-0 z-50 bg-black/60 flex justify-end">
-        <div className="w-full max-w-2xl bg-slate-900 text-slate-100 p-6">Loading task drawer...</div>
+        <div className="w-full max-w-2xl bg-surface-container-lowest text-on-surface p-6">Loading task drawer...</div>
       </div>
     );
   }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex justify-end backdrop-blur-sm animate-fadeIn">
-      <div className="w-full max-w-2xl bg-slate-900 border-l border-slate-800 text-slate-100 flex flex-col h-full shadow-2xl overflow-y-auto">
+      <div className="w-full max-w-2xl bg-surface-container-lowest border-l border-subtle text-on-surface flex flex-col h-full shadow-2xl overflow-y-auto">
         {/* Top Bar */}
-        <div className="px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between sticky top-0 z-10">
+        <div className="px-6 py-4 bg-surface border-b border-subtle flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <span className="font-mono text-indigo-400 text-sm font-bold">#{task?.id}</span>
-            <span className="px-2 py-0.5 rounded text-xs font-semibold bg-slate-800 text-slate-300">
+            <span className="font-mono text-primary text-sm font-bold">#{task?.id}</span>
+            <span className="px-2 py-0.5 rounded text-xs font-semibold bg-surface-container text-on-surface-variant">
               Depth {task?.depth} ({task?.depth === 0 ? "Task" : task?.depth === 1 ? "Subtask" : "Microtask"})
             </span>
             <select
               value={task?.priority || "normal"}
               onChange={(e) => setTask(task ? { ...task, priority: e.target.value } : null)}
-              className="bg-slate-800 border border-slate-700 text-xs px-2 py-1 rounded text-slate-200"
+              className="bg-surface-container border border-subtle text-xs px-2 py-1 rounded text-on-surface"
             >
               <option value="urgent">Urgent</option>
               <option value="high">High</option>
               <option value="normal">Normal</option>
               <option value="low">Low</option>
             </select>
-            <span className="text-xs text-slate-400">Watchers: {task?.watcher_ids?.length || 0}</span>
+            <span className="text-xs text-on-surface-variant">Watchers: {task?.watcher_ids?.length || 0}</span>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors"
           >
             ✕
           </button>
         </div>
 
-        {error && <div className="p-4 bg-rose-950 text-rose-300 text-xs">{error}</div>}
+        {error && <div className="p-4 bg-error-container text-error text-xs">{error}</div>}
 
         <div className="p-6 space-y-6 flex-1">
           {/* Title & Whole-Process Start Banner */}
-          <div className="space-y-3 bg-slate-950/60 p-4 rounded-lg border border-slate-800">
+          <div className="space-y-3 bg-surface-container-low/60 p-4 rounded-lg border border-subtle">
             <div>
-              <label className="text-xs text-slate-400 font-semibold block mb-1">Task Title</label>
+              <label className="text-xs text-on-surface-variant font-semibold block mb-1">Task Title</label>
               <input
                 type="text"
                 value={task?.title || ""}
                 onChange={(e) => setTask(task ? { ...task, title: e.target.value } : null)}
-                className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                className="w-full bg-surface-container-lowest border border-subtle rounded px-3 py-2 text-sm text-on-primary focus:outline-none focus:border-primary-container"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-slate-400 font-semibold block mb-1">Whole-Process Start Date (Requirement §4.4)</label>
+                <label className="text-xs text-on-surface-variant font-semibold block mb-1">Whole-Process Start Date (Requirement §4.4)</label>
                 <input
                   type="date"
                   value={task?.start_date || ""}
                   onChange={(e) => setTask(task ? { ...task, start_date: e.target.value } : null)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs text-white"
+                  className="w-full bg-surface-container-lowest border border-subtle rounded px-3 py-1.5 text-xs text-on-primary"
                 />
               </div>
               <div>
-                <label className="text-xs text-slate-400 font-semibold block mb-1">Due Date (Planned)</label>
+                <label className="text-xs text-on-surface-variant font-semibold block mb-1">Due Date (Planned)</label>
                 <input
                   type="date"
                   value={task?.due_date || ""}
                   onChange={(e) => setTask(task ? { ...task, due_date: e.target.value } : null)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs text-white"
+                  className="w-full bg-surface-container-lowest border border-subtle rounded px-3 py-1.5 text-xs text-on-primary"
                 />
               </div>
             </div>
             <div>
-              <label className="text-xs text-slate-400 font-semibold block mb-1">Description (Markdown)</label>
+              <label className="text-xs text-on-surface-variant font-semibold block mb-1">Description (Markdown)</label>
               <textarea
                 rows={3}
                 value={task?.description_md || ""}
                 onChange={(e) => setTask(task ? { ...task, description_md: e.target.value } : null)}
-                className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                className="w-full bg-surface-container-lowest border border-subtle rounded px-3 py-2 text-xs text-on-primary focus:outline-none focus:border-primary-container"
               />
             </div>
           </div>
 
           {/* Status Period Execution Box */}
-          <div className="bg-slate-950/60 p-4 rounded-lg border border-slate-800 space-y-4">
-            <h3 className="text-xs uppercase tracking-wider text-indigo-400 font-bold">Status Period & Execution</h3>
+          <div className="bg-surface-container-low/60 p-4 rounded-lg border border-subtle space-y-4">
+            <h3 className="text-xs uppercase tracking-wider text-primary font-bold">Status Period & Execution</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-slate-400 block mb-1">Current Status</label>
+                <label className="text-xs text-on-surface-variant block mb-1">Current Status</label>
                 <select
                   value={selectedStatusId}
                   onChange={(e) => setSelectedStatusId(Number(e.target.value))}
-                  className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs text-white"
+                  className="w-full bg-surface-container-lowest border border-subtle rounded px-3 py-1.5 text-xs text-on-primary"
                 >
                   {stages.length > 0 ? (
                     <>
@@ -537,40 +537,40 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
                 </select>
               </div>
               <div>
-                <label className="text-xs text-slate-400 block mb-1">Status Period Start</label>
+                <label className="text-xs text-on-surface-variant block mb-1">Status Period Start</label>
                 <input
                   type="date"
                   value={periodStart}
                   onChange={(e) => setPeriodStart(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs text-white"
+                  className="w-full bg-surface-container-lowest border border-subtle rounded px-3 py-1.5 text-xs text-on-primary"
                 />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-slate-400 block mb-1">Planned Due</label>
+                <label className="text-xs text-on-surface-variant block mb-1">Planned Due</label>
                 <input
                   type="date"
                   value={periodDue}
                   onChange={(e) => setPeriodDue(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs text-white"
+                  className="w-full bg-surface-container-lowest border border-subtle rounded px-3 py-1.5 text-xs text-on-primary"
                 />
               </div>
               <div>
-                <label className="text-xs text-slate-400 block mb-1">Actual End Date</label>
+                <label className="text-xs text-on-surface-variant block mb-1">Actual End Date</label>
                 <input
                   type="date"
                   value={periodActual}
                   onChange={(e) => setPeriodActual(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs text-white"
+                  className="w-full bg-surface-container-lowest border border-subtle rounded px-3 py-1.5 text-xs text-on-primary"
                 />
               </div>
             </div>
 
             {/* Micro-bar: stacked per-Status segments */}
             <div>
-              <span className="text-[11px] text-slate-400 font-semibold block mb-1">Period Micro-bar:</span>
-              <div className="flex h-2 rounded overflow-hidden bg-slate-900 border border-slate-800">
+              <span className="text-[11px] text-on-surface-variant font-semibold block mb-1">Period Micro-bar:</span>
+              <div className="flex h-2 rounded overflow-hidden bg-surface-container-lowest border border-subtle">
                 {task?.status_periods && task.status_periods.length > 0 ? (
                   task.status_periods.map((p) => {
                     const stObj = statuses.find((s) => s.id === p.status_id);
@@ -578,52 +578,52 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
                       <div
                         key={p.id}
                         title={`${stObj?.name || p.status_id}: ${p.start_date || "?"} → ${p.due_date || p.actual_end_date || "?"}`}
-                        className={`flex-1 ${stObj?.is_done ? "bg-emerald-600" : "bg-indigo-600"}`}
+                        className={`flex-1 ${stObj?.is_done ? "bg-emerald-600" : "bg-primary-container"}`}
                       />
                     );
                   })
                 ) : (
-                  <div className="flex-1 bg-slate-800" />
+                  <div className="flex-1 bg-surface-container" />
                 )}
               </div>
             </div>
 
             {/* Period History Table */}
             <div className="mt-2">
-              <span className="text-[11px] text-slate-400 font-semibold block mb-1">Period History Logs:</span>
-              <div className="bg-slate-900 rounded border border-slate-800 max-h-32 overflow-y-auto text-xs font-mono">
+              <span className="text-[11px] text-on-surface-variant font-semibold block mb-1">Period History Logs:</span>
+              <div className="bg-surface-container-lowest rounded border border-subtle max-h-32 overflow-y-auto text-xs font-mono">
                 {task?.status_periods && task.status_periods.length > 0 ? (
                   task.status_periods.map((p) => {
                     const stObj = statuses.find((s) => s.id === p.status_id);
                     return (
-                      <div key={p.id} className="px-3 py-1.5 border-b border-slate-800 flex justify-between text-slate-300">
+                      <div key={p.id} className="px-3 py-1.5 border-b border-subtle flex justify-between text-on-surface-variant">
                         <span>{stObj?.name || `Status #${p.status_id}`}</span>
                         <span>{p.start_date || "—"} → {p.due_date || p.actual_end_date || "—"}</span>
                       </div>
                     );
                   })
                 ) : (
-                  <div className="px-3 py-2 text-slate-500">No periods recorded yet.</div>
+                  <div className="px-3 py-2 text-outline">No periods recorded yet.</div>
                 )}
               </div>
             </div>
           </div>
 
           {/* Metadata Grid: Assignees / Watchers / Blocked / Tags */}
-          <div className="bg-slate-950/60 p-4 rounded-lg border border-slate-800 space-y-4">
-            <h3 className="text-xs uppercase tracking-wider text-indigo-400 font-bold">Relations & Metadata</h3>
+          <div className="bg-surface-container-low/60 p-4 rounded-lg border border-subtle space-y-4">
+            <h3 className="text-xs uppercase tracking-wider text-primary font-bold">Relations & Metadata</h3>
             {task?.is_blocked && (
-              <div className="px-3 py-1.5 rounded bg-rose-950/60 border border-rose-900 text-rose-300 text-xs">
+              <div className="px-3 py-1.5 rounded bg-error-container/60 border border-rose-900 text-error text-xs">
                 Blocked by Task #{task.blocked_by_ids.join(", #")}
               </div>
             )}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <span className="text-xs text-slate-400 block mb-1">Assignees</span>
+                <span className="text-xs text-on-surface-variant block mb-1">Assignees</span>
                 <div className="space-y-1 max-h-24 overflow-y-auto">
                   {members.length > 0 ? (
                     members.map((m) => (
-                      <label key={m.user_id} className="flex items-center gap-2 text-xs text-slate-300">
+                      <label key={m.user_id} className="flex items-center gap-2 text-xs text-on-surface-variant">
                         <input
                           type="checkbox"
                           checked={task?.assignee_ids.includes(m.user_id) || false}
@@ -635,16 +635,16 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
                       </label>
                     ))
                   ) : (
-                    <span className="text-[11px] text-slate-500">No project members loaded.</span>
+                    <span className="text-[11px] text-outline">No project members loaded.</span>
                   )}
                 </div>
               </div>
               <div>
-                <span className="text-xs text-slate-400 block mb-1">Watchers ({task?.watcher_ids.length || 0})</span>
+                <span className="text-xs text-on-surface-variant block mb-1">Watchers ({task?.watcher_ids.length || 0})</span>
                 <div className="space-y-1 max-h-24 overflow-y-auto">
                   {members.length > 0 ? (
                     members.map((m) => (
-                      <label key={m.user_id} className="flex items-center gap-2 text-xs text-slate-300">
+                      <label key={m.user_id} className="flex items-center gap-2 text-xs text-on-surface-variant">
                         <input
                           type="checkbox"
                           checked={task?.watcher_ids.includes(m.user_id) || false}
@@ -656,23 +656,23 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
                       </label>
                     ))
                   ) : (
-                    <span className="text-[11px] text-slate-500">No project members loaded.</span>
+                    <span className="text-[11px] text-outline">No project members loaded.</span>
                   )}
                 </div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-slate-400 block mb-1">Blocked by (task IDs)</label>
+                <label className="text-xs text-on-surface-variant block mb-1">Blocked by (task IDs)</label>
                 <div className="flex flex-wrap gap-1 mb-2">
                   {(task?.blocked_by_ids || []).map((bid) => (
-                    <span key={bid} className="px-2 py-0.5 rounded bg-rose-950 text-rose-300 text-[11px] font-mono flex items-center gap-1">
+                    <span key={bid} className="px-2 py-0.5 rounded bg-error-container text-error text-[11px] font-mono flex items-center gap-1">
                       #{bid}
                       <button
                         onClick={() =>
                           setTask(task ? { ...task, blocked_by_ids: task.blocked_by_ids.filter((x) => x !== bid) } : null)
                         }
-                        className="hover:text-white"
+                        className="hover:text-on-surface"
                       >
                         ×
                       </button>
@@ -685,7 +685,7 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
                     placeholder="Task ID"
                     value={blockedInput}
                     onChange={(e) => setBlockedInput(e.target.value)}
-                    className="flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white"
+                    className="flex-1 bg-surface-container-lowest border border-subtle rounded px-2 py-1 text-xs text-on-primary"
                   />
                   <button
                     onClick={() => {
@@ -700,20 +700,20 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
                       }
                       setBlockedInput("");
                     }}
-                    className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-200"
+                    className="px-2 py-1 bg-surface-container rounded text-xs text-on-surface"
                   >
                     Add
                   </button>
                 </div>
               </div>
               <div>
-                <label className="text-xs text-slate-400 block mb-1">Tags (comma-separated)</label>
+                <label className="text-xs text-on-surface-variant block mb-1">Tags (comma-separated)</label>
                 <input
                   type="text"
                   value={tagsInput}
                   onChange={(e) => setTagsInput(e.target.value)}
                   placeholder="urgent, backend"
-                  className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs text-white"
+                  className="w-full bg-surface-container-lowest border border-subtle rounded px-3 py-1.5 text-xs text-on-primary"
                 />
               </div>
             </div>
@@ -721,17 +721,17 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
 
           {/* Metadata Grid: Custom Fields */}
           {customFields.length > 0 && (
-            <div className="bg-slate-950/60 p-4 rounded-lg border border-slate-800 space-y-3">
-              <h3 className="text-xs uppercase tracking-wider text-indigo-400 font-bold">Template Custom Fields</h3>
+            <div className="bg-surface-container-low/60 p-4 rounded-lg border border-subtle space-y-3">
+              <h3 className="text-xs uppercase tracking-wider text-primary font-bold">Template Custom Fields</h3>
               <div className="grid grid-cols-2 gap-4">
                 {customFields.map((cf) => (
                   <div key={cf.def_id}>
-                    <label className="text-xs text-slate-400 block mb-1">{cf.label}{cf.required && " *"}</label>
+                    <label className="text-xs text-on-surface-variant block mb-1">{cf.label}{cf.required && " *"}</label>
                     <input
                       type="text"
                       value={cf.value}
                       onChange={(e) => handleCustomFieldChange(cf.def_id, e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs text-white"
+                      className="w-full bg-surface-container-lowest border border-subtle rounded px-3 py-1.5 text-xs text-on-primary"
                     />
                   </div>
                 ))}
@@ -740,19 +740,19 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
           )}
 
           {/* Hierarchy Tree & Subtasks */}
-          <div className="bg-slate-950/60 p-4 rounded-lg border border-slate-800 space-y-3">
-            <h3 className="text-xs uppercase tracking-wider text-indigo-400 font-bold">Hierarchy & Subtasks (Depth {task?.depth}/2)</h3>
-            <div className="text-[11px] font-mono text-slate-400">
+          <div className="bg-surface-container-low/60 p-4 rounded-lg border border-subtle space-y-3">
+            <h3 className="text-xs uppercase tracking-wider text-primary font-bold">Hierarchy & Subtasks (Depth {task?.depth}/2)</h3>
+            <div className="text-[11px] font-mono text-on-surface-variant">
               {parentTask ? (
                 <span>
                   #{parentTask.id} {parentTask.title} (Depth {parentTask.depth}) →{" "}
-                  <strong className="text-slate-200">
+                  <strong className="text-on-surface">
                     #{task?.id} {task?.title} (Depth {task?.depth})
                   </strong>
                 </span>
               ) : (
                 <span>
-                  <strong className="text-slate-200">
+                  <strong className="text-on-surface">
                     #{task?.id} {task?.title} (Depth {task?.depth}, root)
                   </strong>
                 </span>
@@ -760,9 +760,9 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
             </div>
             <div className="space-y-2">
               {subtasks.map((sub) => (
-                <div key={sub.id} className="px-3 py-2 bg-slate-900 rounded border border-slate-800 flex justify-between items-center text-xs">
-                  <span className="text-slate-200">↳ #{sub.id} {sub.title}</span>
-                  <span className="text-slate-400 font-mono">Depth {sub.depth}</span>
+                <div key={sub.id} className="px-3 py-2 bg-surface-container-lowest rounded border border-subtle flex justify-between items-center text-xs">
+                  <span className="text-on-surface">↳ #{sub.id} {sub.title}</span>
+                  <span className="text-on-surface-variant font-mono">Depth {sub.depth}</span>
                 </div>
               ))}
               {task && task.depth < 2 ? (
@@ -772,11 +772,11 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
                     placeholder={`Add subtask (${task.depth === 0 ? "1.1" : "1.1.1"})...`}
                     value={newSubtaskTitle}
                     onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                    className="flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-xs text-white"
+                    className="flex-1 bg-surface-container-lowest border border-subtle rounded px-3 py-1.5 text-xs text-on-primary"
                   />
                   <button
                     type="submit"
-                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded text-xs font-semibold text-white transition-colors"
+                    className="px-3 py-1.5 bg-primary-container hover:bg-primary rounded text-xs font-semibold text-on-primary transition-colors"
                   >
                     Add Subtask
                   </button>
@@ -788,14 +788,14 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
           </div>
 
           {/* Tabs: Comments / Attachments / Audit */}
-          <div className="border-t border-slate-800 pt-4 space-y-4">
-            <div className="flex gap-2 border-b border-slate-800 pb-2">
+          <div className="border-t border-subtle pt-4 space-y-4">
+            <div className="flex gap-2 border-b border-subtle pb-2">
               {(["comments", "attachments", "audit"] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`px-3 py-1 rounded text-xs font-semibold capitalize transition-colors ${
-                    activeTab === tab ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white bg-slate-800/50"
+                    activeTab === tab ? "bg-primary-container text-on-primary" : "text-on-surface-variant hover:text-on-surface bg-surface-container/50"
                   }`}
                 >
                   {tab} {tab === "comments" ? `(${comments.length})` : tab === "attachments" ? `(${attachments.length})` : `(${history.length})`}
@@ -810,20 +810,20 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
                     .filter((c) => !c.parent_id)
                     .map((c) => (
                       <div key={c.id} className="space-y-2">
-                        <div className="p-3 bg-slate-950 rounded border border-slate-800 text-xs space-y-1">
-                          <div className="flex justify-between text-slate-500 font-mono text-[10px]">
+                        <div className="p-3 bg-surface rounded border border-subtle text-xs space-y-1">
+                          <div className="flex justify-between text-outline font-mono text-[10px]">
                             <span>
                               Author #{c.author_id}
                               {(c.mentions ?? []).length > 0 && (
-                                <span className="text-indigo-300"> → @{(c.mentions ?? []).join(", @")}</span>
+                                <span className="text-primary"> → @{(c.mentions ?? []).join(", @")}</span>
                               )}
                             </span>
                             <span>{new Date(c.created_at).toLocaleString()}</span>
                           </div>
-                          <div className="text-slate-200">{c.body_md}</div>
+                          <div className="text-on-surface">{c.body_md}</div>
                           <button
                             onClick={() => setReplyToId(c.id)}
-                            className="text-[11px] text-indigo-400 hover:text-indigo-300"
+                            className="text-[11px] text-primary hover:text-primary"
                           >
                             Reply
                           </button>
@@ -833,28 +833,28 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
                           .map((r) => (
                             <div
                               key={r.id}
-                              className="ml-6 p-2.5 bg-slate-900 rounded border-l-2 border-indigo-600 border-y border-r border-slate-800 text-xs space-y-1"
+                              className="ml-6 p-2.5 bg-surface-container-lowest rounded border-l-2 border-primary border-y border-r border-subtle text-xs space-y-1"
                             >
-                              <div className="flex justify-between text-slate-500 font-mono text-[10px]">
+                              <div className="flex justify-between text-outline font-mono text-[10px]">
                                 <span>
                                   Author #{r.author_id}
                                   {(r.mentions ?? []).length > 0 && (
-                                    <span className="text-indigo-300"> → @{(r.mentions ?? []).join(", @")}</span>
+                                    <span className="text-primary"> → @{(r.mentions ?? []).join(", @")}</span>
                                   )}
                                 </span>
                                 <span>{new Date(r.created_at).toLocaleString()}</span>
                               </div>
-                              <div className="text-slate-200">{r.body_md}</div>
+                              <div className="text-on-surface">{r.body_md}</div>
                             </div>
                           ))}
                       </div>
                     ))}
-                  {comments.length === 0 && <div className="text-xs text-slate-500">No comments yet.</div>}
+                  {comments.length === 0 && <div className="text-xs text-outline">No comments yet.</div>}
                 </div>
                 {replyToId && (
-                  <div className="text-[11px] text-slate-400">
+                  <div className="text-[11px] text-on-surface-variant">
                     Replying to comment #{replyToId}{" "}
-                    <button onClick={() => setReplyToId(null)} className="text-indigo-400 hover:text-indigo-300">
+                    <button onClick={() => setReplyToId(null)} className="text-primary hover:text-primary">
                       cancel
                     </button>
                   </div>
@@ -865,11 +865,11 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
                     placeholder="Write a comment (markdown + @userId mentions supported)..."
                     value={commentInput}
                     onChange={(e) => setCommentInput(e.target.value)}
-                    className="flex-1 bg-slate-950 border border-slate-700 rounded px-3 py-2 text-xs text-white"
+                    className="flex-1 bg-surface border border-subtle rounded px-3 py-2 text-xs text-on-primary"
                   />
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-xs font-semibold text-white"
+                    className="px-4 py-2 bg-primary-container hover:bg-primary rounded text-xs font-semibold text-on-primary"
                   >
                     Post
                   </button>
@@ -880,28 +880,28 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
             {activeTab === "attachments" && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-400">Files (10MB limit per file)</span>
-                  <label className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 rounded text-xs font-semibold text-white cursor-pointer">
+                  <span className="text-xs text-on-surface-variant">Files (10MB limit per file)</span>
+                  <label className="px-3 py-1 bg-primary-container hover:bg-primary rounded text-xs font-semibold text-on-primary cursor-pointer">
                     Upload File
                     <input type="file" onChange={handleUploadAttachment} className="hidden" />
                   </label>
                 </div>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {attachments.map((att) => (
-                    <div key={att.id} className="p-2.5 bg-slate-950 rounded border border-slate-800 flex justify-between items-center text-xs">
+                    <div key={att.id} className="p-2.5 bg-surface rounded border border-subtle flex justify-between items-center text-xs">
                       <div>
-                        <span className="text-slate-200 font-medium">{att.filename}</span>
-                        <span className="text-slate-500 ml-2 font-mono text-[10px]">({Math.round(att.size / 1024)} KB)</span>
+                        <span className="text-on-surface font-medium">{att.filename}</span>
+                        <span className="text-outline ml-2 font-mono text-[10px]">({Math.round(att.size / 1024)} KB)</span>
                       </div>
                       <button
                         onClick={() => handleDeleteAttachment(att.id)}
-                        className="text-rose-400 hover:text-rose-300 text-xs"
+                        className="text-rose-400 hover:text-error text-xs"
                       >
                         Delete
                       </button>
                     </div>
                   ))}
-                  {attachments.length === 0 && <div className="text-xs text-slate-500">No attachments uploaded.</div>}
+                  {attachments.length === 0 && <div className="text-xs text-outline">No attachments uploaded.</div>}
                 </div>
               </div>
             )}
@@ -909,28 +909,28 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
             {activeTab === "audit" && (
               <div className="space-y-2 max-h-48 overflow-y-auto text-xs font-mono">
                 {history.map((h) => (
-                  <div key={h.id} className="p-2 bg-slate-950 rounded border border-slate-800 flex justify-between text-slate-300">
+                  <div key={h.id} className="p-2 bg-surface rounded border border-subtle flex justify-between text-on-surface-variant">
                     <span>Status change to #{h.to_status_id} (Actor #{h.actor_id || "system"})</span>
-                    <span className="text-slate-500">{new Date(h.at).toLocaleString()}</span>
+                    <span className="text-outline">{new Date(h.at).toLocaleString()}</span>
                   </div>
                 ))}
-                {history.length === 0 && <div className="text-xs text-slate-500 font-sans">No audit logs recorded.</div>}
+                {history.length === 0 && <div className="text-xs text-outline font-sans">No audit logs recorded.</div>}
               </div>
             )}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-slate-950 border-t border-slate-800 flex justify-end gap-3 sticky bottom-0 z-10">
+        <div className="px-6 py-4 bg-surface border-t border-subtle flex justify-end gap-3 sticky bottom-0 z-10">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded bg-slate-800 text-slate-300 hover:text-white text-xs font-medium"
+            className="px-4 py-2 rounded bg-surface-container text-on-surface-variant hover:text-on-surface text-xs font-medium"
           >
             Cancel
           </button>
           <button
             onClick={handleSaveTask}
-            className="px-5 py-2 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/20"
+            className="px-5 py-2 rounded bg-primary-container hover:bg-primary text-on-primary text-xs font-semibold shadow-lg shadow-indigo-600/20"
           >
             Save Changes
           </button>

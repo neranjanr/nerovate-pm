@@ -1,0 +1,625 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "secondary-fixed": "#c9e6ff", "secondary-fixed-dim": "#89ceff", "primary-fixed-dim": "#c3c0ff", "surface-bright": "#f8f9ff", "tertiary": "#005338", "on-tertiary-container": "#67f4b7", "error": "#ba1a1a", "surface-container-high": "#dce9ff", "surface-container-lowest": "#ffffff", "on-error-container": "#93000a", "tertiary-fixed": "#6ffbbe", "on-primary": "#ffffff", "primary-container": "#4f46e5", "tertiary-fixed-dim": "#4edea3", "on-tertiary": "#ffffff", "on-secondary-container": "#004666", "on-secondary-fixed-variant": "#004c6e", "on-tertiary-fixed": "#002113", "surface-dim": "#cbdbf5", "inverse-surface": "#213145", "on-secondary-fixed": "#001e2f", "surface-tint": "#4d44e3", "tertiary-container": "#006e4b", "on-primary-fixed": "#0f0069", "secondary-container": "#39b8fd", "error-container": "#ffdad6", "on-error": "#ffffff", "on-secondary": "#ffffff", "surface-container-low": "#eff4ff", "surface": "#f8f9ff", "outline-variant": "#c7c4d8", "on-surface-variant": "#464555", "on-background": "#0b1c30", "surface-container": "#e5eeff", "inverse-on-surface": "#eaf1ff", "surface-variant": "#d3e4fe", "secondary": "#006591", "on-primary-fixed-variant": "#3323cc", "on-tertiary-fixed-variant": "#005236", "outline": "#777587", "background": "#f8f9ff", "primary-fixed": "#e2dfff", "surface-container-highest": "#d3e4fe", "on-primary-container": "#dad7ff", "primary": "#3525cd", "on-surface": "#0b1c30", "inverse-primary": "#c3c0ff" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-sm": "0.5rem", "space-xl": "2rem", "margin": "1.5rem", "space-xs": "0.25rem", "gutter": "1rem", "space-md": "0.75rem", "space-lg": "1.25rem" }, "fontFamily": { "body-sm": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "body-md": ["Inter"], "label-sm": ["Inter"], "headline-xl": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "headline-md": ["Plus Jakarta Sans"], "code-sm": ["JetBrains Mono"], "label-md": ["Inter"] }, "fontSize": { "body-sm": ["0.8125rem", {"lineHeight": "1.125rem", "fontWeight": "400"}], "headline-lg": ["1.5rem", {"lineHeight": "2rem", "fontWeight": "600"}], "headline-sm": ["1rem", {"lineHeight": "1.5rem", "fontWeight": "600"}], "body-md": ["0.875rem", {"lineHeight": "1.25rem", "fontWeight": "400"}], "label-sm": ["0.6875rem", {"lineHeight": "0.875rem", "letterSpacing": "0.025em", "fontWeight": "600"}], "headline-xl": ["2rem", {"lineHeight": "2.5rem", "fontWeight": "700"}], "body-lg": ["1rem", {"lineHeight": "1.5rem", "fontWeight": "400"}], "headline-md": ["1.25rem", {"lineHeight": "1.75rem", "fontWeight": "600"}], "code-sm": ["0.75rem", {"lineHeight": "1rem", "fontWeight": "500"}], "label-md": ["0.8125rem", {"lineHeight": "1rem", "fontWeight": "500"}] } } } }</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-screen w-72 bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between select-none"><div class="flex flex-col h-full overflow-hidden"><div class="h-14 px-space-md flex items-center justify-between shrink-0 bg-surface-container-lowest"><div class="flex items-center gap-space-sm"><img alt="Neravate PM Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1Wk-U0qOguWDsbUW-Lhygk1DRGGLlywdts99YKGnU2kkIxTwoa_WTD4tS6Nu1LerGhbEkcXTufUYzI_EvN6fH_AXrQeZRjbn3TKm1Dy3bWMai-pSy5CZr10kCxkYkyVWdp9THR8X91yQogvtXxSCcCbOya2r8XvalafCGTXRp33SlnaCosIi6xqi4gq_M1IBts256TXwIYwdmAgwoGvxDTn3p29qA5KhRxHoOGGHIX8ule_iAxLUWmSinUJ"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Neravate PM</span></div><button class="h-8 w-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">keyboard_double_arrow_left</span></button></div><div class="flex-1 overflow-y-auto px-space-sm py-space-sm space-y-space-md"><div class="space-y-space-xs"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase text-on-surface-variant">Favorites &amp; Quick Access</div><nav class="space-y-0.5" data-active-classes="bg-primary-container text-on-primary font-medium rounded-lg"><a class="group flex items-center justify-between px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="my-tasks" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">check_circle</span><span class="font-body-md text-body-md">My Tasks</span></div><span class="px-1.5 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">24</span></a><a class="group flex items-center justify-between px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="assigned-to-me" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">assignment_ind</span><span class="font-body-md text-body-md">Assigned to Me</span></div></a><a class="group flex items-center justify-between px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="recent" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">schedule</span><span class="font-body-md text-body-md">Recent</span></div></a></nav></div><div class="space-y-space-xs"><div class="flex items-center justify-between px-space-sm py-1"><span class="font-label-sm text-label-sm uppercase text-on-surface-variant">Categories &amp; Workspaces</span><button class="h-5 w-5 rounded flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[16px]">add</span></button></div><div class="space-y-1"><div class="space-y-0.5"><div class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface hover:bg-surface-container-low cursor-pointer transition-colors"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span><span class="material-symbols-outlined text-[18px] text-primary">folder_open</span><span class="font-body-sm text-body-sm font-semibold text-on-surface">IT Branch</span></div><span class="font-label-sm text-label-sm text-on-surface-variant">4</span></div><nav class="pl-6 space-y-0.5" data-active-classes="bg-primary-container text-on-primary font-medium rounded-lg"><a class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="procurements" href="#"><span class="font-body-sm text-body-sm truncate">Procurements</span></a><a class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="recurrent-payments" href="#"><span class="font-body-sm text-body-sm truncate">Recurrent Payments</span><span class="px-1.5 py-0.2 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">9</span></a><a class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="day-to-day-tasks" href="#"><span class="font-body-sm text-body-sm truncate">Day to Day Tasks</span><span class="px-1.5 py-0.2 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">14</span></a><a class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="project-implementation" href="#"><span class="font-body-sm text-body-sm truncate">Project Implementation</span></a></nav></div><div class="space-y-0.5"><div class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface cursor-pointer transition-colors"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">chevron_right</span><span class="material-symbols-outlined text-[18px]">folder</span><span class="font-body-sm text-body-sm">Product &amp; Design</span></div><span class="font-label-sm text-label-sm">2</span></div></div><div class="space-y-0.5"><div class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface cursor-pointer transition-colors"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">chevron_right</span><span class="material-symbols-outlined text-[18px]">folder</span><span class="font-body-sm text-body-sm">Operations &amp; SecOps</span></div><span class="font-label-sm text-label-sm">2</span></div></div><button class="w-full flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface font-body-sm text-body-sm transition-colors"><span class="material-symbols-outlined text-[18px]">add_circle</span><span class="">Add Category</span></button></div></div></div><div class="p-space-sm bg-surface-container-low shrink-0 space-y-space-xs"><div class="px-space-sm py-space-xs bg-surface-container-lowest rounded-lg"><div class="flex items-center justify-between mb-1"><span class="font-label-sm text-label-sm text-on-surface-variant">Team Storage</span><span class="font-code-sm text-code-sm text-on-surface font-semibold">78%</span></div><div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full bg-primary rounded-full w-[78%]"></div></div><div class="mt-1 text-right"><span class="font-label-sm text-label-sm text-primary hover:underline cursor-pointer">Upgrade Plan</span></div></div><nav class="space-y-0.5" data-active-classes="bg-primary-container text-on-primary font-medium rounded-lg"><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="global-settings" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span class="font-body-md text-body-md">Global Settings</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="help-resources" href="#"><span class="material-symbols-outlined text-[18px]">help_outline</span><span class="font-body-md text-body-md">Help &amp; Resources</span></a></nav></div></div></aside><div class="pl-72 min-h-screen flex flex-col bg-surface"><header class="fixed top-0 left-72 right-0 h-14 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-space-lg"><div class="flex items-center gap-space-md"><div class="flex items-center gap-1.5 px-space-sm py-1 rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container transition-colors cursor-pointer"><span class="material-symbols-outlined text-primary text-[18px]">workspaces</span><span class="font-body-sm text-body-sm font-semibold">Neravate Core / Engineering</span><span class="material-symbols-outlined text-[16px] text-on-surface-variant">unfold_more</span></div><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-2.5 text-on-surface-variant text-[18px]">search</span><input class="w-80 h-9 pl-8 pr-16 bg-surface-container-low hover:bg-surface-container focus:bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant font-body-sm text-body-sm rounded-lg outline-none transition-all focus:ring-2 focus:ring-primary-container" placeholder="Search tasks, docs, commands..." type="text"><kbd class="absolute right-2 font-code-sm text-code-sm px-1.5 py-0.5 bg-surface-container text-on-surface-variant rounded border border-outline-variant/30">Ctrl+K</kbd></div></div><div class="flex items-center gap-space-sm"><button class="h-9 px-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center gap-1.5 font-label-md text-label-md transition-colors"><span class="material-symbols-outlined text-secondary text-[18px]">auto_awesome</span><span class="">Ask AI</span></button><button class="relative h-9 w-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error ring-2 ring-surface"></span></button><button class="h-9 px-space-md bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md rounded-lg flex items-center gap-1 shadow-sm transition-all"><span class="material-symbols-outlined text-[18px]">add</span><span class="">Create</span></button><div class="relative ml-1 cursor-pointer"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-container-highest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHKiw3uH9vYNspguDhm6XOG8yP99PnPrd8fzZiHtOS-bMNM9Eq6enfggaGgvbw_LJvCyauIe_Wx4gMPeTkxK6MAjVRkpzFaD-hjX6IQGQahAR5uELy08_hPvE4wOtT1_K8o1q1m1BHj3gFES9E-Yp75tQf0pgL9d4doK2Ji7idtKkU-yM3Ao4Mk2WTThUDy2peZ3l9m04C6bRNvp4Par6lt8Q4x0u1kLqRjXKCEzVQtxAWN_7-7Z4HGw"><span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-tertiary-container ring-2 ring-surface"></span></div></div></header><main class="w-full pt-14 px-space-lg flex-1 bg-surface"><div class="flex flex-col w-full">
+<!-- Top Context & Metadata Header -->
+<div class="w-full bg-surface-container-lowest px-space-lg py-3 rounded-xl shadow-sm mb-4">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+<!-- Breadcrumb Hierarchy -->
+<div class="flex items-center flex-wrap gap-1.5 text-on-surface">
+<span class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary cursor-pointer transition-colors">Categories</span>
+<span class="material-symbols-outlined text-[14px] text-outline">chevron_right</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant hover:text-primary cursor-pointer transition-colors">proc</span>
+<span class="material-symbols-outlined text-[14px] text-outline">chevron_right</span>
+<span class="font-headline-sm text-headline-sm text-primary tracking-tight font-semibold flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]">laptop_mac</span>
+          LAPTOP-894
+        </span>
+<span class="material-symbols-outlined text-[14px] text-outline">chevron_right</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">laptop</span>
+</div>
+<!-- Project Tags & Meta Badges -->
+<div class="flex items-center gap-2 flex-wrap">
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-container-low text-on-surface font-label-md text-label-md">
+<span class="material-symbols-outlined text-[15px] text-primary">task_alt</span>
+<span class="">Tasks:</span>
+<span class="font-code-sm font-semibold text-primary">8</span>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-container-low text-on-surface font-label-md text-label-md">
+<span class="material-symbols-outlined text-[15px] text-tertiary">shield_person</span>
+<span class="text-on-surface-variant">Owner:</span>
+<span class="font-medium text-on-surface">Admin</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm uppercase tracking-wider font-semibold">Sample</span>
+<span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-label-sm uppercase tracking-wider font-semibold">Legacy</span>
+<button class="flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors shadow-sm ml-1" id="toggle-color-config-btn" title="Customize status badge color palette">
+<span class="material-symbols-outlined text-[16px] text-primary">palette</span>
+<span class="">Status Colors</span>
+</button>
+</div>
+</div>
+<!-- Secondary Meta Row: Linked Projects -->
+<div class="mt-2.5 pt-2.5 flex items-center justify-between flex-wrap gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<div class="flex items-center gap-2">
+<span class="text-on-surface-variant">Linked projects:</span>
+<span class="italic text-outline">No links yet.</span>
+<button class="flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface-container-low hover:bg-surface-container text-primary font-label-md text-label-md transition-colors ml-1">
+<span class="material-symbols-outlined text-[14px]">link</span>
+<span class="">+ Link project</span>
+</button>
+</div>
+<div class="flex items-center gap-3 text-outline">
+<span class="flex items-center gap-1 font-code-sm text-code-sm"><span class="material-symbols-outlined text-[14px]">sync</span> Auto-synced 2m ago</span>
+</div>
+</div>
+</div>
+<!-- Primary View Switcher & Global Canvas Toolbar -->
+<div class="w-full bg-surface-container-lowest px-space-lg py-2.5 rounded-xl shadow-sm mb-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+<!-- View Switcher Tabs -->
+<div class="flex items-center gap-1 bg-surface-container-low p-1 rounded-lg">
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-surface-container-lowest text-primary shadow-sm font-label-md text-label-md transition-all font-semibold">
+<span class="material-symbols-outlined text-[16px]">view_list</span>
+<span class="">List</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/40 font-label-md text-label-md transition-all">
+<span class="material-symbols-outlined text-[16px]">bubble_chart</span>
+<span class="">Status View</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high/40 font-label-md text-label-md transition-all">
+<span class="material-symbols-outlined text-[16px]">account_tree</span>
+<span class="">Tree View</span>
+</button>
+</div>
+<!-- Right Controls: Add Task, Tree Mode & Grouping -->
+<div class="flex items-center gap-2 flex-wrap">
+<button class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md shadow-sm transition-colors">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="">Add Task</span>
+</button>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary text-on-primary font-label-sm text-label-sm font-semibold shadow-sm">
+<span class="material-symbols-outlined text-[15px]">account_tree</span>
+<span class="">Tree Mode: ON</span>
+</div>
+<!-- Grouping Switcher / Disabled Notice -->
+<div class="relative group">
+<button class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface-container text-on-surface-variant font-label-md text-label-md cursor-not-allowed opacity-80">
+<span class="material-symbols-outlined text-[16px]">layers</span>
+<span class="">No Grouping</span>
+<span class="material-symbols-outlined text-[14px]">expand_more</span>
+</button>
+<span class="absolute -bottom-5 right-0 whitespace-nowrap font-label-sm text-label-sm text-on-surface-variant italic scale-95 opacity-85">
+          Grouping disabled in tree mode
+        </span>
+</div>
+</div>
+</div>
+<!-- Tree Depth Filter Bar (ClickUp Navigation Sub-bar) -->
+<div class="w-full bg-surface-container-lowest px-space-lg py-2 rounded-xl shadow-sm mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<!-- Depth Pill Selector & Expand/Collapse Controls -->
+<div class="flex items-center gap-3 flex-wrap">
+<div class="flex items-center gap-1.5 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px]">filter_list</span>
+<span class="">Tree view:</span>
+</div>
+<div class="flex items-center bg-surface-container-low p-0.5 rounded-lg">
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors">
+          Tasks only
+        </button>
+<button class="px-2.5 py-1 rounded bg-primary-container text-on-primary font-label-md text-label-md shadow-xs font-semibold">
+          Tasks + Subtasks
+        </button>
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors">
+          All
+        </button>
+</div>
+<div class="h-4 w-px bg-surface-container-high hidden sm:block"></div>
+<div class="flex items-center gap-1.5">
+<button class="flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[15px]">unfold_less</span>
+<span class="">Collapse All</span>
+</button>
+<button class="flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[15px]">unfold_more</span>
+<span class="">Expand All</span>
+</button>
+</div>
+</div>
+<!-- Visible Counts Metric -->
+<div class="flex items-center gap-2 font-code-sm text-code-sm text-on-surface-variant">
+<span class="">Total items:</span>
+<span class="font-semibold text-on-surface">8</span>
+<span class="text-outline">(visible: 5)</span>
+</div>
+</div>
+<!-- Status Color Palette Config Modal / Drawer (Toggleable Profile Style Preview) -->
+<div class="hidden w-full bg-surface-container-low rounded-xl p-space-md shadow-md mb-3 transition-all duration-200" id="status-color-drawer">
+<div class="flex items-center justify-between pb-2 mb-3 bg-surface-container-lowest p-3 rounded-lg">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</div>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface font-bold">Status Color Palette &amp; Workspace Profile</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Customize corporate color accents for procurement status transitions.</p>
+</div>
+</div>
+<button class="w-7 h-7 rounded-lg hover:bg-surface-container flex items-center justify-center text-on-surface-variant" id="close-color-drawer-btn">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+<!-- Status Card 1 -->
+<div class="bg-surface-container-lowest p-2.5 rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-3.5 h-3.5 rounded-full bg-amber-500 ring-2 ring-amber-100"></span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Pending proc approval</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="w-4 h-4 rounded bg-amber-500 cursor-pointer shadow-xs"></span>
+<span class="font-code-sm text-code-sm text-outline">#F59E0B</span>
+</div>
+</div>
+<!-- Status Card 2 -->
+<div class="bg-surface-container-lowest p-2.5 rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-3.5 h-3.5 rounded-full bg-indigo-500 ring-2 ring-indigo-100"></span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Concept approval</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="w-4 h-4 rounded bg-indigo-500 cursor-pointer shadow-xs"></span>
+<span class="font-code-sm text-code-sm text-outline">#6366F1</span>
+</div>
+</div>
+<!-- Status Card 3 -->
+<div class="bg-surface-container-lowest p-2.5 rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-3.5 h-3.5 rounded-full bg-sky-500 ring-2 ring-sky-100"></span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">In Progress</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="w-4 h-4 rounded bg-sky-500 cursor-pointer shadow-xs"></span>
+<span class="font-code-sm text-code-sm text-outline">#0284C7</span>
+</div>
+</div>
+<!-- Status Card 4 -->
+<div class="bg-surface-container-lowest p-2.5 rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100"></span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">Completed</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="w-4 h-4 rounded bg-emerald-500 cursor-pointer shadow-xs"></span>
+<span class="font-code-sm text-code-sm text-outline">#10B981</span>
+</div>
+</div>
+</div>
+</div>
+<!-- ClickUp Hierarchical Tree Grid Table (NO WBS / SEQ NO COLUMN) -->
+<div class="w-full bg-surface-container-lowest rounded-xl shadow-sm overflow-visible relative">
+<!-- Table Header (Crisp ClickUp style, sequence column REMOVED) -->
+<div class="grid grid-cols-12 px-space-md py-2.5 bg-surface-container-low text-on-surface-variant font-label-md text-label-md rounded-t-xl select-none">
+<div class="col-span-12 sm:col-span-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline">drag_indicator</span>
+<span class="uppercase tracking-wider font-semibold text-on-surface">Task Name</span>
+</div>
+<div class="col-span-3 sm:col-span-2 hidden sm:flex items-center gap-1">
+<span class="uppercase tracking-wider font-semibold">Status</span>
+<span class="material-symbols-outlined text-[14px]">arrow_drop_down</span>
+</div>
+<div class="col-span-2 sm:col-span-2 hidden sm:flex items-center gap-1">
+<span class="uppercase tracking-wider font-semibold">Assignee</span>
+</div>
+<div class="col-span-2 sm:col-span-1 hidden sm:flex items-center gap-1">
+<span class="uppercase tracking-wider font-semibold">Due Date</span>
+</div>
+<div class="col-span-1 sm:col-span-1 hidden sm:flex items-center justify-end">
+<span class="uppercase tracking-wider font-semibold">Priority</span>
+</div>
+</div>
+<!-- Tree Task Rows Container -->
+<div class="flex flex-col relative divide-y divide-surface-container/60">
+<!-- ================= TASK ROW 1: TREt new task ================= -->
+<div class="group relative hover:bg-surface-container-low/70 transition-colors">
+<div class="grid grid-cols-12 items-center px-space-md py-2.5">
+<!-- Col: Task Name with Tree Toggle & Indicators -->
+<div class="col-span-12 sm:col-span-6 flex items-center gap-2 min-w-0 pr-2">
+<!-- Reorder Drag Grip -->
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-on-surface cursor-grab transition-opacity">
+<span class="material-symbols-outlined text-[16px]">drag_indicator</span>
+</button>
+<!-- Caret Toggle (Expanded) -->
+<button class="w-5 h-5 flex items-center justify-center rounded hover:bg-surface-container text-on-surface-variant transition-transform">
+<span class="material-symbols-outlined text-[18px]">arrow_drop_down</span>
+</button>
+<!-- Checkbox -->
+<input class="w-4 h-4 rounded text-primary focus:ring-primary accent-primary cursor-pointer" type="checkbox">
+<!-- Title and inline copy icon -->
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="font-body-md text-body-md font-semibold text-on-surface truncate">TREt new task</span>
+<button class="text-outline hover:text-primary transition-colors" title="Copy task identifier">
+<span class="material-symbols-outlined text-[15px]">content_copy</span>
+</button>
+</div>
+<!-- Subtask Badge -->
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container-high text-on-surface-variant font-code-sm text-code-sm ml-1 shrink-0">
+              2 subtasks
+            </span>
+<!-- Inline Add Subtask Trigger -->
+<button class="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 text-primary hover:underline font-label-sm text-label-sm ml-auto shrink-0 transition-opacity">
+<span class="material-symbols-outlined text-[14px]">add</span>
+<span class="">Subtask</span>
+</button>
+</div>
+<!-- Col: Status Pill (Interactive Trigger) -->
+<div class="col-span-6 sm:col-span-2 mt-1 sm:mt-0 flex items-center relative">
+<button class="status-badge-trigger flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 hover:bg-amber-100 transition-all font-label-md text-label-md shadow-2xs font-medium" data-task="TREt new task">
+<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+<span class="truncate">Pending proc approval</span>
+<span class="material-symbols-outlined text-[14px] text-amber-700">expand_more</span>
+</button>
+</div>
+<!-- Col: Assignee -->
+<div class="col-span-3 sm:col-span-2 hidden sm:flex items-center gap-1.5">
+<div class="w-6 h-6 rounded-full bg-primary-fixed text-primary font-code-sm text-code-sm flex items-center justify-center font-bold">
+              AD
+            </div>
+<span class="font-body-sm text-body-sm text-on-surface">Admin User</span>
+</div>
+<!-- Col: Due Date -->
+<div class="col-span-2 sm:col-span-1 hidden sm:flex items-center text-outline font-body-sm text-body-sm">
+<span class="italic">No due date</span>
+</div>
+<!-- Col: Priority -->
+<div class="col-span-1 sm:col-span-1 hidden sm:flex items-center justify-end">
+<span class="material-symbols-outlined text-[18px] text-amber-500" title="High Priority">keyboard_double_arrow_up</span>
+</div>
+</div>
+<!-- Nested Subtask 1.1 -->
+<div class="grid grid-cols-12 items-center px-space-md py-2 bg-surface-container-lowest/70 hover:bg-surface-container-low/50 relative"><div class="absolute left-7 top-0 bottom-0 w-px bg-outline-variant/60"></div><div class="absolute left-7 top-1/2 w-4 h-3.5 border-b-2 border-l-2 border-outline-variant/60 rounded-bl -mt-3.5"></div><div class="col-span-12 sm:col-span-6 flex items-center gap-2 pl-9 min-w-0 pr-2"><button class="opacity-0 group-hover:opacity-100 text-outline cursor-grab"><span class="material-symbols-outlined text-[14px]">drag_indicator</span></button><input class="w-3.5 h-3.5 rounded text-primary accent-primary cursor-pointer" type="checkbox"><span class="font-body-sm text-body-sm text-on-surface truncate">Submit initial hardware quotation to finance</span><button class="text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined text-[13px]">content_copy</span></button></div><div class="col-span-6 sm:col-span-2 flex items-center"><button class="status-badge-trigger flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-sky-50 text-sky-800 hover:bg-sky-100 font-label-sm text-label-sm font-medium"><span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span><span class="">In Progress</span></button></div><div class="col-span-3 sm:col-span-2 hidden sm:flex items-center gap-1.5"><div class="w-5 h-5 rounded-full bg-secondary-fixed text-secondary font-code-sm text-[10px] flex items-center justify-center font-bold">MC</div><span class="font-body-sm text-body-sm text-on-surface-variant">Mike C.</span></div><div class="col-span-2 sm:col-span-1 hidden sm:flex items-center text-outline font-body-sm text-body-sm"><span class="">Oct 28</span></div><div class="col-span-1 sm:col-span-1 hidden sm:flex items-center justify-end"><span class="material-symbols-outlined text-[16px] text-outline">remove</span></div></div>
+<!-- Nested Subtask 1.2 -->
+<div class="grid grid-cols-12 items-center px-space-md py-2 bg-surface-container-lowest/70 hover:bg-surface-container-low/50 relative"><div class="absolute left-7 top-0 h-1/2 w-px bg-outline-variant/60"></div><div class="absolute left-7 top-1/2 w-4 h-3.5 border-b-2 border-l-2 border-outline-variant/60 rounded-bl -mt-3.5"></div><div class="col-span-12 sm:col-span-6 flex items-center gap-2 pl-9 min-w-0 pr-2"><button class="opacity-0 group-hover:opacity-100 text-outline cursor-grab"><span class="material-symbols-outlined text-[14px]">drag_indicator</span></button><input checked="" class="w-3.5 h-3.5 rounded text-primary accent-primary cursor-pointer" type="checkbox"><span class="font-body-sm text-body-sm text-on-surface-variant line-through truncate">Confirm warranty extension clause (3-Year Onsite)</span><button class="text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined text-[13px]">content_copy</span></button></div><div class="col-span-6 sm:col-span-2 flex items-center"><button class="status-badge-trigger flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-label-sm text-label-sm font-medium"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span class="">Completed</span></button></div><div class="col-span-3 sm:col-span-2 hidden sm:flex items-center gap-1.5"><div class="w-5 h-5 rounded-full bg-tertiary-fixed text-tertiary font-code-sm text-[10px] flex items-center justify-center font-bold">SL</div><span class="font-body-sm text-body-sm text-on-surface-variant">Sara L.</span></div><div class="col-span-2 sm:col-span-1 hidden sm:flex items-center text-outline font-body-sm text-body-sm"><span class="">Oct 24</span></div><div class="col-span-1 sm:col-span-1 hidden sm:flex items-center justify-end"><span class="material-symbols-outlined text-[16px] text-tertiary">keyboard_arrow_down</span></div></div>
+</div>
+<!-- ================= TASK ROW 2: ask boss (WITH ACTIVE CLICKUP POPOVER) ================= -->
+<div class="group relative hover:bg-surface-container-low/70 transition-colors z-20">
+<div class="grid grid-cols-12 items-center px-space-md py-2.5">
+<!-- Col: Task Name -->
+<div class="col-span-12 sm:col-span-6 flex items-center gap-2 min-w-0 pr-2">
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-on-surface cursor-grab">
+<span class="material-symbols-outlined text-[16px]">drag_indicator</span>
+</button>
+<button class="w-5 h-5 flex items-center justify-center rounded hover:bg-surface-container text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">arrow_drop_down</span>
+</button>
+<input class="w-4 h-4 rounded text-primary focus:ring-primary accent-primary cursor-pointer" type="checkbox">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="font-body-md text-body-md font-semibold text-on-surface truncate">ask boss</span>
+<button class="text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[15px]">content_copy</span>
+</button>
+</div>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container-high text-on-surface-variant font-code-sm text-code-sm ml-1 shrink-0">
+              2 subtasks
+            </span>
+<button class="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 text-primary hover:underline font-label-sm text-label-sm ml-auto shrink-0">
+<span class="material-symbols-outlined text-[14px]">add</span>
+<span class="">Subtask</span>
+</button>
+</div>
+<!-- Col: Status Pill with Active Open ClickUp-Style Popover Menu -->
+<div class="col-span-6 sm:col-span-2 mt-1 sm:mt-0 flex items-center relative">
+<button class="status-badge-trigger flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 ring-2 ring-indigo-300 font-label-md text-label-md font-medium shadow-xs" id="active-status-btn">
+<span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+<span class="truncate">Concept approval to be requested</span>
+<span class="material-symbols-outlined text-[14px] text-indigo-600">expand_less</span>
+</button>
+<!-- AUTHENTIC CLICKUP-STYLE STATUS DROPDOWN POPOVER -->
+<div class="absolute top-10 left-0 sm:-left-6 w-80 bg-surface-container-lowest rounded-xl shadow-2xl p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150 hidden" id="clickup-status-popover">
+<!-- Search or quick status input -->
+<div class="relative mb-2">
+<span class="material-symbols-outlined absolute left-2.5 top-2 text-[16px] text-outline">search</span>
+<input class="w-full h-8 pl-8 pr-3 bg-surface-container-low text-on-surface placeholder:text-outline font-body-sm text-body-sm rounded-lg outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary" placeholder="Search or add status..." type="text">
+</div>
+<!-- Scrollable Status Hierarchy Categories -->
+<div class="max-h-64 overflow-y-auto space-y-2 pr-1">
+<!-- Group: NOT STARTED / PENDING -->
+<div>
+<div class="px-2 py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline font-semibold">
+                    Not Started / Pending
+                  </div>
+<div class="space-y-0.5">
+<!-- Option 1: Concept Approval (Active selected with checkmark) -->
+<div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-indigo-50/80 text-indigo-900 cursor-pointer font-body-sm text-body-sm font-medium hover:bg-indigo-100 transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-indigo-500 ring-2 ring-indigo-200"></span>
+<span class="">Concept approval to be requested</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-indigo-600">check</span>
+</div>
+<!-- Option 2: Pending proc approval -->
+<div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-surface-container-low text-on-surface cursor-pointer font-body-sm text-body-sm transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+<span class="">Pending proc approval</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Group: ACTIVE -->
+<div>
+<div class="px-2 py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline font-semibold">
+                    Active
+                  </div>
+<div class="space-y-0.5">
+<div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-surface-container-low text-on-surface cursor-pointer font-body-sm text-body-sm transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+<span class="">In Progress</span>
+</div>
+</div>
+<div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-surface-container-low text-on-surface cursor-pointer font-body-sm text-body-sm transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+<span class="">Under Technical Review</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Group: BLOCKED -->
+<div>
+<div class="px-2 py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline font-semibold">
+                    Blocked
+                  </div>
+<div class="space-y-0.5">
+<div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-surface-container-low text-on-surface cursor-pointer font-body-sm text-body-sm transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+<span class="">Blocked / Waiting on Vendor</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Group: COMPLETE -->
+<div>
+<div class="px-2 py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline font-semibold">
+                    Complete
+                  </div>
+<div class="space-y-0.5">
+<div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-surface-container-low text-on-surface cursor-pointer font-body-sm text-body-sm transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-teal-500"></span>
+<span class="">Approved / Ready</span>
+</div>
+</div>
+<div class="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-surface-container-low text-on-surface cursor-pointer font-body-sm text-body-sm transition-colors">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+<span class="">Completed</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Popover Actions: Add Custom Status & Edit -->
+<div class="mt-2 pt-2 bg-surface-container-low/60 -mx-2.5 -mb-2.5 p-2 rounded-b-xl flex items-center justify-between font-label-md text-label-md">
+<button class="flex items-center gap-1 text-primary hover:underline">
+<span class="material-symbols-outlined text-[15px]">add_circle</span>
+<span class="">+ Custom Status</span>
+</button>
+<button class="flex items-center gap-1 text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[15px]">settings</span>
+<span class="">Edit Statuses</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Col: Assignee -->
+<div class="col-span-3 sm:col-span-2 hidden sm:flex items-center gap-1.5">
+<div class="w-6 h-6 rounded-full bg-secondary-fixed text-secondary font-code-sm text-code-sm flex items-center justify-center font-bold">
+              PM
+            </div>
+<span class="font-body-sm text-body-sm text-on-surface">Procurement Mgr</span>
+</div>
+<!-- Col: Due Date -->
+<div class="col-span-2 sm:col-span-1 hidden sm:flex items-center text-outline font-body-sm text-body-sm">
+<span class="italic">No due date</span>
+</div>
+<!-- Col: Priority -->
+<div class="col-span-1 sm:col-span-1 hidden sm:flex items-center justify-end">
+<span class="material-symbols-outlined text-[18px] text-primary" title="Normal Priority">density_medium</span>
+</div>
+</div>
+<!-- Nested Subtask 2.1 -->
+<div class="grid grid-cols-12 items-center px-space-md py-2 bg-surface-container-lowest/70 hover:bg-surface-container-low/50 relative"><div class="absolute left-7 top-0 bottom-0 w-px bg-outline-variant/60"></div><div class="absolute left-7 top-1/2 w-4 h-3.5 border-b-2 border-l-2 border-outline-variant/60 rounded-bl -mt-3.5"></div><div class="col-span-12 sm:col-span-6 flex items-center gap-2 pl-9 min-w-0 pr-2"><button class="opacity-0 group-hover:opacity-100 text-outline cursor-grab"><span class="material-symbols-outlined text-[14px]">drag_indicator</span></button><button class="w-4 h-4 flex items-center justify-center rounded text-on-surface-variant hover:bg-surface-container"><span class="material-symbols-outlined text-[16px]">arrow_drop_down</span></button><input class="w-3.5 h-3.5 rounded text-primary accent-primary cursor-pointer" type="checkbox"><span class="font-body-sm text-body-sm text-on-surface font-medium truncate">Hardware spec confirmation (RAM 64GB vs 32GB)</span><span class="px-1.5 py-0.2 rounded-full bg-surface-container text-on-surface-variant font-code-sm text-[10px] ml-1 shrink-0">1 micro-task</span><button class="text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined text-[13px]">content_copy</span></button></div><div class="col-span-6 sm:col-span-2 flex items-center"><button class="status-badge-trigger flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-label-sm text-label-sm font-medium"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span><span class="">Concept approval</span></button></div><div class="col-span-3 sm:col-span-2 hidden sm:flex items-center gap-1.5"><div class="w-5 h-5 rounded-full bg-primary-fixed-dim text-primary font-code-sm text-[10px] flex items-center justify-center font-bold">JD</div><span class="font-body-sm text-body-sm text-on-surface-variant">John Doe</span></div><div class="col-span-2 sm:col-span-1 hidden sm:flex items-center text-outline font-body-sm text-body-sm"><span class="">Tomorrow</span></div><div class="col-span-1 sm:col-span-1 hidden sm:flex items-center justify-end"><span class="material-symbols-outlined text-[16px] text-amber-500">keyboard_arrow_up</span></div></div><div class="grid grid-cols-12 items-center px-space-md py-1.5 bg-surface-container-low/30 hover:bg-surface-container-low/60 relative"><div class="absolute left-7 top-0 bottom-0 w-px bg-outline-variant/60"></div><div class="absolute left-14 top-0 h-1/2 w-px bg-outline-variant/60"></div><div class="absolute left-14 top-1/2 w-4 h-3.5 border-b-2 border-l-2 border-outline-variant/60 rounded-bl -mt-3.5"></div><div class="col-span-12 sm:col-span-6 flex items-center gap-2 pl-16 min-w-0 pr-2"><button class="opacity-0 group-hover:opacity-100 text-outline cursor-grab"><span class="material-symbols-outlined text-[14px]">drag_indicator</span></button><input class="w-3 h-3 rounded text-primary accent-primary cursor-pointer" type="checkbox"><span class="material-symbols-outlined text-[14px] text-outline">subdirectory_arrow_right</span><span class="font-body-sm text-body-sm text-on-surface-variant truncate">Vendor memory quotation check (Crucial vs Kingston)</span><button class="text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined text-[12px]">content_copy</span></button></div><div class="col-span-6 sm:col-span-2 flex items-center"><button class="status-badge-trigger flex items-center gap-1.5 px-2 py-0.2 rounded-full bg-sky-50 text-sky-800 hover:bg-sky-100 font-label-sm text-[11px] font-medium"><span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span><span class="">In Progress</span></button></div><div class="col-span-3 sm:col-span-2 hidden sm:flex items-center gap-1.5"><div class="w-4 h-4 rounded-full bg-secondary-fixed text-secondary font-code-sm text-[9px] flex items-center justify-center font-bold">PM</div><span class="font-body-sm text-body-sm text-on-surface-variant">Procurement Mgr</span></div><div class="col-span-2 sm:col-span-1 hidden sm:flex items-center text-outline font-body-sm text-body-sm"><span class="">Today</span></div><div class="col-span-1 sm:col-span-1 hidden sm:flex items-center justify-end"><span class="material-symbols-outlined text-[15px] text-outline">remove</span></div></div>
+<!-- Nested Subtask 2.2 -->
+<div class="grid grid-cols-12 items-center px-space-md py-2 bg-surface-container-lowest/70 hover:bg-surface-container-low/50 relative"><div class="absolute left-7 top-0 h-1/2 w-px bg-outline-variant/60"></div><div class="absolute left-7 top-1/2 w-4 h-3.5 border-b-2 border-l-2 border-outline-variant/60 rounded-bl -mt-3.5"></div><div class="col-span-12 sm:col-span-6 flex items-center gap-2 pl-9 min-w-0 pr-2"><button class="opacity-0 group-hover:opacity-100 text-outline cursor-grab"><span class="material-symbols-outlined text-[14px]">drag_indicator</span></button><input class="w-3.5 h-3.5 rounded text-primary accent-primary cursor-pointer" type="checkbox"><span class="font-body-sm text-body-sm text-on-surface truncate">Procurement budget signoff with Department Head</span><button class="text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined text-[13px]">content_copy</span></button></div><div class="col-span-6 sm:col-span-2 flex items-center"><button class="status-badge-trigger flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-label-sm text-label-sm font-medium"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span><span class="">Concept approval</span></button></div><div class="col-span-3 sm:col-span-2 hidden sm:flex items-center gap-1.5"><div class="w-5 h-5 rounded-full bg-tertiary-fixed text-tertiary font-code-sm text-[10px] flex items-center justify-center font-bold">AD</div><span class="font-body-sm text-body-sm text-on-surface-variant">Admin User</span></div><div class="col-span-2 sm:col-span-1 hidden sm:flex items-center text-outline font-body-sm text-body-sm"><span class="">Nov 02</span></div><div class="col-span-1 sm:col-span-1 hidden sm:flex items-center justify-end"><span class="material-symbols-outlined text-[16px] text-rose-500">keyboard_double_arrow_up</span></div></div>
+</div>
+<!-- ================= TASK ROW 3: test ================= -->
+<div class="group relative hover:bg-surface-container-low/70 transition-colors">
+<div class="grid grid-cols-12 items-center px-space-md py-2.5">
+<div class="col-span-12 sm:col-span-6 flex items-center gap-2 min-w-0 pr-2">
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-on-surface cursor-grab">
+<span class="material-symbols-outlined text-[16px]">drag_indicator</span>
+</button>
+<!-- No children, non-expandable dash icon -->
+<div class="w-5 h-5 flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-[14px]">arrow_right</span>
+</div>
+<input class="w-4 h-4 rounded text-primary focus:ring-primary accent-primary cursor-pointer" type="checkbox">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="font-body-md text-body-md font-semibold text-on-surface truncate">test</span>
+<button class="text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[15px]">content_copy</span>
+</button>
+</div>
+<button class="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 text-primary hover:underline font-label-sm text-label-sm ml-auto shrink-0">
+<span class="material-symbols-outlined text-[14px]">add</span>
+<span class="">Subtask</span>
+</button>
+</div>
+<div class="col-span-6 sm:col-span-2 mt-1 sm:mt-0 flex items-center">
+<button class="status-badge-trigger flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-label-md text-label-md font-medium">
+<span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+<span class="truncate">Concept approval to be requested</span>
+<span class="material-symbols-outlined text-[14px] text-indigo-500">expand_more</span>
+</button>
+</div>
+<div class="col-span-3 sm:col-span-2 hidden sm:flex items-center gap-1.5">
+<span class="text-outline italic font-body-sm text-body-sm">Unassigned</span>
+</div>
+<div class="col-span-2 sm:col-span-1 hidden sm:flex items-center text-outline font-body-sm text-body-sm">
+<span class="italic">No due date</span>
+</div>
+<div class="col-span-1 sm:col-span-1 hidden sm:flex items-center justify-end">
+<span class="material-symbols-outlined text-[18px] text-outline">remove</span>
+</div>
+</div>
+</div>
+<!-- ================= TASK ROW 4: Vendor quotation review ================= -->
+<div class="group relative hover:bg-surface-container-low/70 transition-colors">
+<div class="grid grid-cols-12 items-center px-space-md py-2.5">
+<div class="col-span-12 sm:col-span-6 flex items-center gap-2 min-w-0 pr-2">
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-on-surface cursor-grab">
+<span class="material-symbols-outlined text-[16px]">drag_indicator</span>
+</button>
+<div class="w-5 h-5 flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-[14px]">arrow_right</span>
+</div>
+<input class="w-4 h-4 rounded text-primary focus:ring-primary accent-primary cursor-pointer" type="checkbox">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="font-body-md text-body-md font-semibold text-on-surface truncate">Vendor quotation review</span>
+<button class="text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[15px]">content_copy</span>
+</button>
+</div>
+<button class="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 text-primary hover:underline font-label-sm text-label-sm ml-auto shrink-0">
+<span class="material-symbols-outlined text-[14px]">add</span>
+<span class="">Subtask</span>
+</button>
+</div>
+<div class="col-span-6 sm:col-span-2 mt-1 sm:mt-0 flex items-center">
+<button class="status-badge-trigger flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-sky-50 text-sky-800 hover:bg-sky-100 font-label-md text-label-md font-medium">
+<span class="w-2 h-2 rounded-full bg-sky-500"></span>
+<span class="truncate">In Progress</span>
+<span class="material-symbols-outlined text-[14px] text-sky-600">expand_more</span>
+</button>
+</div>
+<div class="col-span-3 sm:col-span-2 hidden sm:flex items-center gap-1.5">
+<div class="w-6 h-6 rounded-full bg-secondary-fixed text-secondary font-code-sm text-code-sm flex items-center justify-center font-bold">
+              MC
+            </div>
+<span class="font-body-sm text-body-sm text-on-surface">Mike C.</span>
+</div>
+<div class="col-span-2 sm:col-span-1 hidden sm:flex items-center text-on-surface font-body-sm text-body-sm">
+<span class="">Nov 05</span>
+</div>
+<div class="col-span-1 sm:col-span-1 hidden sm:flex items-center justify-end">
+<span class="material-symbols-outlined text-[18px] text-amber-500">keyboard_arrow_up</span>
+</div>
+</div>
+</div>
+<!-- ================= TASK ROW 5: Asset barcode scanning ================= -->
+<div class="group relative hover:bg-surface-container-low/70 transition-colors">
+<div class="grid grid-cols-12 items-center px-space-md py-2.5">
+<div class="col-span-12 sm:col-span-6 flex items-center gap-2 min-w-0 pr-2">
+<button class="opacity-0 group-hover:opacity-100 text-outline hover:text-on-surface cursor-grab">
+<span class="material-symbols-outlined text-[16px]">drag_indicator</span>
+</button>
+<div class="w-5 h-5 flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-[14px]">arrow_right</span>
+</div>
+<input checked="" class="w-4 h-4 rounded text-primary focus:ring-primary accent-primary cursor-pointer" type="checkbox">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="font-body-md text-body-md font-semibold text-on-surface-variant line-through truncate">Asset barcode scanning</span>
+<button class="text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[15px]">content_copy</span>
+</button>
+</div>
+<button class="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 text-primary hover:underline font-label-sm text-label-sm ml-auto shrink-0">
+<span class="material-symbols-outlined text-[14px]">add</span>
+<span class="">Subtask</span>
+</button>
+</div>
+<div class="col-span-6 sm:col-span-2 mt-1 sm:mt-0 flex items-center">
+<button class="status-badge-trigger flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-label-md text-label-md font-medium">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+<span class="truncate">Completed</span>
+<span class="material-symbols-outlined text-[14px] text-emerald-600">expand_more</span>
+</button>
+</div>
+<div class="col-span-3 sm:col-span-2 hidden sm:flex items-center gap-1.5">
+<div class="w-6 h-6 rounded-full bg-tertiary-fixed text-tertiary font-code-sm text-code-sm flex items-center justify-center font-bold">
+              SL
+            </div>
+<span class="font-body-sm text-body-sm text-on-surface">Sara L.</span>
+</div>
+<div class="col-span-2 sm:col-span-1 hidden sm:flex items-center text-outline font-body-sm text-body-sm">
+<span class="">Oct 20</span>
+</div>
+<div class="col-span-1 sm:col-span-1 hidden sm:flex items-center justify-end">
+<span class="material-symbols-outlined text-[18px] text-tertiary">check_circle</span>
+</div>
+</div>
+</div>
+<!-- Quick Add New Task Row at Bottom of Table -->
+<div class="flex items-center gap-2 px-space-md py-2.5 text-on-surface-variant hover:text-primary hover:bg-surface-container-low/40 cursor-pointer transition-colors rounded-b-xl">
+<span class="material-symbols-outlined text-[18px] text-primary">add</span>
+<span class="font-body-md text-body-md font-medium">New task...</span>
+</div>
+</div>
+</div>
+<!-- Telemetry & Diagnostic Footer Info Bar (Inspired by Reference) -->
+<div class="w-full mt-4 py-2.5 px-space-md bg-surface-container-low rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-2 text-on-surface-variant font-code-sm text-code-sm">
+<div class="flex items-center flex-wrap gap-x-2 gap-y-1">
+<span class="flex items-center gap-1 font-semibold text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-primary">monitoring</span>
+        Telemetry:
+      </span>
+<span class="">8 periods</span>
+<span class="text-outline">•</span>
+<span class="">0 comments</span>
+<span class="text-outline">•</span>
+<span class="">0 files</span>
+<span class="text-outline">•</span>
+<span class="">est 0m vs spent 0m</span>
+<span class="text-outline">•</span>
+<span class="text-on-surface">Backup: DB 224 KB + uploads 0 B (0 files)</span>
+</div>
+<div class="flex items-center gap-1.5 text-tertiary font-semibold">
+<span class="w-2 h-2 rounded-full bg-tertiary-container animate-pulse"></span>
+<span class="">Nightly sqlite3 .backup + tar of /data active</span>
+</div>
+</div>
+</div>
+<script>
+  // Simple interactive toggle for status color config drawer and status popover
+  const toggleBtn = document.getElementById('toggle-color-config-btn');
+  const closeBtn = document.getElementById('close-color-drawer-btn');
+  const drawer = document.getElementById('status-color-drawer');
+  const activeStatusBtn = document.getElementById('active-status-btn');
+  const popover = document.getElementById('clickup-status-popover');
+
+  if (toggleBtn && drawer && closeBtn) {
+    toggleBtn.addEventListener('click', () => {
+      drawer.classList.toggle('hidden');
+    });
+    closeBtn.addEventListener('click', () => {
+      drawer.classList.add('hidden');
+    });
+  }
+
+  // Toggle active status menu
+  if (activeStatusBtn && popover) {
+    activeStatusBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      popover.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!popover.contains(e.target) && !activeStatusBtn.contains(e.target)) {
+        popover.classList.add('hidden');
+      }
+    });
+  }
+</script></main></div>
+
+</body></html>

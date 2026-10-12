@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "secondary-fixed": "#c9e6ff", "secondary-fixed-dim": "#89ceff", "primary-fixed-dim": "#c3c0ff", "surface-bright": "#f8f9ff", "tertiary": "#005338", "on-tertiary-container": "#67f4b7", "error": "#ba1a1a", "surface-container-high": "#dce9ff", "surface-container-lowest": "#ffffff", "on-error-container": "#93000a", "tertiary-fixed": "#6ffbbe", "on-primary": "#ffffff", "primary-container": "#4f46e5", "tertiary-fixed-dim": "#4edea3", "on-tertiary": "#ffffff", "on-secondary-container": "#004666", "on-secondary-fixed-variant": "#004c6e", "on-tertiary-fixed": "#002113", "surface-dim": "#cbdbf5", "inverse-surface": "#213145", "on-secondary-fixed": "#001e2f", "surface-tint": "#4d44e3", "tertiary-container": "#006e4b", "on-primary-fixed": "#0f0069", "secondary-container": "#39b8fd", "error-container": "#ffdad6", "on-error": "#ffffff", "on-secondary": "#ffffff", "surface-container-low": "#eff4ff", "surface": "#f8f9ff", "outline-variant": "#c7c4d8", "on-surface-variant": "#464555", "on-background": "#0b1c30", "surface-container": "#e5eeff", "inverse-on-surface": "#eaf1ff", "surface-variant": "#d3e4fe", "secondary": "#006591", "on-primary-fixed-variant": "#3323cc", "on-tertiary-fixed-variant": "#005236", "outline": "#777587", "background": "#f8f9ff", "primary-fixed": "#e2dfff", "surface-container-highest": "#d3e4fe", "on-primary-container": "#dad7ff", "primary": "#3525cd", "on-surface": "#0b1c30", "inverse-primary": "#c3c0ff" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-sm": "0.5rem", "space-xl": "2rem", "margin": "1.5rem", "space-xs": "0.25rem", "gutter": "1rem", "space-md": "0.75rem", "space-lg": "1.25rem" }, "fontFamily": { "body-sm": ["Inter"], "headline-lg": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "body-md": ["Inter"], "label-sm": ["Inter"], "headline-xl": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "headline-md": ["Plus Jakarta Sans"], "code-sm": ["JetBrains Mono"], "label-md": ["Inter"] }, "fontSize": { "body-sm": ["0.8125rem", {"lineHeight": "1.125rem", "fontWeight": "400"}], "headline-lg": ["1.5rem", {"lineHeight": "2rem", "fontWeight": "600"}], "headline-sm": ["1rem", {"lineHeight": "1.5rem", "fontWeight": "600"}], "body-md": ["0.875rem", {"lineHeight": "1.25rem", "fontWeight": "400"}], "label-sm": ["0.6875rem", {"lineHeight": "0.875rem", "letterSpacing": "0.025em", "fontWeight": "600"}], "headline-xl": ["2rem", {"lineHeight": "2.5rem", "fontWeight": "700"}], "body-lg": ["1rem", {"lineHeight": "1.5rem", "fontWeight": "400"}], "headline-md": ["1.25rem", {"lineHeight": "1.75rem", "fontWeight": "600"}], "code-sm": ["0.75rem", {"lineHeight": "1rem", "fontWeight": "500"}], "label-md": ["0.8125rem", {"lineHeight": "1rem", "fontWeight": "500"}] } } } }</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-screen w-72 bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between select-none"><div class="flex flex-col h-full overflow-hidden"><div class="h-14 px-space-md flex items-center justify-between shrink-0 bg-surface-container-lowest"><div class="flex items-center gap-space-sm"><img alt="Neravate PM Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1Wk-U0qOguWDsbUW-Lhygk1DRGGLlywdts99YKGnU2kkIxTwoa_WTD4tS6Nu1LerGhbEkcXTufUYzI_EvN6fH_AXrQeZRjbn3TKm1Dy3bWMai-pSy5CZr10kCxkYkyVWdp9THR8X91yQogvtXxSCcCbOya2r8XvalafCGTXRp33SlnaCosIi6xqi4gq_M1IBts256TXwIYwdmAgwoGvxDTn3p29qA5KhRxHoOGGHIX8ule_iAxLUWmSinUJ"/><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Neravate PM</span></div><button class="h-8 w-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">keyboard_double_arrow_left</span></button></div><div class="flex-1 overflow-y-auto px-space-sm py-space-sm space-y-space-md"><div class="space-y-space-xs"><div class="px-space-sm py-1 font-label-sm text-label-sm uppercase text-on-surface-variant">Favorites &amp; Quick Access</div><nav class="space-y-0.5" data-active-classes="bg-primary-container text-on-primary font-medium rounded-lg"><a class="group flex items-center justify-between px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="my-tasks" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">check_circle</span><span class="font-body-md text-body-md">My Tasks</span></div><span class="px-1.5 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">24</span></a><a class="group flex items-center justify-between px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="assigned-to-me" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">assignment_ind</span><span class="font-body-md text-body-md">Assigned to Me</span></div></a><a class="group flex items-center justify-between px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all" data-path="recent" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[18px]">schedule</span><span class="font-body-md text-body-md">Recent</span></div></a></nav></div><div class="space-y-space-xs"><div class="flex items-center justify-between px-space-sm py-1"><span class="font-label-sm text-label-sm uppercase text-on-surface-variant">Categories &amp; Workspaces</span><button class="h-5 w-5 rounded flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[16px]">add</span></button></div><div class="space-y-1"><div class="space-y-0.5"><div class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface hover:bg-surface-container-low cursor-pointer transition-colors"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span><span class="material-symbols-outlined text-[18px] text-primary">folder_open</span><span class="font-body-sm text-body-sm font-semibold text-on-surface">IT Branch</span></div><span class="font-label-sm text-label-sm text-on-surface-variant">4</span></div><nav class="pl-6 space-y-0.5" data-active-classes="bg-primary-container text-on-primary font-medium rounded-lg"><a class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="procurements" href="#"><span class="font-body-sm text-body-sm truncate">Procurements</span></a><a class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="recurrent-payments" href="#"><span class="font-body-sm text-body-sm truncate">Recurrent Payments</span><span class="px-1.5 py-0.2 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">9</span></a><a class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="day-to-day-tasks" href="#"><span class="font-body-sm text-body-sm truncate">Day to Day Tasks</span><span class="px-1.5 py-0.2 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm">14</span></a><a class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="project-implementation" href="#"><span class="font-body-sm text-body-sm truncate">Project Implementation</span></a></nav></div><div class="space-y-0.5"><div class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface cursor-pointer transition-colors"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">chevron_right</span><span class="material-symbols-outlined text-[18px]">folder</span><span class="font-body-sm text-body-sm">Product &amp; Design</span></div><span class="font-label-sm text-label-sm">2</span></div></div><div class="space-y-0.5"><div class="flex items-center justify-between px-space-sm py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface cursor-pointer transition-colors"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">chevron_right</span><span class="material-symbols-outlined text-[18px]">folder</span><span class="font-body-sm text-body-sm">Operations &amp; SecOps</span></div><span class="font-label-sm text-label-sm">2</span></div></div><button class="w-full flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface font-body-sm text-body-sm transition-colors"><span class="material-symbols-outlined text-[18px]">add_circle</span><span>Add Category</span></button></div></div></div><div class="p-space-sm bg-surface-container-low shrink-0 space-y-space-xs"><div class="px-space-sm py-space-xs bg-surface-container-lowest rounded-lg"><div class="flex items-center justify-between mb-1"><span class="font-label-sm text-label-sm text-on-surface-variant">Team Storage</span><span class="font-code-sm text-code-sm text-on-surface font-semibold">78%</span></div><div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full bg-primary rounded-full w-[78%]"></div></div><div class="mt-1 text-right"><span class="font-label-sm text-label-sm text-primary hover:underline cursor-pointer">Upgrade Plan</span></div></div><nav class="space-y-0.5" data-active-classes="bg-primary-container text-on-primary font-medium rounded-lg"><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="global-settings" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span class="font-body-md text-body-md">Global Settings</span></a><a class="flex items-center gap-space-sm px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="help-resources" href="#"><span class="material-symbols-outlined text-[18px]">help_outline</span><span class="font-body-md text-body-md">Help &amp; Resources</span></a></nav></div></div></aside><div class="pl-72 min-h-screen flex flex-col bg-surface"><header class="fixed top-0 left-72 right-0 h-14 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-space-lg"><div class="flex items-center gap-space-md"><div class="flex items-center gap-1.5 px-space-sm py-1 rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container transition-colors cursor-pointer"><span class="material-symbols-outlined text-primary text-[18px]">workspaces</span><span class="font-body-sm text-body-sm font-semibold">Neravate Core / Engineering</span><span class="material-symbols-outlined text-[16px] text-on-surface-variant">unfold_more</span></div><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-2.5 text-on-surface-variant text-[18px]">search</span><input class="w-80 h-9 pl-8 pr-16 bg-surface-container-low hover:bg-surface-container focus:bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant font-body-sm text-body-sm rounded-lg outline-none transition-all focus:ring-2 focus:ring-primary-container" placeholder="Search tasks, docs, commands..." type="text"/><kbd class="absolute right-2 font-code-sm text-code-sm px-1.5 py-0.5 bg-surface-container text-on-surface-variant rounded border border-outline-variant/30">Ctrl+K</kbd></div></div><div class="flex items-center gap-space-sm"><button class="h-9 px-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center gap-1.5 font-label-md text-label-md transition-colors"><span class="material-symbols-outlined text-secondary text-[18px]">auto_awesome</span><span>Ask AI</span></button><button class="relative h-9 w-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error ring-2 ring-surface"></span></button><button class="h-9 px-space-md bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md rounded-lg flex items-center gap-1 shadow-sm transition-all"><span class="material-symbols-outlined text-[18px]">add</span><span>Create</span></button><div class="relative ml-1 cursor-pointer"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-container-highest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHKiw3uH9vYNspguDhm6XOG8yP99PnPrd8fzZiHtOS-bMNM9Eq6enfggaGgvbw_LJvCyauIe_Wx4gMPeTkxK6MAjVRkpzFaD-hjX6IQGQahAR5uELy08_hPvE4wOtT1_K8o1q1m1BHj3gFES9E-Yp75tQf0pgL9d4doK2Ji7idtKkU-yM3Ao4Mk2WTThUDy2peZ3l9m04C6bRNvp4Par6lt8Q4x0u1kLqRjXKCEzVQtxAWN_7-7Z4HGw"/><span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-tertiary-container ring-2 ring-surface"></span></div></div></header><main class="w-full pt-14 px-space-lg flex-1 bg-surface"><div class="flex flex-col w-full pb-16">
+<!-- Top Breadcrumb & Project Header Section -->
+<section class="w-full pt-4 pb-3 flex flex-col gap-3">
+<!-- Breadcrumb path -->
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant overflow-x-auto whitespace-nowrap py-1">
+<span class="hover:text-primary cursor-pointer transition-colors">Categories</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="hover:text-primary cursor-pointer transition-colors">IT Branch</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="hover:text-primary cursor-pointer transition-colors">Procurements</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="font-semibold text-on-surface flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary-container inline-block"></span>
+        Infrastructure Modernization &amp; Hardware Upgrade
+      </span>
+<span class="px-1.5 py-0.5 rounded-full bg-surface-container-high text-primary font-code-sm text-code-sm ml-2">PRJ-842</span>
+</div>
+<!-- Main Project Title and High-Level Properties Card -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-4">
+<div class="flex flex-wrap items-center justify-between gap-3">
+<div class="flex items-center gap-2.5 min-w-0">
+<div class="w-9 h-9 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[20px]">router</span>
+</div>
+<div class="flex items-center gap-2 group cursor-pointer">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight group-hover:text-primary transition-colors">
+              Q3 Hardware Migration &amp; Network Upgrade
+            </h1>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px] opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container font-label-sm text-label-sm text-on-surface-variant font-medium">Sprint 24.3</span>
+</div>
+<!-- Quick Top Action CTAs -->
+<div class="flex items-center gap-2 shrink-0">
+<button class="h-8 px-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center gap-1.5 font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[16px] text-tertiary">share</span>
+<span>Share</span>
+</button>
+<button class="h-8 px-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center gap-1.5 font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+<span>Automate</span>
+</button>
+<button class="h-8 px-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center gap-1 font-label-md text-label-md transition-colors" id="toggleDrawerBtn" title="Toggle Project Insights Drawer">
+<span class="material-symbols-outlined text-[18px] text-primary">analytics</span>
+<span>Insights</span>
+</button>
+</div>
+</div>
+<!-- Project Metadata Strip -->
+<div class="flex flex-wrap items-center justify-between gap-y-3 pt-2">
+<div class="flex flex-wrap items-center gap-x-6 gap-y-2 font-body-sm text-body-sm text-on-surface-variant">
+<!-- Status pill with mini progress -->
+<div class="flex items-center gap-2 bg-surface-container-low px-2.5 py-1 rounded-full">
+<span class="w-2 h-2 rounded-full bg-secondary-container animate-pulse"></span>
+<span class="font-medium text-on-surface">In Progress</span>
+<span class="font-code-sm text-code-sm text-secondary font-semibold">68%</span>
+<div class="w-12 h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary-container rounded-full w-[68%]"></div>
+</div>
+</div>
+<!-- Dates -->
+<div class="flex items-center gap-1.5 hover:text-on-surface transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[16px]">calendar_today</span>
+<span>Aug 12 - Oct 04, 2024</span>
+</div>
+<!-- Assignees Pile -->
+<div class="flex items-center gap-1.5">
+<span class="text-on-surface-variant">Team:</span>
+<div class="flex -space-x-1.5 items-center">
+<img class="w-6 h-6 rounded-full object-cover ring-2 ring-surface-container-lowest" data-alt="Senior Network Architect headshot in tech studio with soft blue rim lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGBrZpTlotsudnEvJUhIboyFt-tG9xQKYIoGrHmoW6wtB4aM1D1XmL00W4vvlN37sXkZISto7_f1YWUM4joOXMB3i1IQiCVDpD_CPQtFuGK0y7NVtEcfeagOPJDv961zh1kwrXZCjR451CQQnD-72bT1quG3_L5B67k6rLDOtG_b7DmchOn7fhwWs8FjSdJQp1MYuVaj4rJBgfrN5mAxBmjFCbZxiE5gPtGbRPtHqoHBePY8oXigMrng"/>
+<img class="w-6 h-6 rounded-full object-cover ring-2 ring-surface-container-lowest" data-alt="DevOps engineer portrait neutral background modern tech office daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeCqYTySN1PLcZFpe71cH3LCDXJXGCrs-07qT1ggeIkAsZDTe_Q0Bb1Vt9-iwrkaIgXbzWiNEHrXPiJDiJ5ps-h3Y2LPq1v9KjFVmqgCs8KY43tjT-yvhzdL9vlQ22lDVE9ijhQj3wNdVXeV_r6sM_5mesoo91Efjkd9wxoFlSW-Lne1MMYTcSQ3-cUwaNcxMR3XN5a3hkCh6C3-r6hI_54mCuHYPpeCPpIfoecOcCxiskX2j1m56R4Q"/>
+<img class="w-6 h-6 rounded-full object-cover ring-2 ring-surface-container-lowest" data-alt="IT Procurement specialist smiling headshot modern minimal office" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZrErOQWg0swWvK0c9pXhJ--0iYUFxOTCKNwckk5mE-iGH_2UYDJNhnA-GDmHVFY-YUonmWDAesJSZJsxCX0NEj-xwVyKb1KUn7ZCQNOMNkITFHEnKipo8U4xwfJz_KHsXAoPpg_H6kEwYS-iqRkDCL51PKsTopZBCAVkmGExIPURL6A6EbofnXAN_9ECRjWKNHXjnCtcp3-cLGPmEoghC2Mhrd5iak6oFiIbt64fbgzl1pcG5kSTtIQ"/>
+<div class="w-6 h-6 rounded-full bg-surface-container-high text-on-surface font-label-sm text-label-sm flex items-center justify-center font-bold ring-2 ring-surface-container-lowest">+4</div>
+</div>
+</div>
+<!-- Custom Fields: Budget & Tracked hours -->
+<div class="flex items-center gap-1 bg-surface-container px-2 py-0.5 rounded-md">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Budget:</span>
+<span class="font-code-sm text-code-sm font-semibold text-on-surface">$48,000</span>
+</div>
+<div class="flex items-center gap-1 bg-surface-container px-2 py-0.5 rounded-md">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Tracked:</span>
+<span class="font-code-sm text-code-sm font-semibold text-on-surface">218h / 320h</span>
+</div>
+<!-- Priority Indicator -->
+<div class="flex items-center gap-1 text-error bg-error-container/40 px-2 py-0.5 rounded-md">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">flag</span>
+<span class="font-label-sm text-label-sm font-bold uppercase">High Priority</span>
+</div>
+</div>
+<!-- Right Quick Tag -->
+<div class="flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-code-sm text-code-sm">#Tier1-Infra</span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-code-sm text-code-sm">#Datacenter</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Views Navigation Bar & Controls (ClickUp layout style) -->
+<section class="w-full flex flex-col gap-2.5 mt-2"><!-- View Switcher Tabs -->
+<div class="flex items-center justify-between bg-surface-container-lowest px-space-md py-1 rounded-xl shadow-sm overflow-x-auto">
+<div class="flex items-center gap-1 shrink-0">
+<!-- Table Tab (Active) -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md shadow-sm transition-all">
+<span class="material-symbols-outlined text-[18px]">table_chart</span>
+<span>Table</span>
+<span class="px-1.5 py-0.2 rounded-full bg-white/20 text-on-primary font-label-sm text-label-sm font-bold">34</span>
+</button>
+<!-- List Tab -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[18px]">format_list_bulleted</span>
+<span>List</span>
+</button>
+<!-- Board Tab -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[18px]">view_kanban</span>
+<span>Board</span>
+</button>
+<!-- Calendar Tab -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[18px]">calendar_month</span>
+<span>Calendar</span>
+</button>
+<!-- Gantt Tab -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[18px]">timeline</span>
+<span>Gantt</span>
+</button>
+<!-- Docs Tab -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[18px]">description</span>
+<span>Docs &amp; Specs</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+</button>
+<!-- + View Button -->
+<button class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-primary hover:bg-surface-container font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>View</span>
+</button>
+</div>
+<!-- Right Tab Tools -->
+<div class="flex items-center gap-2 shrink-0">
+<button class="h-8 px-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface flex items-center gap-1 font-label-sm text-label-sm transition-colors">
+<span class="material-symbols-outlined text-[16px]">auto_mode</span>
+<span>Automations (3)</span>
+</button>
+<button class="h-8 px-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface flex items-center gap-1 font-label-sm text-label-sm transition-colors">
+<span class="material-symbols-outlined text-[16px]">table_chart_view</span>
+<span>Fields</span>
+</button>
+</div>
+</div>
+<!-- Filter, Group, Sort & Quick Command Strip -->
+<div class="flex flex-wrap items-center justify-between gap-2 bg-surface-container-lowest px-space-md py-2 rounded-xl shadow-sm">
+<div class="flex flex-wrap items-center gap-1.5">
+<!-- Group By Button - Ungrouped / None -->
+<div class="relative group">
+<button class="h-8 px-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center gap-1.5 font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">layers_clear</span>
+<span>Group: <strong class="font-semibold text-on-surface-variant">None</strong></span>
+<span class="material-symbols-outlined text-[14px]">expand_more</span>
+</button>
+</div>
+<!-- Subtasks Mode Switcher -->
+<div class="flex items-center bg-surface-container-low p-0.5 rounded-lg">
+<button class="px-2 py-1 rounded bg-surface-container-lowest text-primary font-label-sm text-label-sm font-semibold shadow-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">account_tree</span>
+<span>In-Tree</span>
+</button>
+<button class="px-2 py-1 rounded text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm transition-colors">
+Separate
+</button>
+<button class="px-2 py-1 rounded text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm transition-colors">
+Collapse All
+</button>
+</div>
+<!-- Filter Action -->
+<button class="h-8 px-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center gap-1.5 font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[16px]">filter_list</span>
+<span>Filter</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+</button>
+<!-- Sort Action -->
+<button class="h-8 px-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center gap-1.5 font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[16px]">swap_vert</span>
+<span>Sort: Due Date</span>
+</button>
+<!-- Customize Columns -->
+<button class="h-8 px-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center gap-1 font-label-md text-label-md transition-colors">
+<span class="material-symbols-outlined text-[16px]">view_column</span>
+<span>Columns (7)</span>
+</button>
+</div>
+<!-- Right Search & Instant New Task -->
+<div class="flex items-center gap-2 w-full sm:w-auto">
+<div class="relative flex items-center flex-1 sm:w-56">
+<span class="material-symbols-outlined absolute left-2 text-on-surface-variant text-[16px]">search</span>
+<input class="w-full h-8 pl-7 pr-3 bg-surface-container-low hover:bg-surface-container focus:bg-surface-container-lowest text-on-surface font-body-sm text-body-sm rounded-lg outline-none transition-all placeholder:text-on-surface-variant" placeholder="Search tasks &amp; tags..." type="text"/>
+</div>
+<button class="h-8 px-3 rounded-lg bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md flex items-center gap-1 shadow-sm shrink-0 transition-all">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>New Task</span>
+</button>
+</div>
+</div></section>
+<!-- Core Content: Main Split View (Task Tree Area + Collapsible Insight Drawer) -->
+<div class="w-full grid grid-cols-1 xl:grid-cols-12 gap-space-md mt-4 items-start">
+<!-- LEFT / CENTER: Nested Tree Task List Area (ClickUp Structure) -->
+<div class="xl:col-span-9 flex flex-col gap-4 transition-all duration-300" id="taskTreeContainer"><!-- ClickUp-style Unified Ungrouped Data Table Card -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden flex flex-col">
+<!-- Continuous Scroll Table Container -->
+<div class="overflow-x-auto">
+<div class="min-w-[1020px] flex flex-col divide-y divide-outline-variant/20">
+<!-- Table Header Row -->
+<div class="bg-surface-container-low px-space-md py-2.5 flex items-center text-on-surface-variant font-label-sm text-label-sm font-semibold select-none">
+<div class="w-8 shrink-0"></div>
+<div class="flex-1 min-w-[280px] flex items-center gap-1">
+<span>NAME &amp; HIERARCHY</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container text-on-surface-variant font-code-sm text-code-sm font-normal">34</span>
+</div>
+<div class="w-32 shrink-0 text-left px-2">STATUS</div>
+<div class="w-32 shrink-0 text-left px-2">ASSIGNEE</div>
+<div class="w-28 shrink-0 text-left px-2">DUE DATE</div>
+<div class="w-24 shrink-0 text-left px-2">PRIORITY</div>
+<div class="w-24 shrink-0 text-left px-2">EST / TIME</div>
+<div class="w-28 shrink-0 text-left px-2">TAGS</div>
+<div class="w-8 shrink-0 flex items-center justify-center text-on-surface-variant hover:text-on-surface cursor-pointer" title="Add Column">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</div>
+</div>
+<!-- ROW 1: Migrate Core Switch to SD-WAN v4 (Parent Task) -->
+<div class="group flex items-center px-space-md py-2 hover:bg-surface-container-low/40 transition-colors bg-surface-container-lowest">
+<div class="w-8 shrink-0 flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px] text-outline-variant opacity-0 group-hover:opacity-100 cursor-grab">drag_indicator</span>
+<span class="material-symbols-outlined text-[18px] text-primary cursor-pointer">expand_more</span>
+</div>
+<div class="flex-1 min-w-[280px] flex items-center gap-2 pr-2">
+<input class="w-4 h-4 rounded text-primary-container focus:ring-0 cursor-pointer accent-primary" type="checkbox"/>
+<span class="font-body-md text-body-md font-semibold text-on-surface hover:text-primary cursor-pointer truncate">
+            Migrate Core Switch to SD-WAN v4 Architecture
+          </span>
+<div class="flex items-center gap-1 px-1.5 py-0.2 rounded bg-primary-fixed text-on-primary-fixed font-code-sm text-code-sm font-semibold shrink-0">
+<span class="material-symbols-outlined text-[13px]">subdirectory_arrow_right</span>
+<span>2/3 subtasks</span>
+</div>
+</div>
+<!-- Status Column Pill -->
+<div class="w-32 shrink-0 px-2">
+<div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold cursor-pointer hover:ring-2 hover:ring-secondary-container/20 transition-all">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>In Progress</span>
+</div>
+</div>
+<!-- Assignee -->
+<div class="w-32 shrink-0 px-2 flex items-center gap-1.5">
+<img class="w-6 h-6 rounded-full object-cover ring-1 ring-surface-container-high" data-alt="Eleni R." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpRtCvFcfdQmRhi6EaqnCPfO4OsrPZPFqzip-2bw-8_xKxhpzx1aE51ascKqmMQ7nb4O5LePe-m4oXZ6dN43RpQ7MZF9jj8PDxZGbZuYvL8bAtkVU1IRBQb2ryqBdYu7qwxr75g-ELYjWOtt4E8hEYbR_rkx97dbh3Z6-DqWa3dFGqy5wUETtRPw5GcosB0cC-noN7iuw4QLQyPlpAxKmkfqCRm4rBOuXS8ILi4V9NxChmoZC2qErRFg"/>
+<span class="font-body-sm text-body-sm text-on-surface truncate">Eleni R.</span>
+</div>
+<!-- Due Date -->
+<div class="w-28 shrink-0 px-2 flex items-center gap-1 text-on-surface font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[15px] text-error">alarm</span>
+<span class="font-medium text-error">Sep 28</span>
+<span class="font-label-sm text-label-sm text-error/80">(2d)</span>
+</div>
+<!-- Priority -->
+<div class="w-24 shrink-0 px-2 flex items-center gap-1 text-error">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">keyboard_double_arrow_up</span>
+<span class="font-label-sm text-label-sm font-bold uppercase">Urgent</span>
+</div>
+<!-- Est / Time -->
+<div class="w-24 shrink-0 px-2 flex items-center gap-1 font-code-sm text-code-sm text-on-surface-variant">
+<span>24h</span><span class="text-outline-variant">/</span><span class="text-primary font-semibold">32h</span>
+</div>
+<!-- Tags -->
+<div class="w-28 shrink-0 px-2 flex items-center gap-1 truncate">
+<span class="px-1.5 py-0.2 rounded bg-surface-container font-label-sm text-label-sm text-on-surface-variant truncate">#Network</span>
+</div>
+<!-- Row Actions -->
+<div class="w-8 shrink-0 flex items-center justify-center">
+<button class="opacity-0 group-hover:opacity-100 p-1 text-on-surface-variant hover:text-on-surface transition-opacity">
+<span class="material-symbols-outlined text-[16px]">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- SUBTASK ROW 1.1: Configure BGP Peering (Indented in table) -->
+<div class="group flex items-center px-space-md py-1.5 hover:bg-surface-container-low/40 transition-colors bg-surface-container-lowest/70">
+<div class="w-8 shrink-0 flex items-center justify-end pr-1">
+<span class="material-symbols-outlined text-[14px] text-outline-variant opacity-0 group-hover:opacity-100 cursor-grab">drag_indicator</span>
+</div>
+<div class="flex-1 min-w-[280px] flex items-center gap-2 pl-6 pr-2 relative">
+<div class="absolute left-2 top-1/2 -mt-1 w-3.5 h-px bg-outline-variant/40"></div>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant cursor-pointer">expand_more</span>
+<input checked="" class="w-3.5 h-3.5 rounded text-tertiary focus:ring-0 cursor-pointer accent-tertiary-container" type="checkbox"/>
+<span class="font-body-sm text-body-sm text-on-surface-variant line-through font-medium hover:text-primary cursor-pointer truncate">
+            Configure BGP Peering &amp; Multi-VLAN Trunking
+          </span>
+<span class="px-1 py-0.1 rounded bg-surface-container font-label-sm text-label-sm text-on-surface-variant shrink-0">Subtask #1</span>
+</div>
+<!-- Status -->
+<div class="w-32 shrink-0 px-2">
+<div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-semibold cursor-pointer">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span>Complete</span>
+</div>
+</div>
+<!-- Assignee -->
+<div class="w-32 shrink-0 px-2 flex items-center gap-1.5">
+<img class="w-5 h-5 rounded-full object-cover" data-alt="Marcus V." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfxG6HZFA80LpcrFAhDXrViEytHZAUAe0oyqzDHBXRBN9qTG4RtbCS-nSbfF1Lc1LjzyXK4ZWKYgDsLOjkkbY__SmVuyF2crbAbTBkFKKqaD5FmwbNjcsCTUaBMBeVtWD2V8xl7djfZG6u6dto3c6Nu45cqVB4q368DKuiawoqe02ispk6G4guIiRy3eHuLy34eaBk60bpWLFJzJ2SA_gqNbDGmja4rt-gLSgqMbSQmoQVzGFf3zRcww"/>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Marcus V.</span>
+</div>
+<!-- Due Date -->
+<div class="w-28 shrink-0 px-2 font-body-sm text-body-sm text-on-surface-variant">Sep 24</div>
+<!-- Priority -->
+<div class="w-24 shrink-0 px-2 flex items-center gap-1 text-secondary">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span>
+<span class="font-label-sm text-label-sm">High</span>
+</div>
+<!-- Est / Time -->
+<div class="w-24 shrink-0 px-2 font-code-sm text-code-sm text-on-surface-variant">12h / 12h</div>
+<!-- Tags -->
+<div class="w-28 shrink-0 px-2 font-label-sm text-label-sm text-on-surface-variant">#SDWAN</div>
+<div class="w-8 shrink-0 flex items-center justify-center">
+<button class="opacity-0 group-hover:opacity-100 p-1 text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-[16px]">more_horiz</span></button>
+</div>
+</div>
+<!-- MICRO-CHECKLIST ROW 1.1.1 (Nested Level 3 in table) -->
+<div class="group flex items-center px-space-md py-1 hover:bg-surface-container-low/30 transition-colors bg-surface-container-lowest/50 text-on-surface-variant">
+<div class="w-8 shrink-0"></div>
+<div class="flex-1 min-w-[280px] flex items-center gap-2 pl-14 pr-2 relative">
+<div class="absolute left-10 top-1/2 -mt-1 w-3.5 h-px bg-outline-variant/30"></div>
+<input checked="" class="w-3 h-3 rounded text-tertiary cursor-pointer accent-tertiary" type="checkbox"/>
+<span class="font-label-md text-label-md line-through truncate">Verify IPv6 route advertisement on standby border node</span>
+<span class="font-code-sm text-code-sm px-1 rounded bg-surface-container">telemetry-ok</span>
+</div>
+<div class="w-32 shrink-0 px-2"><span class="font-label-sm text-label-sm text-tertiary font-medium">Resolved</span></div>
+<div class="w-32 shrink-0 px-2 font-body-sm text-body-sm text-on-surface-variant">Marcus V.</div>
+<div class="w-28 shrink-0 px-2 font-body-sm text-body-sm text-on-surface-variant">Sep 24</div>
+<div class="w-24 shrink-0 px-2 text-on-surface-variant font-label-sm text-label-sm">-</div>
+<div class="w-24 shrink-0 px-2 font-code-sm text-code-sm text-on-surface-variant">2h</div>
+<div class="w-28 shrink-0 px-2"></div>
+<div class="w-8 shrink-0"></div>
+</div>
+<!-- SUBTASK ROW 1.2: Deploy Cisco Catalyst 9300 -->
+<div class="group flex items-center px-space-md py-1.5 hover:bg-surface-container-low/40 transition-colors bg-surface-container-lowest/70">
+<div class="w-8 shrink-0 flex items-center justify-end pr-1">
+<span class="material-symbols-outlined text-[14px] text-outline-variant opacity-0 group-hover:opacity-100 cursor-grab">drag_indicator</span>
+</div>
+<div class="flex-1 min-w-[280px] flex items-center gap-2 pl-6 pr-2 relative">
+<div class="absolute left-2 top-1/2 -mt-1 w-3.5 h-px bg-outline-variant/40"></div>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant cursor-pointer">chevron_right</span>
+<input class="w-3.5 h-3.5 rounded text-primary focus:ring-0 cursor-pointer accent-primary" type="checkbox"/>
+<span class="font-body-sm text-body-sm text-on-surface font-medium hover:text-primary cursor-pointer truncate">
+            Deploy Cisco Catalyst 9300 Failover Firmware Patch v17.9
+          </span>
+<span class="px-1.5 py-0.1 rounded bg-error-container/40 text-error font-label-sm text-label-sm font-semibold shrink-0">Blocked</span>
+</div>
+<!-- Status -->
+<div class="w-32 shrink-0 px-2">
+<div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold cursor-pointer">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>In Progress</span>
+</div>
+</div>
+<!-- Assignee -->
+<div class="w-32 shrink-0 px-2 flex items-center gap-1.5">
+<img class="w-5 h-5 rounded-full object-cover" data-alt="Nadia K." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHA-s2Q3Hb8ilf0i0G7L6J7IU7t1PNCXufKMwWd0OaKvzBZ1IpoXBebxhdG32D2fSpf6SHFgL0G8gcp8ly01ryl9uo4WpHZ7pVQSTgMYGId5bvFo72LCmh24d4gCu3tlwWbNx-YLruimzx6zhAA9tImlhRBQ7zerYBF_y6TZbeP_9XDUiwgazLxXr9vUfvyT72bir1l4f5mjpHCr7FQnNCX25lWaPn7aMBNXkrDq9cp2VpTzRb4vVeBg"/>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Nadia K.</span>
+</div>
+<!-- Due Date -->
+<div class="w-28 shrink-0 px-2 font-body-sm text-body-sm text-error font-medium">Tomorrow</div>
+<!-- Priority -->
+<div class="w-24 shrink-0 px-2 flex items-center gap-1 text-error">
+<span class="material-symbols-outlined text-[14px]">keyboard_double_arrow_up</span>
+<span class="font-label-sm text-label-sm font-bold">Urgent</span>
+</div>
+<!-- Est / Time -->
+<div class="w-24 shrink-0 px-2 font-code-sm text-code-sm text-on-surface-variant">8h / 12h</div>
+<!-- Tags -->
+<div class="w-28 shrink-0 px-2 font-label-sm text-label-sm text-on-surface-variant">#Firmware</div>
+<div class="w-8 shrink-0 flex items-center justify-center">
+<button class="opacity-0 group-hover:opacity-100 p-1 text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-[16px]">more_horiz</span></button>
+</div>
+</div>
+<!-- ROW 2: Procurement RFQ for Edge Spine Switches (In Progress) -->
+<div class="group flex items-center px-space-md py-2 hover:bg-surface-container-low/40 transition-colors bg-surface-container-lowest">
+<div class="w-8 shrink-0 flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px] text-outline-variant opacity-0 group-hover:opacity-100 cursor-grab">drag_indicator</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant cursor-pointer">chevron_right</span>
+</div>
+<div class="flex-1 min-w-[280px] flex items-center gap-2 pr-2">
+<input class="w-4 h-4 rounded text-primary focus:ring-0 cursor-pointer accent-primary" type="checkbox"/>
+<span class="font-body-md text-body-md font-semibold text-on-surface hover:text-primary cursor-pointer truncate">
+            Finalize RFQ &amp; RFP evaluation matrix for Edge Spine switches
+          </span>
+</div>
+<!-- Status -->
+<div class="w-32 shrink-0 px-2">
+<div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold cursor-pointer">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>In Progress</span>
+</div>
+</div>
+<!-- Assignee -->
+<div class="w-32 shrink-0 px-2 flex items-center gap-1.5">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Arthur Chen" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA37AMlS-daZ_CwE1sjocTwurqJbuJZK24oD0u9dNryO2DrMP5CfT2R7u06KFQBSu0TmGqwnKUv4PAvFVUjA5CePa9gSirn7_DMOZbMI1WKLMARoaXPqJ2jjrqZQOzsmw7TgY_lDeawoUe-2CDl1cQ1Fd1Ls4NYhqaoBFdN8vkv7pl1KMXuwSaFgemjMGDkOqCHc038QcJQTX3nvfwcNGCfUellLH9ZsFz2SrAlG08dDqGJ7Y26BzaXWw"/>
+<span class="font-body-sm text-body-sm text-on-surface truncate">Arthur Chen</span>
+</div>
+<!-- Due Date -->
+<div class="w-28 shrink-0 px-2 font-body-sm text-body-sm text-on-surface">Oct 02</div>
+<!-- Priority -->
+<div class="w-24 shrink-0 px-2 flex items-center gap-1 text-secondary">
+<span class="material-symbols-outlined text-[16px]">arrow_upward</span>
+<span class="font-label-sm text-label-sm">High</span>
+</div>
+<!-- Est / Time -->
+<div class="w-24 shrink-0 px-2 font-code-sm text-code-sm text-on-surface-variant">16h / 20h</div>
+<!-- Tags -->
+<div class="w-28 shrink-0 px-2">
+<span class="px-1.5 py-0.2 rounded bg-surface-container font-label-sm text-label-sm text-on-surface-variant">#Procurement</span>
+</div>
+<div class="w-8 shrink-0 flex items-center justify-center">
+<button class="opacity-0 group-hover:opacity-100 p-1 text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-[16px]">more_horiz</span></button>
+</div>
+</div>
+<!-- ROW 3: Zero Trust Network Access (ZTNA) (Status: Review) -->
+<div class="group flex items-center px-space-md py-2 hover:bg-surface-container-low/40 transition-colors bg-surface-container-lowest">
+<div class="w-8 shrink-0 flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px] text-outline-variant opacity-0 group-hover:opacity-100 cursor-grab">drag_indicator</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant cursor-pointer">chevron_right</span>
+</div>
+<div class="flex-1 min-w-[280px] flex items-center gap-2 pr-2">
+<input class="w-4 h-4 rounded text-primary focus:ring-0 cursor-pointer accent-primary" type="checkbox"/>
+<span class="font-body-md text-body-md font-semibold text-on-surface hover:text-primary cursor-pointer truncate">
+            Zero Trust Network Access (ZTNA) Policy Simulation &amp; QA
+          </span>
+</div>
+<!-- Status -->
+<div class="w-32 shrink-0 px-2">
+<div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold cursor-pointer">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>In Review</span>
+</div>
+</div>
+<!-- Assignee -->
+<div class="w-32 shrink-0 px-2 flex items-center gap-1.5">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Tara Moss" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBk2ElQM055fVUWp7sh0iRpGkZvhuOV7aft0kjzETinPCwcI1fZAqHbk_wRr6t-z_hzpqV56vwDM4scgSXpv3J_gIpUFTcbDVjXS67b0HnKi0heCqFbYAbX3LJlnNVEprxBAaVZrftTnD_YGMKba8UC8ZMaOS-NsGAPGgryUfbWow7wkWG4QI6VeHCiHq4NpkNXprEApTtZ2DNmgA-X0eYdQV-KwFXTqEfY5_N6jM1wRfUROPwJBn0lIA"/>
+<span class="font-body-sm text-body-sm text-on-surface truncate">Tara Moss</span>
+</div>
+<!-- Due Date -->
+<div class="w-28 shrink-0 px-2 font-body-sm text-body-sm text-on-surface">Sep 30</div>
+<!-- Priority -->
+<div class="w-24 shrink-0 px-2 flex items-center gap-1 text-secondary">
+<span class="material-symbols-outlined text-[16px]">arrow_upward</span>
+<span class="font-label-sm text-label-sm">High</span>
+</div>
+<!-- Est / Time -->
+<div class="w-24 shrink-0 px-2 font-code-sm text-code-sm text-on-surface-variant">18h / 18h</div>
+<!-- Tags -->
+<div class="w-28 shrink-0 px-2">
+<span class="px-1.5 py-0.2 rounded bg-surface-container font-label-sm text-label-sm text-on-surface-variant">#ZeroTrust</span>
+</div>
+<div class="w-8 shrink-0 flex items-center justify-center">
+<button class="opacity-0 group-hover:opacity-100 p-1 text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-[16px]">more_horiz</span></button>
+</div>
+</div>
+<!-- ROW 4: Disaster Recovery Tape & S3 Archival (Status: To Do) -->
+<div class="group flex items-center px-space-md py-2 hover:bg-surface-container-low/40 transition-colors bg-surface-container-lowest">
+<div class="w-8 shrink-0 flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px] text-outline-variant opacity-0 group-hover:opacity-100 cursor-grab">drag_indicator</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant cursor-pointer">chevron_right</span>
+</div>
+<div class="flex-1 min-w-[280px] flex items-center gap-2 pr-2">
+<input class="w-4 h-4 rounded text-primary focus:ring-0 cursor-pointer accent-primary" type="checkbox"/>
+<span class="font-body-md text-body-md font-semibold text-on-surface hover:text-primary cursor-pointer truncate">
+            Disaster Recovery Tape Archival &amp; Cold Site Verification
+          </span>
+</div>
+<!-- Status -->
+<div class="w-32 shrink-0 px-2">
+<div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm font-semibold cursor-pointer">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+<span>To Do</span>
+</div>
+</div>
+<!-- Assignee -->
+<div class="w-32 shrink-0 px-2 flex items-center gap-1.5">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Sara L." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-yFY_42VGi3SEkz8qdHIPEqQNBbxh0O6icpXjpi3JqKEG8CKgpCkuruoWj8IZSuRXO_JsIR4kXDxKo0ZrR5a6UKx1S2WNMWMSWTVsM5Gb5GwR5hq7bHDMBPkTYXSXDz9hvbyh9HeAJ0rd7Hxl_MZK8H8LuL_V5ea5mMvIFp8vPa7YVDCQHLYEPutv9vcOTzCnFkl81oFmAysxPsnj84DeNV5Ptt9mKV1Oj4qKES2udNtDPiFkfxSqlQ"/>
+<span class="font-body-sm text-body-sm text-on-surface truncate">Sara L.</span>
+</div>
+<!-- Due Date -->
+<div class="w-28 shrink-0 px-2 font-body-sm text-body-sm text-on-surface-variant">Oct 08</div>
+<!-- Priority -->
+<div class="w-24 shrink-0 px-2 flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">horizontal_rule</span>
+<span class="font-label-sm text-label-sm">Normal</span>
+</div>
+<!-- Est / Time -->
+<div class="w-24 shrink-0 px-2 font-code-sm text-code-sm text-on-surface-variant">0h / 14h</div>
+<!-- Tags -->
+<div class="w-28 shrink-0 px-2">
+<span class="px-1.5 py-0.2 rounded bg-surface-container font-label-sm text-label-sm text-on-surface-variant">#SecOps</span>
+</div>
+<div class="w-8 shrink-0 flex items-center justify-center">
+<button class="opacity-0 group-hover:opacity-100 p-1 text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-[16px]">more_horiz</span></button>
+</div>
+</div>
+<!-- ROW 5: Publish Supplier Procurement Notice (Status: Done) -->
+<div class="group flex items-center px-space-md py-2 hover:bg-surface-container-low/40 transition-colors bg-surface-container-lowest opacity-90 hover:opacity-100">
+<div class="w-8 shrink-0 flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px] text-outline-variant opacity-0 group-hover:opacity-100 cursor-grab">drag_indicator</span>
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant cursor-pointer">chevron_right</span>
+</div>
+<div class="flex-1 min-w-[280px] flex items-center gap-2 pr-2">
+<input checked="" class="w-4 h-4 rounded text-tertiary focus:ring-0 cursor-pointer accent-tertiary" type="checkbox"/>
+<span class="font-body-md text-body-md font-medium text-on-surface-variant line-through truncate">
+            Publish Supplier Procurement Notice to Government e-Portal
+          </span>
+</div>
+<!-- Status -->
+<div class="w-32 shrink-0 px-2">
+<div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-semibold cursor-pointer">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span>Done</span>
+</div>
+</div>
+<!-- Assignee -->
+<div class="w-32 shrink-0 px-2 flex items-center gap-1.5">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Arthur Chen" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVNDh2c3tRoj7CqR_OpuZ92J5fMXeC3STXb04Qwx2uHCgBq4iap6hgWK6Yo2wfA9uCalIW3BJyqxIYw_ip0QDgSFCYik-OuBI-ClTYZA3WI9dFQPqA3GFuHvFnZvry46GiVL0usnUPHvJxaTqnt_CxkA-GAZtifGsLitJvgA-iJ8g4ge6Uubn6KjOc9WBjR_1j0k4g7zsjjJL06B5BLzfgThGE9PPMWfiG5MhuSExHRXWQnoLrFnzfEg"/>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Arthur Chen</span>
+</div>
+<!-- Due Date -->
+<div class="w-28 shrink-0 px-2 font-body-sm text-body-sm text-on-surface-variant">Aug 29</div>
+<!-- Priority -->
+<div class="w-24 shrink-0 px-2 flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">horizontal_rule</span>
+<span class="font-label-sm text-label-sm">Low</span>
+</div>
+<!-- Est / Time -->
+<div class="w-24 shrink-0 px-2 font-code-sm text-code-sm text-on-surface-variant">6h / 6h</div>
+<!-- Tags -->
+<div class="w-28 shrink-0 px-2 font-label-sm text-label-sm text-on-surface-variant">#GovPortal</div>
+<div class="w-8 shrink-0 flex items-center justify-center">
+<button class="opacity-0 group-hover:opacity-100 p-1 text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-[16px]">more_horiz</span></button>
+</div>
+</div>
+<!-- Inline Table Add Task / Row at Bottom -->
+<div class="flex items-center px-space-md py-2.5 bg-surface-container-lowest hover:bg-surface-container-low/40 transition-colors group cursor-text">
+<div class="w-8 shrink-0 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</div>
+<div class="flex-1 flex items-center justify-between">
+<input class="w-full bg-transparent border-0 outline-none font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant" placeholder="+ Add Task... (Type task name and press Enter)" type="text"/>
+<span class="font-code-sm text-code-sm px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">Press Enter ↵</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Table Summary Footer -->
+<div class="bg-surface-container-low/60 px-space-md py-2 flex items-center justify-between border-t border-outline-variant/30 text-on-surface-variant font-label-sm text-label-sm">
+<div class="flex items-center gap-3">
+<span>34 tasks total</span>
+<span>•</span>
+<span>Ungrouped Table Layout</span>
+</div>
+<div class="flex items-center gap-2">
+<span>Calculations: <strong>218h tracked</strong></span>
+</div>
+</div>
+</div></div>
+<!-- RIGHT: Dedicated Project Insights & Telemetry Widget Drawer -->
+<div class="xl:col-span-3 flex flex-col gap-space-md" id="projectDrawer">
+<!-- Card 1: Project Health & Burndown Summary -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Project Velocity</h2>
+<span class="px-2 py-0.5 rounded-full bg-tertiary-container/15 text-tertiary font-label-sm text-label-sm font-bold">On Schedule</span>
+</div>
+<!-- Inline SVG Completion Progress Chart -->
+<div class="flex items-center gap-4 py-2">
+<div class="relative w-20 h-20 shrink-0 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90" viewbox="0 0 36 36">
+<path class="text-surface-container" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.5"></path>
+<path class="text-primary-container" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="68, 100" stroke-linecap="round" stroke-width="3.5"></path>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">68%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant -mt-1">Done</span>
+</div>
+</div>
+<div class="flex flex-col gap-1 min-w-0">
+<div class="flex justify-between items-center text-on-surface font-body-sm text-body-sm">
+<span class="text-on-surface-variant">Closed Tasks:</span>
+<span class="font-code-sm text-code-sm font-bold">23 / 34</span>
+</div>
+<div class="flex justify-between items-center text-on-surface font-body-sm text-body-sm">
+<span class="text-on-surface-variant">Burned Hours:</span>
+<span class="font-code-sm text-code-sm font-bold text-primary">218h</span>
+</div>
+<div class="flex justify-between items-center text-on-surface font-body-sm text-body-sm">
+<span class="text-on-surface-variant">Est. Completion:</span>
+<span class="font-code-sm text-code-sm font-medium">Oct 04</span>
+</div>
+</div>
+</div>
+<!-- Priority Breakdown Bar -->
+<div class="flex flex-col gap-1.5 pt-2">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant font-medium">Tasks by Priority</span>
+<span class="text-error font-semibold">4 Urgent</span>
+</div>
+<div class="w-full h-2 rounded-full flex overflow-hidden gap-0.5">
+<div class="h-full bg-error" style="width: 25%" title="Urgent: 25%"></div>
+<div class="h-full bg-secondary-container" style="width: 45%" title="High: 45%"></div>
+<div class="h-full bg-outline-variant" style="width: 20%" title="Normal: 20%"></div>
+<div class="h-full bg-surface-container-highest" style="width: 10%" title="Low: 10%"></div>
+</div>
+<div class="flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant pt-1">
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-error"></span> Urgent (4)</span>
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-secondary-container"></span> High (12)</span>
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-outline-variant"></span> Normal (10)</span>
+</div>
+</div>
+</div>
+<!-- Card 2: Quick Filter Presets -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-2.5">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Quick Focus Filters</h3>
+<div class="flex flex-col gap-1 font-body-sm text-body-sm">
+<button class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface transition-colors text-left group">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">assignment_ind</span>
+<span class="font-medium">Assigned to Me</span>
+</div>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container-high text-on-surface font-code-sm text-code-sm">6</span>
+</button>
+<button class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors text-left group">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-error">notification_important</span>
+<span>Overdue / At Risk</span>
+</div>
+<span class="px-1.5 py-0.2 rounded-full bg-error-container text-error font-code-sm text-code-sm font-bold">2</span>
+</button>
+<button class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors text-left group">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary">person_off</span>
+<span>Unassigned Tasks</span>
+</div>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container text-on-surface-variant font-code-sm text-code-sm">3</span>
+</button>
+</div>
+</div>
+<!-- Card 3: Milestone & Architecture Context Snapshot -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase font-semibold text-on-surface-variant">Hardware Architecture Spec</span>
+<span class="material-symbols-outlined text-[16px] text-primary cursor-pointer hover:rotate-45 transition-transform">open_in_new</span>
+</div>
+<div class="relative rounded-lg overflow-hidden h-32 group cursor-pointer">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="High tech server datacenter room with blue and purple LED lights clean cable management isometric rack view" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXG_ZD-9dXdmL3cZtAdTSUAKJl0uIBKo2cbUDrg849Kxox6eBeCZi5Rn4G8tDURWtii6DS0RVamhVGriyv-ai4cJPHgE_Xq8ePK2wnJEutWivEYg8efWNA_tlPGEZWo_4qxOm5Wsa_fEM1abxy5oboXJPN93LC-OrrpE4yNSv0_7ipfJE3xOZ7K9HgrM2Hv27vtWUNynSebjEMiG2-kQdRICofbVcRuwz8j9NWi7iE-SDbTI5rUkT6Hg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-2.5">
+<span class="font-headline-sm text-headline-sm text-white font-semibold">Tier-4 Datacenter Pod B</span>
+<span class="font-code-sm text-code-sm text-white/80">Rack Cluster: 12-42U Nexus 9K</span>
+</div>
+</div>
+<div class="p-2.5 rounded-lg bg-surface-container-low flex flex-col gap-1.5">
+<div class="flex items-center gap-1.5 text-on-surface font-label-md text-label-md font-semibold">
+<span class="material-symbols-outlined text-[16px] text-tertiary">verified_user</span>
+<span>Security Compliance Pass</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+            All SD-WAN hardware components passed ISO 27001 physical tamper verification.
+          </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Simple drawer toggle interaction to simulate desktop multi-pane expansion
+  const toggleBtn = document.getElementById('toggleDrawerBtn');
+  const drawer = document.getElementById('projectDrawer');
+  const treeContainer = document.getElementById('taskTreeContainer');
+
+  if (toggleBtn && drawer && treeContainer) {
+    toggleBtn.addEventListener('click', () => {
+      drawer.classList.toggle('hidden');
+      if (drawer.classList.contains('hidden')) {
+        treeContainer.classList.remove('xl:col-span-9');
+        treeContainer.classList.add('xl:col-span-12');
+      } else {
+        treeContainer.classList.remove('xl:col-span-12');
+        treeContainer.classList.add('xl:col-span-9');
+      }
+    });
+  }
+</script></main></div></body></html>

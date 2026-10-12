@@ -117,27 +117,27 @@ export default function LinkedProjects({ projectId }: { projectId: string }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs" aria-label="Linked projects">
-      <span className="text-slate-400 font-medium">Linked projects:</span>
+      <span className="text-on-surface-variant font-medium">Linked projects:</span>
       {links.map((l) => (
         <span
           key={l.id}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-200"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container border border-subtle text-on-surface"
           title={l.note || l.kind}
         >
           <button
             onClick={() => navigate(`/projects/${l.to_project_id}/timeline`)}
-            className="hover:text-indigo-300 font-medium"
+            className="hover:text-primary font-medium"
             title={`Jump to ${l.to_category_name || "Category"} / ${l.to_project_name || l.to_project_id}`}
           >
             {(l.to_category_name || "—") + " / " + (l.to_project_name || `#${l.to_project_id}`)}
           </button>
-          <span className="px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-300 font-mono text-[10px]">
+          <span className="px-1.5 py-0.5 rounded bg-primary-fixed text-primary font-mono text-[10px]">
             {l.kind}
           </span>
           {canWrite && (
             <button
               onClick={() => handleDelete(l.id)}
-              className="text-slate-500 hover:text-rose-300 ml-0.5"
+              className="text-outline hover:text-error ml-0.5"
               title="Remove link"
               aria-label={`Remove link to ${l.to_project_name}`}
             >
@@ -147,12 +147,12 @@ export default function LinkedProjects({ projectId }: { projectId: string }) {
         </span>
       ))}
       {links.length === 0 && (
-        <span className="text-slate-500 italic">No links yet.</span>
+        <span className="text-outline italic">No links yet.</span>
       )}
       {canWrite && !showForm && (
         <button
           onClick={() => setShowForm(true)}
-          className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-medium"
+          className="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-subtle text-on-surface-variant font-medium"
         >
           +Link project
         </button>
@@ -163,7 +163,7 @@ export default function LinkedProjects({ projectId }: { projectId: string }) {
             aria-label="target project"
             value={toId}
             onChange={(e) => setToId(e.target.value)}
-            className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-200 text-xs max-w-56"
+            className="px-2 py-1 rounded bg-surface-container border border-subtle text-on-surface text-xs max-w-56"
           >
             <option value="">Select project…</option>
             {options.map((p) => (
@@ -176,7 +176,7 @@ export default function LinkedProjects({ projectId }: { projectId: string }) {
             aria-label="link kind"
             value={kind}
             onChange={(e) => setKind(e.target.value)}
-            className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-200 text-xs"
+            className="px-2 py-1 rounded bg-surface-container border border-subtle text-on-surface text-xs"
           >
             <option value="relates-to">relates-to</option>
             <option value="continues-as">continues-as</option>
@@ -187,22 +187,22 @@ export default function LinkedProjects({ projectId }: { projectId: string }) {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             maxLength={2000}
-            className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-200 text-xs w-36"
+            className="px-2 py-1 rounded bg-surface-container border border-subtle text-on-surface text-xs w-36"
           />
           <button
             type="submit"
-            className="px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium"
+            className="px-2 py-1 rounded bg-primary-container hover:bg-primary text-on-primary font-medium"
           >
             Add
           </button>
           <button
             type="button"
             onClick={() => setShowForm(false)}
-            className="px-2 py-1 rounded text-slate-400 hover:text-white"
+            className="px-2 py-1 rounded text-on-surface-variant hover:text-on-surface"
           >
             Cancel
           </button>
-          {error && <span role="alert" className="text-rose-300">{error}</span>}
+          {error && <span role="alert" className="text-error">{error}</span>}
         </form>
       )}
     </div>

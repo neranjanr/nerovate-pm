@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-error-container":"#93000a","surface-variant":"#d3e4fe","background":"#f8f9ff","surface-container-lowest":"#ffffff","on-surface-variant":"#464555","on-secondary-fixed-variant":"#004c6e","secondary":"#006591","inverse-primary":"#c3c0ff","on-surface":"#0b1c30","primary":"#3525cd","on-background":"#0b1c30","surface-bright":"#f8f9ff","surface-container":"#e5eeff","surface-tint":"#4d44e3","error":"#ba1a1a","on-tertiary-fixed":"#002113","on-secondary":"#ffffff","on-tertiary-fixed-variant":"#005236","outline":"#777587","secondary-container":"#39b8fd","inverse-on-surface":"#eaf1ff","inverse-surface":"#213145","surface-container-highest":"#d3e4fe","primary-fixed-dim":"#c3c0ff","tertiary-fixed-dim":"#4edea3","on-primary-fixed":"#0f0069","tertiary":"#005338","on-primary-container":"#dad7ff","primary-container":"#4f46e5","error-container":"#ffdad6","surface-dim":"#cbdbf5","on-secondary-fixed":"#001e2f","secondary-fixed":"#c9e6ff","tertiary-fixed":"#6ffbbe","secondary-fixed-dim":"#89ceff","surface-container-high":"#dce9ff","surface":"#f8f9ff","on-primary-fixed-variant":"#3323cc","on-primary":"#ffffff","on-tertiary-container":"#67f4b7","on-error":"#ffffff","outline-variant":"#c7c4d8","on-tertiary":"#ffffff","surface-container-low":"#eff4ff","primary-fixed":"#e2dfff","on-secondary-container":"#004666","tertiary-container":"#006e4b"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"space-lg":"1.25rem","space-md":"0.75rem","space-xs":"0.25rem","gutter":"1rem","space-xl":"2rem","margin":"1.5rem","space-sm":"0.5rem"},"fontFamily":{"headline-md":["Plus Jakarta Sans"],"label-sm":["Inter"],"headline-lg":["Plus Jakarta Sans"],"body-lg":["Inter"],"body-sm":["Inter"],"headline-sm":["Plus Jakarta Sans"],"body-md":["Inter"],"label-md":["Inter"],"code-sm":["JetBrains Mono"],"headline-xl":["Plus Jakarta Sans"]},"fontSize":{"headline-md":["1.25rem",{"lineHeight":"1.75rem","fontWeight":"600"}],"label-sm":["0.6875rem",{"lineHeight":"0.875rem","letterSpacing":"0.025em","fontWeight":"600"}],"headline-lg":["1.5rem",{"lineHeight":"2rem","fontWeight":"600"}],"body-lg":["1rem",{"lineHeight":"1.5rem","fontWeight":"400"}],"body-sm":["0.8125rem",{"lineHeight":"1.125rem","fontWeight":"400"}],"headline-sm":["1rem",{"lineHeight":"1.5rem","fontWeight":"600"}],"body-md":["0.875rem",{"lineHeight":"1.25rem","fontWeight":"400"}],"label-md":["0.8125rem",{"lineHeight":"1rem","fontWeight":"500"}],"code-sm":["0.75rem",{"lineHeight":"1rem","fontWeight":"500"}],"headline-xl":["2rem",{"lineHeight":"2.5rem","fontWeight":"700"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col h-full overflow-hidden"><div class="h-14 px-space-md flex items-center justify-between shrink-0 bg-surface-container-low"><div class="flex items-center gap-space-sm"><div class="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-on-primary shadow-sm"><span class="material-symbols-outlined text-[18px]">layers</span></div><div class="flex flex-col"><span class="font-headline-sm text-headline-sm tracking-tight text-on-surface leading-none">Neravate PM</span><span class="font-label-sm text-label-sm text-on-surface-variant leading-none mt-0.5">Enterprise Core</span></div></div><button class="w-7 h-7 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="Collapse sidebar" type="button"><span class="material-symbols-outlined text-[16px]">keyboard_double_arrow_left</span></button></div><div class="px-space-md py-space-xs shrink-0"><div class="flex items-center gap-space-xs"><button class="flex-1 h-8 px-space-sm bg-surface-container-lowest rounded-lg flex items-center justify-between text-on-surface-variant hover:text-on-surface transition-colors shadow-[0_1px_8px_rgba(0,0,0,0.02)]" type="button"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[16px]">search</span><span class="font-body-sm text-body-sm">Search task, doc...</span></div><kbd class="font-code-sm text-code-sm bg-surface-container px-1 py-0.5 rounded text-on-surface-variant">⌘K</kbd></button><button class="w-8 h-8 rounded-lg bg-primary-container text-on-primary flex items-center justify-center hover:bg-primary transition-colors" title="Quick Create" type="button"><span class="material-symbols-outlined text-[18px]">add</span></button></div></div><div class="flex-1 overflow-y-auto px-space-md py-space-sm space-y-space-md"><div class="p-space-xs bg-surface-container-lowest rounded-xl shadow-[0_1px_8px_rgba(0,0,0,0.03)] space-y-1.5"><div class="flex items-center justify-between px-space-xs py-1"><div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-tertiary"></span><span class="font-label-sm text-label-sm font-bold uppercase tracking-wider text-on-surface">Categories</span><span class="font-label-sm text-label-sm bg-surface-container px-1.5 py-0.2 rounded-full text-on-surface-variant font-semibold">4 Hubs</span></div><div class="flex items-center gap-0.5"><button class="w-5 h-5 flex items-center justify-center rounded text-outline hover:text-on-surface transition-colors" title="Add Category" type="button"><span class="material-symbols-outlined text-[14px]">add</span></button><button class="w-5 h-5 flex items-center justify-center rounded text-outline hover:text-on-surface transition-colors" title="Category Settings" type="button"><span class="material-symbols-outlined text-[14px]">settings</span></button></div></div><nav class="space-y-1"><div class="space-y-0.5 rounded-lg"><div class="flex items-center justify-between px-space-xs py-1.5 rounded-lg bg-surface-container-low text-on-surface font-semibold"><div class="flex items-center gap-1.5 min-w-0"><span class="material-symbols-outlined text-[16px] text-tertiary">expand_more</span><span class="w-2.5 h-2.5 rounded-full bg-tertiary shrink-0"></span><span class="font-label-md text-label-md truncate">proc</span><span class="font-code-sm text-[10px] bg-tertiary-fixed text-on-tertiary-fixed px-1 rounded font-bold">ACTIVE</span></div><span class="font-label-sm text-label-sm bg-surface-container px-1.5 py-0.5 rounded-full text-on-surface-variant font-semibold">18</span></div><div class="pl-3.5 space-y-0.5"><a class="flex items-center justify-between px-space-xs py-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="category-proc-tasks" href="#"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-[14px] text-outline">subdirectory_arrow_right</span><span class="font-body-sm text-body-sm">Proc Tasks</span></div><span class="font-label-sm text-label-sm text-outline">5</span></a><a class="flex items-center justify-between px-2 py-1.5 rounded-lg bg-primary text-on-primary font-semibold shadow-sm transition-all" data-path="category-proc-laptop" href="#"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-[14px] text-on-primary-container">subdirectory_arrow_right</span><span class="font-body-sm text-body-sm text-on-primary font-bold">Laptop Provision</span><span class="w-1.5 h-1.5 rounded-full bg-tertiary-fixed"></span></div><span class="font-label-sm text-label-sm bg-on-primary/20 text-on-primary px-1.5 py-0.5 rounded-full font-bold">13</span></a></div></div><div class="space-y-0.5"><a class="group flex items-center justify-between px-space-xs py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="category-todo" href="#"><div class="flex items-center gap-1.5 min-w-0"><span class="material-symbols-outlined text-[16px] text-outline group-hover:text-on-surface">chevron_right</span><span class="w-2 h-2 rounded-full bg-secondary shrink-0"></span><span class="font-label-md text-label-md truncate">To_Do Operations</span></div><span class="font-label-sm text-label-sm bg-surface-container px-1.5 py-0.5 rounded-full text-on-surface-variant">12</span></a></div><div class="space-y-0.5"><a class="group flex items-center justify-between px-space-xs py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="category-core-proc" href="#"><div class="flex items-center gap-1.5 min-w-0"><span class="material-symbols-outlined text-[16px] text-outline group-hover:text-on-surface">chevron_right</span><span class="w-2 h-2 rounded-full bg-primary-container shrink-0"></span><span class="font-label-md text-label-md truncate">Core Procurement</span></div><span class="font-label-sm text-label-sm bg-surface-container px-1.5 py-0.5 rounded-full text-on-surface-variant">8</span></a></div></nav></div><div class="p-space-xs bg-surface-container-lowest rounded-xl shadow-[0_1px_8px_rgba(0,0,0,0.03)] space-y-1.5"><div class="flex items-center justify-between px-space-xs py-1"><div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-secondary-container"></span><span class="font-label-sm text-label-sm font-bold uppercase tracking-wider text-on-surface">Projects</span><span class="font-label-sm text-label-sm bg-surface-container px-1.5 py-0.2 rounded-full text-on-surface-variant font-semibold">38</span></div><div class="flex items-center gap-0.5"><button class="w-5 h-5 flex items-center justify-center rounded text-outline hover:text-on-surface transition-colors" title="Add Project" type="button"><span class="material-symbols-outlined text-[14px]">add</span></button><button class="w-5 h-5 flex items-center justify-center rounded text-outline hover:text-on-surface transition-colors" title="Filter Projects" type="button"><span class="material-symbols-outlined text-[14px]">filter_list</span></button></div></div><nav class="space-y-1"><a class="flex items-center justify-between px-2 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="all-projects" href="#"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-[16px] text-outline">folder_open</span><span class="font-label-md text-label-md">Master Hub (All)</span></div><span class="font-label-sm text-label-sm text-outline">38</span></a><a aria-current="page" class="flex items-center justify-between px-2 py-2 rounded-lg bg-primary-container text-on-primary shadow-sm relative group" data-path="project-laptop-fleet" href="#"><div class="flex items-center gap-2 min-w-0"><span class="w-2 h-2 rounded-full bg-tertiary-fixed shrink-0"></span><div class="flex flex-col min-w-0"><div class="flex items-center gap-1.5"><span class="font-label-md text-label-md font-bold text-on-primary truncate">Laptop Fleet Procurement</span></div><span class="font-code-sm text-[11px] text-on-primary-container font-semibold">LAPTOP-894 • proc</span></div></div><span class="font-label-sm text-label-sm bg-on-primary/20 text-on-primary px-1.5 py-0.5 rounded-full font-bold">9</span></a><a class="flex items-center justify-between px-2 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="project-cloud-migration" href="#"><div class="flex items-center gap-2 min-w-0"><span class="w-2 h-2 rounded-full bg-tertiary shrink-0"></span><div class="flex flex-col min-w-0"><span class="font-label-md text-label-md truncate">Cloud Infra Migration</span><span class="font-code-sm text-[11px] text-outline">SERVER-302 • proc</span></div></div><span class="font-label-sm text-label-sm bg-surface-container px-1.5 py-0.5 rounded-full text-on-surface-variant">2</span></a><a class="flex items-center justify-between px-2 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="project-client-portal" href="#"><div class="flex items-center gap-2 min-w-0"><span class="w-2 h-2 rounded-full bg-secondary shrink-0"></span><div class="flex flex-col min-w-0"><span class="font-label-md text-label-md truncate">Client Web Portal</span><span class="font-code-sm text-[11px] text-outline">DEV-204 • To_Do</span></div></div><span class="font-label-sm text-label-sm bg-surface-container px-1.5 py-0.5 rounded-full text-on-surface-variant">2</span></a><a class="flex items-center justify-between px-2 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors" data-path="project-hardware-rollout" href="#"><div class="flex items-center gap-2 min-w-0"><span class="w-2 h-2 rounded-full bg-secondary-container shrink-0"></span><div class="flex flex-col min-w-0"><span class="font-label-md text-label-md truncate">Global Fleet Rollout</span><span class="font-code-sm text-[11px] text-outline">TODO-117 • To_Do</span></div></div><span class="font-label-sm text-label-sm bg-surface-container px-1.5 py-0.5 rounded-full text-on-surface-variant">17</span></a></nav></div></div><div class="p-space-sm shrink-0 bg-surface-container-low"><nav class="space-y-0.5" data-active-classes="bg-primary-container text-on-primary font-label-md rounded-lg shadow-sm"><a class="flex items-center justify-between px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="global-settings" href="#"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[18px]">settings</span><span class="font-label-md text-label-md">Global Settings</span></div><span class="w-2 h-2 rounded-full bg-primary-container"></span></a><a class="flex items-center justify-between px-space-sm py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-path="documentation" href="#"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[18px]">help_center</span><span class="font-label-md text-label-md">Help &amp; Documentation</span></div><span class="material-symbols-outlined text-[14px] text-outline">open_in_new</span></a></nav></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-14 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40"><div class="w-full h-14 px-space-lg flex items-center justify-between"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-container-lowest px-2.5 py-1 rounded-lg shadow-[0_1px_4px_rgba(0,0,0,0.03)]"><span class="material-symbols-outlined text-[18px] text-primary">domain</span><span class="font-label-md text-label-md text-on-surface">Production Team</span><span class="material-symbols-outlined text-[16px] text-outline">expand_more</span></div><div class="h-4 w-px bg-surface-container-highest"></div><nav class="hidden lg:flex items-center gap-space-md" data-active-classes="text-primary font-bold"><a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="overview" href="#">Boards</a><a aria-current="page" class="transition-colors text-primary font-bold" data-path="all-projects" href="#">Timeline</a><a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="global-settings" href="#">Members</a><a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="documentation" href="#">Reports</a></nav></div><div class="flex items-center gap-space-md"><div class="relative hidden sm:block"><span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-[18px] text-outline">search</span><input class="h-8 pl-8 pr-12 rounded-lg bg-surface-container-low text-body-sm font-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container-lowest focus:shadow-sm w-56 lg:w-72 transition-all" placeholder="Filter sprint tasks..." type="text"/><kbd class="absolute right-2 top-1/2 -translate-y-1/2 font-code-sm text-code-sm text-outline bg-surface-container px-1 py-0.2 rounded">/</kbd></div><div class="flex items-center gap-space-xs"><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="Activity" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span></button><button class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="Filter views" type="button"><span class="material-symbols-outlined text-[20px]">tune</span></button><button class="h-8 px-3 rounded-lg bg-primary text-on-primary font-label-md text-label-md flex items-center gap-1 hover:bg-primary-container hover:text-on-primary transition-colors shadow-sm" type="button"><span class="material-symbols-outlined text-[16px]">add</span><span class="hidden md:inline">New Task</span></button></div><div class="h-4 w-px bg-surface-container-highest"></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="relative pt-14 w-full bg-background min-h-screen"><div class="flex flex-col w-full">
+<!-- Interactive Top Action / Filter Subheader Bar -->
+<div class="px-space-xl py-space-md bg-surface-container-lowest shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+<div class="flex flex-col gap-1">
+<!-- Breadcrumb Navigation -->
+<div class="flex items-center gap-1.5 font-label-sm text-label-sm text-outline">
+<a class="hover:text-primary transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[14px]">folder</span>
+<span>Categories</span>
+</a>
+<span class="material-symbols-outlined text-[12px]">chevron_right</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container text-on-surface font-code-sm text-code-sm">proc</span>
+<span class="material-symbols-outlined text-[12px]">chevron_right</span>
+<span class="text-secondary font-code-sm text-code-sm font-semibold">LAPTOP-894</span>
+<span class="material-symbols-outlined text-[12px]">chevron_right</span>
+<span class="text-on-surface font-semibold">laptop</span>
+</div>
+<!-- View Identity -->
+<div class="flex items-center gap-space-sm mt-0.5">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">All Projects &amp; Directory Explorer</h1>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-semibold">38 Active Across 4 Hubs</span>
+</div>
+</div>
+<!-- Right Controls: Action Triggers & Display Views -->
+<div class="flex items-center flex-wrap gap-space-sm">
+<!-- Segmented View Mode Switcher -->
+<div class="bg-surface-container-low p-0.5 rounded-lg flex items-center gap-0.5 shadow-inner">
+<button class="view-toggle-btn active flex items-center gap-1 px-2.5 py-1 rounded bg-surface-container-lowest text-primary shadow-sm font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">view_list</span>
+<span>List</span>
+</button>
+<button class="view-toggle-btn flex items-center gap-1 px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface transition-colors font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">grid_view</span>
+<span>Bento Grid</span>
+</button>
+<button class="view-toggle-btn flex items-center gap-1 px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface transition-colors font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[16px]">waterfall_chart</span>
+<span>Timeline</span>
+</button>
+</div>
+<!-- Category Filter Dropdown Trigger -->
+<div class="relative">
+<button class="h-8 px-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-1.5 transition-colors" id="categoryFilterBtn" type="button">
+<span class="material-symbols-outlined text-[16px] text-primary">filter_alt</span>
+<span>Filter: Category (All)</span>
+<span class="material-symbols-outlined text-[14px]">expand_more</span>
+</button>
+</div>
+<!-- Creation CTA Group -->
+<div class="flex items-center gap-1.5">
+<button class="h-8 px-3 rounded-lg bg-surface-container-low hover:bg-surface-container text-primary font-label-md text-label-md flex items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">playlist_add</span>
+<span>+ Add Task</span>
+</button>
+<button class="h-8 px-3 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md flex items-center gap-1 shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">add_box</span>
+<span>+ New Project</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Operational KPI Row (Bento Micro Stats) -->
+<div class="px-space-xl py-space-lg grid grid-cols-1 md:grid-cols-4 gap-space-md">
+<!-- Stat 1: Total Project Velocity -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-semibold">Total Workstreams</span>
+<span class="w-7 h-7 rounded-lg bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[16px]">hub</span>
+</span>
+</div>
+<div class="mt-2 flex items-baseline justify-between">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-on-surface">38</span>
+<span class="font-label-sm text-label-sm text-tertiary font-bold flex items-center">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>+4 this sprint
+          </span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full mt-3 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 74%"></div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-1.5">74% on target milestones</span>
+</div>
+<!-- Stat 2: Active Procurement Cycle -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-semibold">Proc &amp; Provision Fleet</span>
+<span class="w-7 h-7 rounded-lg bg-secondary-fixed flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[16px]">laptop_mac</span>
+</span>
+</div>
+<div class="mt-2 flex items-baseline justify-between">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-on-surface">19</span>
+<span class="font-label-sm text-label-sm text-outline">/ 24 Units staged</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full mt-3 overflow-hidden">
+<div class="bg-secondary-container h-full rounded-full" style="width: 79%"></div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-1.5">M3 Pro MacBooks + Dell Precision</span>
+</div>
+<!-- Stat 3: Open Category Tasks -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-semibold">To_Do &amp; Core Queue</span>
+<span class="w-7 h-7 rounded-lg bg-surface-container-high flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[16px]">task_alt</span>
+</span>
+</div>
+<div class="mt-2 flex items-baseline justify-between">
+<div class="flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-on-surface">142</span>
+<span class="font-label-sm text-label-sm text-error font-semibold flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">crisis_alert</span> 3 At Risk
+          </span>
+</div>
+</div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full mt-3 overflow-hidden flex">
+<div class="bg-tertiary h-full" style="width: 65%"></div>
+<div class="bg-secondary h-full" style="width: 25%"></div>
+<div class="bg-error h-full" style="width: 10%"></div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-1.5">65% closed, 25% review, 10% blocked</span>
+</div>
+<!-- Stat 4: Sprint Velocity SVG Spark -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline font-semibold">Throughput Pace</span>
+<span class="w-7 h-7 rounded-lg bg-tertiary-fixed flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[16px]">speed</span>
+</span>
+</div>
+<div class="flex items-center justify-between mt-1">
+<div>
+<span class="font-headline-xl text-headline-xl text-on-surface">94.8%</span>
+<p class="font-label-sm text-label-sm text-outline">Sprint adherence</p>
+</div>
+<!-- Inline SVG Mini Area Chart -->
+<svg class="w-24 h-11 text-tertiary" fill="none" viewbox="0 0 100 45">
+<path d="M0 38 Q 20 30, 35 34 T 70 18 T 100 8 L 100 45 L 0 45 Z" fill="currentColor" fill-opacity="0.12"></path>
+<path d="M0 38 Q 20 30, 35 34 T 70 18 T 100 8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2.5"></path>
+<circle cx="100" cy="8" fill="currentColor" r="3"></circle>
+</svg>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-1">Average turnaround: 1.8 days</span>
+</div>
+</div>
+<!-- Interactive Project Filters & Search Ribbon -->
+<div class="px-space-xl flex flex-col md:flex-row items-center justify-between gap-space-sm mb-space-md">
+<div class="flex items-center gap-space-sm w-full md:w-auto">
+<div class="relative flex-1 md:w-80">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-[16px] text-outline">search</span>
+<input class="w-full h-8 pl-8 pr-10 rounded-lg bg-surface-container-lowest shadow-sm text-body-sm font-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" id="projectSearchInput" placeholder="Filter by code, name, category, or owner..." type="text"/>
+<span class="absolute right-2.5 top-1/2 -translate-y-1/2 font-code-sm text-code-sm text-outline bg-surface-container-low px-1 py-0.2 rounded">esc</span>
+</div>
+<!-- Quick Category Segment Pills -->
+<div class="hidden xl:flex items-center gap-1">
+<button class="category-pill active h-7 px-2.5 rounded-full bg-primary text-on-primary font-label-sm text-label-sm font-semibold shadow-xs" type="button">All Hubs (38)</button>
+<button class="category-pill h-7 px-2.5 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant font-label-sm text-label-sm transition-colors flex items-center gap-1 shadow-xs" type="button">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span>proc (18)</span>
+</button>
+<button class="category-pill h-7 px-2.5 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant font-label-sm text-label-sm transition-colors flex items-center gap-1 shadow-xs" type="button">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span>To_Do (12)</span>
+</button>
+<button class="category-pill h-7 px-2.5 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant font-label-sm text-label-sm transition-colors flex items-center gap-1 shadow-xs" type="button">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span>Core Ops (8)</span>
+</button>
+</div>
+</div>
+<!-- Additional Table Actions -->
+<div class="flex items-center gap-2 self-end md:self-auto">
+<span class="font-body-sm text-body-sm text-outline">Sorted by: <strong class="text-on-surface">Urgency &amp; Sprint</strong></span>
+<button class="h-8 w-8 rounded-lg bg-surface-container-lowest hover:bg-surface-container flex items-center justify-center text-outline hover:text-on-surface shadow-sm transition-colors" title="Bulk actions" type="button">
+<span class="material-symbols-outlined text-[18px]">select_all</span>
+</button>
+<button class="h-8 w-8 rounded-lg bg-surface-container-lowest hover:bg-surface-container flex items-center justify-center text-outline hover:text-on-surface shadow-sm transition-colors" title="Export CSV" type="button">
+<span class="material-symbols-outlined text-[18px]">download</span>
+</button>
+</div>
+</div>
+<!-- Main Consolidated Master Projects Table & Tree Architecture -->
+<div class="px-space-xl pb-space-xl">
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<!-- Data Table Header -->
+<div class="bg-surface-container-low px-space-lg py-2.5 flex items-center justify-between text-outline font-label-sm text-label-sm uppercase tracking-wider select-none">
+<div class="flex items-center gap-3 w-5/12 min-w-[280px]">
+<input class="rounded bg-surface-container-lowest border-0 text-primary focus:ring-0 w-3.5 h-3.5 cursor-pointer" type="checkbox"/>
+<span>Project Identifier &amp; Stream</span>
+</div>
+<div class="w-2/12 hidden md:block">Category Hub</div>
+<div class="w-2/12 hidden lg:block">Stage &amp; Status</div>
+<div class="w-2/12 hidden sm:block">Deliverable Velocity</div>
+<div class="w-1/12 text-right">Owner &amp; Ops</div>
+</div>
+<!-- Project List Container with Hover Rows & Micro-Actions -->
+<div class="divide-y-0" id="projectsTableBody">
+<!-- ROW 1: Laptop Procurement (From image category: proc -> laptop) -->
+<div class="group px-space-lg py-3 flex items-center justify-between hover:bg-surface-container-low/70 transition-colors cursor-pointer bg-surface-container-lowest" data-category="proc" data-code="LAPTOP-894">
+<!-- Col 1: Identification & Title -->
+<div class="flex items-center gap-3 w-5/12 min-w-[280px]">
+<input class="rounded bg-surface-container-low border-0 text-primary focus:ring-0 w-3.5 h-3.5 cursor-pointer" type="checkbox"/>
+<span class="w-2 h-2 rounded-full bg-tertiary shrink-0" title="proc category origin"></span>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm font-bold text-secondary bg-surface-container px-1.5 py-0.5 rounded">LAPTOP-894</span>
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Laptop Fleet Procurement 2025</span>
+<span class="hidden xl:inline-block px-1.5 py-0.2 rounded text-[10px] font-semibold uppercase tracking-wider bg-tertiary-fixed text-on-tertiary-fixed">Active Target</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline truncate mt-0.5">Procuring 24x M3 Max systems for Senior Dev and ML Engineering teams</span>
+</div>
+</div>
+<!-- Col 2: Category Hub & Tree Breadcrumb -->
+<div class="w-2/12 hidden md:flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-label-md text-label-md flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="font-semibold">proc</span>
+<span class="text-outline">/ laptop</span>
+</span>
+<span class="font-label-sm text-label-sm bg-surface-container-high px-1.5 py-0.5 rounded text-on-surface-variant font-code-sm">9 Tasks</span>
+</div>
+<!-- Col 3: 2-Tier Status & Health -->
+<div class="w-2/12 hidden lg:flex flex-col gap-1">
+<div class="flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold">Vendor Sourcing</span>
+<span class="flex items-center gap-0.5 text-tertiary font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> On Track
+              </span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">Due: Oct 31 • Sprint 44</span>
+</div>
+<!-- Col 4: Progress Bar -->
+<div class="w-2/12 hidden sm:flex flex-col gap-1 pr-4">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-outline">7 of 9 Completed</span>
+<span class="font-bold text-on-surface">78%</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 78%"></div>
+</div>
+</div>
+<!-- Col 5: Owner Avatar & Quick Action Reveal -->
+<div class="w-1/12 flex items-center justify-end gap-2">
+<div class="relative group/owner">
+<div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-on-primary font-label-sm text-label-sm font-bold shadow-xs">
+                AK
+              </div>
+</div>
+<div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container" title="Quick task view" type="button">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</button>
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container" title="Project options" type="button">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+<!-- ROW 2: Cloud Migration (From image category: proc -> proc) -->
+<div class="group px-space-lg py-3 flex items-center justify-between hover:bg-surface-container-low/70 transition-colors cursor-pointer bg-surface-container-lowest" data-category="proc" data-code="SERVER-302">
+<!-- Col 1 -->
+<div class="flex items-center gap-3 w-5/12 min-w-[280px]">
+<input class="rounded bg-surface-container-low border-0 text-primary focus:ring-0 w-3.5 h-3.5 cursor-pointer" type="checkbox"/>
+<span class="w-2 h-2 rounded-full bg-tertiary shrink-0"></span>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm font-bold text-secondary bg-surface-container px-1.5 py-0.5 rounded">SERVER-302</span>
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Cloud Infrastructure Migration</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline truncate mt-0.5">Transition Kubernetes clusters to dedicated AWS Graviton instances</span>
+</div>
+</div>
+<!-- Col 2 -->
+<div class="w-2/12 hidden md:flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-label-md text-label-md flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="font-semibold">proc</span>
+<span class="text-outline">/ proc</span>
+</span>
+<span class="font-label-sm text-label-sm bg-surface-container-high px-1.5 py-0.5 rounded text-on-surface-variant font-code-sm">2 Tasks</span>
+</div>
+<!-- Col 3 -->
+<div class="w-2/12 hidden lg:flex flex-col gap-1">
+<div class="flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold">Dry-Run Testing</span>
+<span class="flex items-center gap-0.5 text-error font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]">warning</span> At Risk
+              </span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">Due: Nov 04 • Sprint 44</span>
+</div>
+<!-- Col 4 -->
+<div class="w-2/12 hidden sm:flex flex-col gap-1 pr-4">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-outline">1 of 2 Completed</span>
+<span class="font-bold text-on-surface">50%</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary-container h-full rounded-full" style="width: 50%"></div>
+</div>
+</div>
+<!-- Col 5 -->
+<div class="w-1/12 flex items-center justify-end gap-2">
+<div class="w-7 h-7 rounded-full bg-secondary text-on-secondary flex items-center justify-center font-label-sm text-label-sm font-bold shadow-xs">
+              DL
+            </div>
+<div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container" title="Quick task view" type="button">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</button>
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container" title="Project options" type="button">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+<!-- ROW 3: Office Workstations (From image category: proc) -->
+<div class="group px-space-lg py-3 flex items-center justify-between hover:bg-surface-container-low/70 transition-colors cursor-pointer bg-surface-container-lowest" data-category="proc" data-code="PROC-101">
+<!-- Col 1 -->
+<div class="flex items-center gap-3 w-5/12 min-w-[280px]">
+<input class="rounded bg-surface-container-low border-0 text-primary focus:ring-0 w-3.5 h-3.5 cursor-pointer" type="checkbox"/>
+<span class="w-2 h-2 rounded-full bg-tertiary shrink-0"></span>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm font-bold text-secondary bg-surface-container px-1.5 py-0.5 rounded">PROC-101</span>
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Ergonomic Office Setup &amp; Displays</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline truncate mt-0.5">Studio Display mounts and motorized desk hardware for Floor 4</span>
+</div>
+</div>
+<!-- Col 2 -->
+<div class="w-2/12 hidden md:flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-label-md text-label-md flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="font-semibold">proc</span>
+</span>
+<span class="font-label-sm text-label-sm bg-surface-container-high px-1.5 py-0.5 rounded text-on-surface-variant font-code-sm">5 Tasks</span>
+</div>
+<!-- Col 3 -->
+<div class="w-2/12 hidden lg:flex flex-col gap-1">
+<div class="flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-semibold">Assembly</span>
+<span class="flex items-center gap-0.5 text-tertiary font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> On Track
+              </span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">Due: Nov 12 • Sprint 45</span>
+</div>
+<!-- Col 4 -->
+<div class="w-2/12 hidden sm:flex flex-col gap-1 pr-4">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-outline">4 of 5 Completed</span>
+<span class="font-bold text-on-surface">80%</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 80%"></div>
+</div>
+</div>
+<!-- Col 5 -->
+<div class="w-1/12 flex items-center justify-end gap-2">
+<div class="w-7 h-7 rounded-full bg-tertiary text-on-tertiary flex items-center justify-center font-label-sm text-label-sm font-bold shadow-xs">
+              MR
+            </div>
+<div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container" title="Quick task view" type="button">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</button>
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container" title="Project options" type="button">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+<!-- ROW 4: Client Portal (From image category: To_Do) -->
+<div class="group px-space-lg py-3 flex items-center justify-between hover:bg-surface-container-low/70 transition-colors cursor-pointer bg-surface-container-lowest" data-category="To_Do" data-code="DEV-204">
+<!-- Col 1 -->
+<div class="flex items-center gap-3 w-5/12 min-w-[280px]">
+<input class="rounded bg-surface-container-low border-0 text-primary focus:ring-0 w-3.5 h-3.5 cursor-pointer" type="checkbox"/>
+<span class="w-2 h-2 rounded-full bg-secondary shrink-0"></span>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm font-bold text-primary-container bg-surface-container px-1.5 py-0.5 rounded">DEV-204</span>
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Client Web Portal v2 Redesign</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline truncate mt-0.5">Next.js 15 rewrite with automated stakeholder invoicing and SSO</span>
+</div>
+</div>
+<!-- Col 2 -->
+<div class="w-2/12 hidden md:flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-label-md text-label-md flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-semibold">To_Do</span>
+</span>
+<span class="font-label-sm text-label-sm bg-surface-container-high px-1.5 py-0.5 rounded text-on-surface-variant font-code-sm">2 Tasks</span>
+</div>
+<!-- Col 3 -->
+<div class="w-2/12 hidden lg:flex flex-col gap-1">
+<div class="flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded-full bg-surface-variant text-on-surface font-label-sm text-label-sm font-semibold">Sprint Planning</span>
+<span class="flex items-center gap-0.5 text-secondary font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]">hourglass_top</span> Starting
+              </span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">Due: Dec 01 • Sprint 46</span>
+</div>
+<!-- Col 4 -->
+<div class="w-2/12 hidden sm:flex flex-col gap-1 pr-4">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-outline">0 of 2 Completed</span>
+<span class="font-bold text-on-surface">15%</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 15%"></div>
+</div>
+</div>
+<!-- Col 5 -->
+<div class="w-1/12 flex items-center justify-end gap-2">
+<div class="w-7 h-7 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-sm text-label-sm font-bold shadow-xs">
+              SJ
+            </div>
+<div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container" title="Quick task view" type="button">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</button>
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container" title="Project options" type="button">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+<!-- ROW 5: Security Clearance & SSO (From image category: To_Do) -->
+<div class="group px-space-lg py-3 flex items-center justify-between hover:bg-surface-container-low/70 transition-colors cursor-pointer bg-surface-container-lowest" data-category="To_Do" data-code="SEC-501">
+<!-- Col 1 -->
+<div class="flex items-center gap-3 w-5/12 min-w-[280px]">
+<input class="rounded bg-surface-container-low border-0 text-primary focus:ring-0 w-3.5 h-3.5 cursor-pointer" type="checkbox"/>
+<span class="w-2 h-2 rounded-full bg-secondary shrink-0"></span>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm font-bold text-primary-container bg-surface-container px-1.5 py-0.5 rounded">SEC-501</span>
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">SOC2 Type II Audit &amp; Provisioning</span>
+</div>
+<span class="font-body-sm text-body-sm text-outline truncate mt-0.5">Automate MDM compliance policies across distributed team laptops</span>
+</div>
+</div>
+<!-- Col 2 -->
+<div class="w-2/12 hidden md:flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface font-label-md text-label-md flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-semibold">To_Do</span>
+</span>
+<span class="font-label-sm text-label-sm bg-surface-container-high px-1.5 py-0.5 rounded text-on-surface-variant font-code-sm">6 Tasks</span>
+</div>
+<!-- Col 3 -->
+<div class="w-2/12 hidden lg:flex flex-col gap-1">
+<div class="flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-semibold">Evidence Review</span>
+<span class="flex items-center gap-0.5 text-tertiary font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> On Track
+              </span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">Due: Nov 20 • Sprint 45</span>
+</div>
+<!-- Col 4 -->
+<div class="w-2/12 hidden sm:flex flex-col gap-1 pr-4">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-outline">5 of 6 Completed</span>
+<span class="font-bold text-on-surface">92%</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 92%"></div>
+</div>
+</div>
+<!-- Col 5 -->
+<div class="w-1/12 flex items-center justify-end gap-2">
+<div class="w-7 h-7 rounded-full bg-outline text-on-secondary flex items-center justify-center font-label-sm text-label-sm font-bold shadow-xs">
+              RB
+            </div>
+<div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container" title="Quick task view" type="button">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+</button>
+<button class="w-6 h-6 rounded flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container" title="Project options" type="button">
+<span class="material-symbols-outlined text-[16px]">more_vert</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Table Bottom Summary & Quick Insertion Row -->
+<div class="px-space-lg py-2.5 bg-surface-container-low/50 flex flex-col sm:flex-row items-center justify-between gap-space-sm font-label-sm text-label-sm text-on-surface-variant">
+<button class="flex items-center gap-1.5 text-primary hover:text-primary-container font-semibold transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">add_circle</span>
+<span>Click to insert quick project inline...</span>
+</button>
+<div class="flex items-center gap-space-md">
+<span>Showing 5 of 38 Master Projects</span>
+<div class="flex items-center gap-1">
+<button class="w-6 h-6 rounded bg-surface-container-lowest flex items-center justify-center text-outline hover:text-on-surface shadow-xs" type="button">
+<span class="material-symbols-outlined text-[14px]">chevron_left</span>
+</button>
+<span class="px-2 py-0.5 rounded bg-surface-container font-bold text-on-surface">1</span>
+<button class="w-6 h-6 rounded bg-surface-container-lowest flex items-center justify-center text-outline hover:text-on-surface shadow-xs" type="button">
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bento Section: High-Priority Visual Asset & Cross-Category Team Sync -->
+<div class="px-space-xl pb-space-xl grid grid-cols-1 lg:grid-cols-3 gap-space-lg">
+<!-- Card 1: Live Hardware Rollout Map & Telemetry -->
+<div class="lg:col-span-2 p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-secondary-fixed flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">domain_verification</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">LAPTOP-894 Fleet Deployment Locations</h2>
+<p class="font-body-sm text-body-sm text-outline">San Francisco, London &amp; Singapore Regional Distribution</p>
+</div>
+</div>
+<span class="font-label-sm text-label-sm px-2 py-1 rounded bg-surface-container text-on-surface font-semibold flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span> Live Delivery Tracking
+        </span>
+</div>
+<!-- Geographic Map Element with data-location -->
+<div class="w-full h-56 bg-cover bg-center rounded-lg relative overflow-hidden shadow-inner my-2" data-location="San Francisco, CA" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDp20QZM6YzCoXmwdax-oOKcI_jdG4tGR_zFwCtYTAPpNufjpChwTlOFSkYMXMxlPdF8HFo9VUeFcuZ6rJYzBE3Qtzi9Mi8Lg73PUwG8SHjHXlqi1eAYk9DrM-kofiaoiYS1opF6zd4AfPpSKT9Fvd2O6E-zjF5GkR4CQYYZzOXjhPP6bUvwiNiz6yx_jJSbrvSchA50Gs941fNL0c3fABU9jHIALxsnanZ91uwq5MPP0LFdf6VLl-M1Q')">
+<div class="absolute inset-0 bg-gradient-to-t from-inverse-surface/80 via-transparent to-transparent flex items-end p-space-md">
+<div class="flex items-center justify-between w-full text-inverse-on-surface">
+<div>
+<span class="font-label-sm text-label-sm text-tertiary-fixed font-semibold uppercase tracking-wider">Primary Hub Ready</span>
+<p class="font-headline-sm text-headline-sm text-surface-lowest">SFO Pier 27 Fulfillment Center</p>
+</div>
+<span class="font-code-sm text-code-sm bg-inverse-surface/90 px-2 py-1 rounded text-surface-bright">18/24 Units Delivered</span>
+</div>
+</div>
+</div>
+<!-- Quick Deliverable Breakdown Bar -->
+<div class="grid grid-cols-3 gap-space-sm mt-space-xs text-center">
+<div class="p-2 rounded-lg bg-surface-container-low">
+<span class="font-label-sm text-label-sm text-outline">North America</span>
+<p class="font-headline-sm text-headline-sm text-on-surface">14 Units</p>
+</div>
+<div class="p-2 rounded-lg bg-surface-container-low">
+<span class="font-label-sm text-label-sm text-outline">EMEA Fleet</span>
+<p class="font-headline-sm text-headline-sm text-on-surface">6 Units</p>
+</div>
+<div class="p-2 rounded-lg bg-surface-container-low">
+<span class="font-label-sm text-label-sm text-outline">APAC Staging</span>
+<p class="font-headline-sm text-headline-sm text-on-surface">4 Units</p>
+</div>
+</div>
+</div>
+<!-- Card 2: Workspace Category Breakdown Radial Visual -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Category Allocations</h2>
+<button class="text-outline hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</div>
+<p class="font-body-sm text-body-sm text-outline">Current master project distribution across active categories</p>
+</div>
+<!-- Inline SVG Donut Chart -->
+<div class="flex items-center justify-center my-space-md relative">
+<svg class="w-40 h-40 -rotate-90 transform" viewbox="0 0 100 100">
+<!-- Background track -->
+<circle class="text-surface-container" cx="50" cy="50" fill="none" r="38" stroke="currentColor" stroke-width="12"></circle>
+<!-- proc Segment: 47% (dasharray ~ 112, circum ~ 238.7) -->
+<circle class="text-tertiary" cx="50" cy="50" fill="none" r="38" stroke="currentColor" stroke-dasharray="112 238.7" stroke-dashoffset="0" stroke-linecap="round" stroke-width="12"></circle>
+<!-- To_Do Segment: 31% (dasharray ~ 74) -->
+<circle class="text-secondary" cx="50" cy="50" fill="none" r="38" stroke="currentColor" stroke-dasharray="74 238.7" stroke-dashoffset="-114" stroke-linecap="round" stroke-width="12"></circle>
+<!-- Core Ops Segment: 21% (dasharray ~ 50) -->
+<circle class="text-primary-container" cx="50" cy="50" fill="none" r="38" stroke="currentColor" stroke-dasharray="50 238.7" stroke-dashoffset="-190" stroke-linecap="round" stroke-width="12"></circle>
+</svg>
+<div class="absolute flex flex-col items-center justify-center text-center">
+<span class="font-headline-lg text-headline-lg text-on-surface font-bold leading-none">38</span>
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider mt-0.5">Projects</span>
+</div>
+</div>
+<!-- Legend -->
+<div class="space-y-2">
+<div class="flex items-center justify-between font-label-md text-label-md">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary"></span>
+<span class="text-on-surface">proc Category (proc + laptop)</span>
+</div>
+<span class="font-semibold text-on-surface">18 (47%)</span>
+</div>
+<div class="flex items-center justify-between font-label-md text-label-md">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
+<span class="text-on-surface">To_Do Operations</span>
+</div>
+<span class="font-semibold text-on-surface">12 (31%)</span>
+</div>
+<div class="flex items-center justify-between font-label-md text-label-md">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container"></span>
+<span class="text-on-surface">Core Procurement Systems</span>
+</div>
+<span class="font-semibold text-on-surface">8 (21%)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Operational Floating Micro-Drawer / Task Inspect Sheet Trigger Simulation -->
+<div class="hidden fixed bottom-6 right-6 max-w-sm bg-surface-container-lowest p-space-md rounded-xl shadow-xl z-30 transition-all border-0" id="inspectorDrawer">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-headline-sm text-headline-sm text-on-surface" id="drawerTitle">LAPTOP-894 Inspect</span>
+</div>
+<button class="text-outline hover:text-on-surface" id="closeDrawerBtn" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-3">9 associated active sub-tasks in stage. Quick update assigned to team lead.</p>
+<div class="flex items-center gap-2">
+<button class="flex-1 py-1 px-2.5 rounded bg-primary text-on-primary font-label-md text-label-md text-center hover:bg-primary-container transition-colors" type="button">
+        Open Full Hub View
+      </button>
+<button class="py-1 px-2.5 rounded bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors" type="button">
+        Mark Done
+      </button>
+</div>
+</div>
+</div>
+<script>
+  // Dynamic Category Filtering Simulation
+  document.querySelectorAll('.category-pill').forEach(pill => {
+    pill.addEventListener('click', function() {
+      document.querySelectorAll('.category-pill').forEach(p => {
+        p.classList.remove('bg-primary', 'text-on-primary', 'font-semibold');
+        p.classList.add('bg-surface-container-lowest', 'text-on-surface-variant');
+      });
+      this.classList.remove('bg-surface-container-lowest', 'text-on-surface-variant');
+      this.classList.add('bg-primary', 'text-on-primary', 'font-semibold');
+
+      const text = this.textContent.trim().toLowerCase();
+      const rows = document.querySelectorAll('#projectsTableBody > div');
+      
+      rows.forEach(row => {
+        if (text.includes('all')) {
+          row.style.display = 'flex';
+        } else if (text.includes('proc') && row.getAttribute('data-category') === 'proc') {
+          row.style.display = 'flex';
+        } else if (text.includes('to_do') && row.getAttribute('data-category') === 'To_Do') {
+          row.style.display = 'flex';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  });
+
+  // Client search filter across projects table
+  const searchInput = document.getElementById('projectSearchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', function(e) {
+      const query = e.target.value.toLowerCase();
+      const rows = document.querySelectorAll('#projectsTableBody > div');
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(query) ? 'flex' : 'none';
+      });
+    });
+  }
+
+  // Row selection interaction: reveals micro inspect sheet
+  const rows = document.querySelectorAll('#projectsTableBody > div');
+  const drawer = document.getElementById('inspectorDrawer');
+  const drawerTitle = document.getElementById('drawerTitle');
+  const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+
+  rows.forEach(row => {
+    row.addEventListener('click', function(e) {
+      if (e.target.tagName.toLowerCase() === 'input' || e.target.closest('button')) return;
+      const code = this.getAttribute('data-code');
+      if (drawer && drawerTitle) {
+        drawerTitle.textContent = `${code} Task Quick Sheet`;
+        drawer.classList.remove('hidden');
+      }
+    });
+  });
+
+  if (closeDrawerBtn && drawer) {
+    closeDrawerBtn.addEventListener('click', () => {
+      drawer.classList.add('hidden');
+    });
+  }
+</script></main></div></body></html>

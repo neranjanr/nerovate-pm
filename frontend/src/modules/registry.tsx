@@ -4,7 +4,10 @@ export type Role = "admin" | "manager" | "member" | "guest";
 
 export type ViewId =
   | "board"
+  | "kanban"
   | "list"
+  | "status"
+  | "mindmap"
   | "calendar"
   | "table"
   | "timeline"
@@ -32,7 +35,10 @@ const Placeholder = (label: string) =>
  */
 export const REGISTRY: RouteEntry[] = [
   { id: "board", route: "board", navLabel: "Board", requiredRole: ["admin", "manager", "member", "guest"], component: lazy(() => import("../pages/Board")) },
+  { id: "kanban", route: "kanban", navLabel: "Kanban", requiredRole: ["admin", "manager", "member", "guest"], component: lazy(() => import("../pages/Kanban")) },
   { id: "list", route: "list", navLabel: "List", requiredRole: ["admin", "manager", "member", "guest"], component: lazy(() => import("../pages/List")) },
+  { id: "status", route: "status", navLabel: "Status View", requiredRole: ["admin", "manager", "member", "guest"], component: lazy(() => import("../pages/StatusView")) },
+  { id: "mindmap", route: "mindmap", navLabel: "Mind Map", requiredRole: ["admin", "manager", "member", "guest"], component: lazy(() => import("../pages/MindMap")) },
   { id: "calendar", route: "calendar", navLabel: "Calendar", requiredRole: ["admin", "manager", "member"], component: lazy(() => import("../pages/Calendar")) },
   { id: "table", route: "table", navLabel: "Table", requiredRole: ["admin", "manager", "member"], component: lazy(() => import("../pages/Table")) },
   { id: "timeline", route: "timeline", navLabel: "Execution Timeline", requiredRole: ["admin", "manager", "member"], component: lazy(() => import("../pages/Timeline")) },

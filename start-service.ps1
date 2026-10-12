@@ -12,11 +12,47 @@
 param(
   [switch]$Rebuild,
   [switch]$FollowLogs,
-  [int[]]$Ports = @(80),
-  [int]$HostPort = 80
+  [int[]]$Ports = @(8083),
+  [int]$HostPort = 8083
 )
 
 $ErrorActionPreference = "Stop"
+
+# Interactive menu if no startup switches are explicitly passed
+if (-not $PSBoundParameters.ContainsKey('Rebuild') -and -not $PSBoundParameters.ContainsKey('FollowLogs')) {
+  Write-Host "========================================" -ForegroundColor Cyan
+  Write-Host "       Nerovate-PM Startup Menu         " -ForegroundColor Cyan
+  Write-Host "========================================" -ForegroundColor Cyan
+  Write-Host "  1) Normal Start (docker compose up -d)"
+  Write-Host "  2) Rebuild Start (docker compose up -d --build)"
+  Write-Host "  3) Rebuild + Follow Logs"
+  Write-Host "  4) Exit"
+  Write-Host ""
+  $choice = Read-Host "Select option [1-4]"
+  switch ($choice.Trim()) {
+    "1" { 
+      $Rebuild = $false
+      $FollowLogs = $false 
+    }
+    "2" { 
+      $Rebuild = $true
+      $FollowLogs = $false 
+    }
+    "3" { 
+      $Rebuild = $true
+      $FollowLogs = $true 
+    }
+    "4" { 
+      Write-Host "Exiting."
+      exit 0
+    }
+    default {
+      Write-Host "Invalid choice, defaulting to Normal Start (1)." -ForegroundColor Yellow
+      $Rebuild = $false
+      $FollowLogs = $false
+    }
+  }
+}
 
 function Test-PortHeld {
   param([int]$Port)

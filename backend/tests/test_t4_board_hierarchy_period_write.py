@@ -46,12 +46,14 @@ def test_task_hierarchy_and_creation(client: TestClient, admin_token_headers):
     proj = r.json()
     proj_id = proj["id"]
 
-    # Apply profile
+    # Apply profile (copies template statuses into a per-Project profile
+    # with new ids) and read statuses from the applied profile.
     r = client.post(f"/api/v1/projects/{proj_id}/apply-profile/{profile_id}", headers=admin_token_headers)
     assert r.status_code == 200
+    applied_profile_id = r.json()["status_profile_id"]
 
     # Get project statuses
-    r = client.get(f"/api/v1/status-profiles/{proj.get('status_profile_id') or r.json()['status_profile_id']}", headers=admin_token_headers)
+    r = client.get(f"/api/v1/status-profiles/{applied_profile_id}", headers=admin_token_headers)
     statuses = r.json()["statuses"]
     todo_status_id = statuses[0]["id"]
 
@@ -201,7 +203,11 @@ def test_blocked_map(client: TestClient, admin_token_headers):
     sid = r.json()["id"]
     r = client.post("/api/v1/projects", json={"name": "Block Proj", "code": "BLK-01", "start_date": "2026-03-01"}, headers=admin_token_headers)
     proj_id = r.json()["id"]
-    client.post(f"/api/v1/projects/{proj_id}/apply-profile/{pid}", headers=admin_token_headers)
+    r = client.post(f"/api/v1/projects/{proj_id}/apply-profile/{pid}", headers=admin_token_headers)
+    assert r.status_code == 200
+    # apply-profile copies template statuses (new ids): use the applied profile's status.
+    r = client.get(f"/api/v1/status-profiles/{r.json()['status_profile_id']}", headers=admin_token_headers)
+    sid = r.json()["statuses"][0]["id"]
 
     r = client.post("/api/v1/tasks", json={"project_id": proj_id, "title": "A", "start_date": "2026-03-01", "status_id": sid}, headers=admin_token_headers)
     id_a = r.json()["id"]

@@ -68,28 +68,28 @@ export default function Calendar() {
   }, [events]);
 
   return (
-    <main className="p-6 bg-slate-950 min-h-screen text-slate-100">
+    <main className="p-6 bg-surface min-h-screen text-on-surface">
       <h1 className="text-xl font-semibold mb-1">Calendar</h1>
-      <p className="text-xs text-slate-400 mb-4">Task dues + Status planned dues from the same filters as List.</p>
+      <p className="text-xs text-on-surface-variant mb-4">Task dues + Status planned dues from the same filters as List.</p>
       <TaskFilters filters={filters} onChange={setFilters} statuses={statuses} />
-      {loading && <div role="status" className="mt-3 text-xs text-slate-400">Loading calendar…</div>}
-      {error && <div role="alert" className="mt-3 text-xs text-rose-300">{error}</div>}
+      {loading && <div role="status" className="mt-3 text-xs text-on-surface-variant">Loading calendar…</div>}
+      {error && <div role="alert" className="mt-3 text-xs text-error">{error}</div>}
       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {byDate.map(([d, evts]) => (
-          <section key={d} className="bg-slate-900/40 border border-slate-800 rounded">
-            <header className="px-3 py-2 border-b border-slate-800 font-mono text-xs text-indigo-300">{d}</header>
-            <ul className="divide-y divide-slate-800/60">
+          <section key={d} className="bg-surface-container-low border border-subtle rounded">
+            <header className="px-3 py-2 border-b border-subtle font-mono text-xs text-primary">{d}</header>
+            <ul className="divide-y divide-border-subtle">
               {evts.map((e, i) => (
                 <li key={`${e.task_id}-${e.kind}-${i}`} className="px-3 py-2 text-xs">
                   <span
                     className={`inline-block px-1.5 py-0.5 rounded mr-2 font-semibold ${
-                      e.kind === "task_due" ? "bg-indigo-950 text-indigo-300" : "bg-amber-950 text-amber-300"
+                      e.kind === "task_due" ? "bg-primary-fixed text-primary" : "bg-amber-950 text-amber-300"
                     }`}
                   >
                     {e.kind === "task_due" ? "Task due" : "Period due"}
                   </span>
-                  <span className="text-slate-200">{e.title}</span>
-                  <span className="text-slate-500 font-mono ml-2">#{e.task_id} · {e.status_name}</span>
+                  <span className="text-on-surface">{e.title}</span>
+                  <span className="text-outline font-mono ml-2">#{e.task_id} · {e.status_name}</span>
                 </li>
               ))}
             </ul>
@@ -97,9 +97,9 @@ export default function Calendar() {
         ))}
       </div>
       {events.length === 0 && !error && !loading && (
-        <div className="text-center text-slate-500 text-sm py-10">No due dates match the current filters.</div>
+        <div className="text-center text-outline text-sm py-10">No due dates match the current filters.</div>
       )}
-      <div className="mt-4 border-t border-slate-800 pt-2">{id && <TelemetryBar projectId={id} />}</div>
+      <div className="mt-4 border-t border-subtle pt-2">{id && <TelemetryBar projectId={id} />}</div>
     </main>
   );
 }

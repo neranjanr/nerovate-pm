@@ -2,7 +2,9 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 
 // Visual Theme (design tokens only). Distinct from Project Template
 // (reusable Status Profile + field defs) and Status Profile (ordered Statuses).
-export type VisualTheme = "sample" | "legacy";
+// "enterprise" is the sampleproj.html slate/white look and is the default.
+// "sample" / "legacy" are kept so the theme stays changeable later.
+export type VisualTheme = "enterprise" | "sample" | "legacy";
 
 interface ThemeState {
   theme: VisualTheme;
@@ -16,7 +18,10 @@ const ThemeCtx = createContext<ThemeState | null>(null);
 
 function initial(): VisualTheme {
   const v = readWithFallback(localStorage, THEME_KEY, LEGACY_THEME_KEY);
-  return v === "legacy" ? "legacy" : "sample";
+  if (v === "legacy") return "legacy";
+  if (v === "sample") return "sample";
+  if (v === "enterprise") return "enterprise";
+  return "enterprise";
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -25,7 +30,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    document.documentElement.classList.add("dark");
+    document.documentElement.classList.remove("dark");
+    document.documentElement.classList.add("light");
+    document.documentElement.style.colorScheme = "light";
     document.documentElement.dataset.theme = theme;
     writeNewKey(localStorage, KEY, LEGACY_THEME_KEY, theme);
   }, [theme]);
