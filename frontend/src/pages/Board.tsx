@@ -7,6 +7,7 @@ import TaskCreateModal from "../components/TaskCreateModal";
 import TaskDialog from "../components/TaskDialog";
 import { buildTimelineExportUrl, downloadExport } from "../utils/exports";
 import { deriveStatusSignal, kindLabel } from "../utils/statusSignals";
+import { boardStatusMoveBody, formatTaskCode } from "../utils/boardCard";
 
 interface BoardTask {
   id: number;
@@ -14,6 +15,7 @@ interface BoardTask {
   status_id: number;
   depth: number;
   parent_id?: number | null;
+  wbs?: string;
   priority: string;
   start_date: string;
   due_date?: string | null;
@@ -258,7 +260,7 @@ export default function Board() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${auth.accessToken}`,
       },
-      body: JSON.stringify({ status_id: statusId }),
+      body: JSON.stringify(boardStatusMoveBody(statusId, TODAY())),
     })
       .then((r) => {
         if (!r.ok) throw new Error(`Status change failed: ${r.status}`);
@@ -311,7 +313,7 @@ export default function Board() {
         title={canDrag ? "Drag to another column to change Status" : "Guests cannot move tasks"}
       >
         <div className="flex items-center justify-between gap-2">
-          <span className="font-mono text-outline">#{t.id} · depth {t.depth}</span>
+          <span className="font-mono text-outline">{formatTaskCode(t)} · depth {t.depth}</span>
           <span className="px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant capitalize">{t.priority}</span>
         </div>
         <div className="mt-1 font-medium text-on-surface">
@@ -346,10 +348,23 @@ export default function Board() {
         </div>
         <div className="mt-1 font-mono text-[11px] text-outline">
           est {t.estimate_mins ?? 0}m vs spent {t.time_spent_mins}m
-          {t.blocked_by_ids.length > 0 && (
-            <span className="text-error"> · blocked by {t.blocked_by_ids.join(", ")}</span>
-          )}
+          {t.is_blocked && <span className="ml-1 px-1.5 py-0.5 rounded bg-error-container text-error font-bold">⛔ blocked</span>}
         </div>
+        {t.blocked_by_ids.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1 text-[11px]">
+            <span className="text-outline">depends on:</span>
+            {t.blocked_by_ids.map((depId) => (
+              <button
+                key={depId}
+                onClick={() => setEditTaskId(depId)}
+                className="px-1.5 rounded border border-error text-error hover:underline font-mono"
+                title={`Open blocking task #${depId}`}
+              >
+                #{depId}
+              </button>
+            ))}
+          </div>
+        )}
         {canCreate && t.depth < 2 && (
           <button
             onClick={() =>
