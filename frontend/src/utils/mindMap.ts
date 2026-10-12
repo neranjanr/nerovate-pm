@@ -366,17 +366,16 @@ export function layoutForest(args: {
 
   for (const r of forest.rootKeys) visit(r);
 
-  // Center parents over visible children (single smoothing pass, leaves keep order).
+  // Center every visible parent over its visible children along the
+  // ordering axis (y in horizontal, x in vertical), roots included, so the
+  // top tier sits mid-left / mid-top. Single bottom-up pass: reversed
+  // insertion order visits children before parents, leaves keep DFS order.
   for (const [key, p] of [...placed.entries()].reverse()) {
     const kids = (children.get(key) ?? []).map((c) => placed.get(c.key)).filter((c) => c && c.visible);
     if (kids.length === 0 || !p.visible) continue;
     const mid = kids.reduce((s, c) => s + (layout === "horizontal" ? c!.y : c!.x), 0) / kids.length;
-    const cur = layout === "horizontal" ? p.y : p.x;
-    // Only pull non-root parents toward children midpoint; roots stay anchored.
-    if (p.level > 0) {
-      if (layout === "horizontal") p.y = Math.round((cur + mid) / 2);
-      else p.x = Math.round((cur + mid) / 2);
-    }
+    if (layout === "horizontal") p.y = Math.round(mid);
+    else p.x = Math.round(mid);
   }
 
   let w = 800;

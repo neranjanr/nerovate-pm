@@ -156,6 +156,42 @@ describe("mindMap layout", () => {
     expect(ticked.placed.get("task:3")?.visible).toBe(true);
   });
 
+  it("centers the top tier on the ordering axis (mid-left / mid-top)", () => {
+    const f = buildMindMapForest({
+      rootType: "category",
+      category: { id: 1, name: "C", color: "#000000" },
+      projects: [
+        { id: 7, code: "B", name: "Beta", color: "#000000" },
+        { id: 8, code: "A", name: "Alpha", color: "#000000" },
+        { id: 9, code: "C", name: "Gamma", color: "#000000" },
+      ],
+      tasks: [],
+    });
+    const h = layoutForest({ forest: f, layout: "horizontal", maxLevel: 4, collapsed: new Set() });
+    const kidsY = ["proj:7", "proj:8", "proj:9"].map((k) => h.placed.get(k)!.y);
+    expect(h.placed.get("cat:1")!.y).toBe((kidsY[0] + kidsY[1] + kidsY[2]) / 3);
+
+    const v = layoutForest({ forest: f, layout: "vertical", maxLevel: 4, collapsed: new Set() });
+    const kidsX = ["proj:7", "proj:8", "proj:9"].map((k) => v.placed.get(k)!.x);
+    expect(v.placed.get("cat:1")!.x).toBe((kidsX[0] + kidsX[1] + kidsX[2]) / 3);
+  });
+
+  it("centers every parent exactly over its visible children", () => {
+    const f = buildMindMapForest({
+      rootType: "project",
+      projects: [projs[0]],
+      tasks: [
+        { id: 1, project_id: 7, parent_id: null, depth: 0, title: "Task A", status_id: 3, assignee_ids: [], due_date: null },
+        { id: 2, project_id: 7, parent_id: 1, depth: 1, title: "Sub A.1", status_id: 3, assignee_ids: [], due_date: null },
+        { id: 3, project_id: 7, parent_id: 1, depth: 1, title: "Sub A.2", status_id: 3, assignee_ids: [], due_date: null },
+      ],
+    });
+    const h = layoutForest({ forest: f, layout: "horizontal", maxLevel: 4, collapsed: new Set() });
+    const s1 = h.placed.get("task:2")!.y;
+    const s2 = h.placed.get("task:3")!.y;
+    expect(h.placed.get("task:1")!.y).toBe((s1 + s2) / 2);
+  });
+
   it("emits cubic connectors for both layouts", () => {
     expect(connectorPath(0, 0, 340, 132, "horizontal")).toContain("C");
     expect(connectorPath(0, 0, 340, 300, "vertical")).toContain("C");
