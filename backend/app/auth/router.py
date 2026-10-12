@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 
 from app.auth.models import User
 from app.deps import get_current_user, get_session
-from app.security import create_access_token, create_refresh_token, decode_token, verify_password
+from app.security import create_access_token, create_refresh_token, decode_token, hash_password, verify_password
 
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -25,6 +25,15 @@ class UserOut(BaseModel):
     name: str
     role: str
     active: bool
+
+
+class MeUpdateIn(BaseModel):
+    name: str
+
+
+class ChangePasswordIn(BaseModel):
+    current_password: str
+    new_password: str
 
 
 @router.post("/login")
@@ -63,3 +72,36 @@ def refresh(body: RefreshIn, session: Session = Depends(get_session)):
 def me(current: User = Depends(get_current_user)):
     assert current.id is not None
     return UserOut(id=current.id, username=current.username, name=current.name, role=current.role, active=current.active)
+
+
+@router.patch("/me", response_model=UserOut)
+def update_me(
+    body: MeUpdateIn,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    name = body.name.strip()
+    if not name or len(name) > 128:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Name must be 1-128 chars")
+    current.name = name
+    session.add(current)
+    session.commit()
+    session.refresh(current)
+    assert current.id is not None
+    return UserOut(id=current.id, username=current.username, name=current.name, role=current.role, active=current.active)
+
+
+@router.post("/me/change-password")
+def change_password(
+    body: ChangePasswordIn,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    if not verify_password(body.current_password, current.password_hash):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
+    if len(body.new_password) < 8 or len(body.new_password) > 128:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New password must be 8-128 chars")
+    current.password_hash = hash_password(body.new_password)
+    session.add(current)
+    session.commit()
+    return {"ok": True}
