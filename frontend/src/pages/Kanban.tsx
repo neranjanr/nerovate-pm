@@ -4,6 +4,7 @@ import TaskFilters, { EMPTY_FILTERS, type TaskFilterState } from "../components/
 import TaskDialog from "../components/TaskDialog";
 import { useAuth } from "../stores/auth";
 import { deriveStatusSignal, emptyStageSignal, kindLabel } from "../utils/statusSignals";
+import { resolveStageDrop } from "../utils/boardCard";
 
 interface KanbanTask {
   id: number;
@@ -723,6 +724,35 @@ export default function Kanban() {
     return !!d && (!!d.is_done || !!d.is_milestone || (d.kind ?? "normal") !== "normal");
   };
 
+  /**
+   * ADR-0010 issue 02: always show the Status picker for an ambiguous
+   * Standard-view Stage-column drop — the caller's confirmMode never
+   * silently resolves the destination.
+   */
+  const openPickerConfirm = (
+    t: KanbanTask,
+    fromName: string,
+    destStatusId: number,
+    destStageId: number | null,
+    choices?: StatusInfo[]
+  ) => {
+    const toName = fullName(destStatusId, statusById, stages);
+    setConfirm({
+      taskId: t.id,
+      taskTitle: t.title,
+      fromStatusId: t.status_id,
+      fromStageId: t.stage_id ?? null,
+      fromName,
+      toStatusId: destStatusId,
+      toName,
+      destStageId,
+      choices,
+    });
+    setConfirmStage(String(destStageId ?? ""));
+    setConfirmLeaf(String(destStatusId));
+    closeBucket();
+  };
+
   const requestMove = (taskId: number, destStatusId: number, destStageId?: number | null, choices?: StatusInfo[]) => {
     const t = visibleTasks.find((x) => x.id === taskId) ?? tasks.find((x) => x.id === taskId);
     if (!t) return;
@@ -731,33 +761,19 @@ export default function Kanban() {
       return;
     }
     const fromName = taskNodeName(t, statusById, stages);
-    const toName = fullName(destStatusId, statusById, stages);
     const stageOf = (sid: number) => statusById.get(sid)?.stage_id ?? destStageId ?? null;
     if (!needsConfirm(t, destStatusId, destStageId)) {
       closeBucket();
       doMove(taskId, t.status_id, t.stage_id ?? null, fromName, t.title, { statusId: destStatusId });
       return;
     }
-    setConfirm({
-      taskId,
-      taskTitle: t.title,
-      fromStatusId: t.status_id,
-      fromStageId: t.stage_id ?? null,
-      fromName,
-      toStatusId: destStatusId,
-      toName,
-      destStageId: destStageId ?? stageOf(destStatusId),
-      choices,
-    });
-    setConfirmStage(String(destStageId ?? stageOf(destStatusId) ?? ""));
-    setConfirmLeaf(choices && choices.length > 0 ? String(destStatusId) : String(destStatusId));
-    closeBucket();
+    openPickerConfirm(t, fromName, destStatusId, destStageId ?? stageOf(destStatusId), choices);
   };
 
   /**
-   * ADR-0010: dropping onto an empty Stage assigns it directly (no picker,
-   * no confirm dialog — the confirm modal only addresses leaf Statuses, so
-   * stage targets stay on the toast+undo path until 02 adds a Stage picker).
+   * ADR-0010: dropping onto an empty Stage assigns it directly (no picker;
+   * the confirm modal only addresses leaf Statuses, so direct Stage targets
+   * stay on the toast+undo path).
    */
   const requestStageMove = (taskId: number, stageId: number) => {
     const t = visibleTasks.find((x) => x.id === taskId) ?? tasks.find((x) => x.id === taskId);
@@ -773,17 +789,40 @@ export default function Kanban() {
 
   const requestStageDrop = (taskId: number, stageId: number, leafId?: number) => {
     const leaves = statuses.filter((s) => s.stage_id === stageId).sort((a, b) => a.order - b.order);
+    const resolved = resolveStageDrop({
+      leafIds: leaves.map((l) => l.id),
+      leafId: leafId ?? null,
+      // Partial views (active filters or a category project subset) never
+      // auto-resolve a non-empty Stage — see resolveStageDrop.
+      filtersActive: filtersActive || projectFilter !== "",
+    });
     // ADR-0010: empty Stages are directly assignable — no Status picker.
-    if (leaves.length === 0) {
+    if (resolved.kind === "direct-stage") {
       requestStageMove(taskId, stageId);
       return;
     }
-    if (leafId != null) {
-      requestMove(taskId, leafId, stageId, leaves.length > 1 ? leaves : undefined);
+    if (resolved.kind === "blocked-filtered") {
+      setError("Clear filters to move across Stages — or drop onto an explicit Status.");
+      closeBucket();
       return;
     }
-    if (leaves.length === 1) requestMove(taskId, leaves[0].id, stageId);
-    else requestMove(taskId, leaves[0].id, stageId, leaves);
+    if (resolved.kind === "explicit-move") {
+      const target = leaves.find((l) => l.id === resolved.statusId);
+      requestMove(
+        taskId,
+        resolved.statusId,
+        stageId,
+        target && leaves.length > 1 ? leaves : undefined
+      );
+      return;
+    }
+    // force-picker: multi-leaf Standard-view drop preselects the first leaf
+    // but always shows the picker — never a silent first-Status move.
+    const t = visibleTasks.find((x) => x.id === taskId) ?? tasks.find((x) => x.id === taskId);
+    if (!t) return;
+    const first = leaves.find((l) => l.id === resolved.choices[0]) ?? leaves[0];
+    if (!first) return;
+    openPickerConfirm(t, taskNodeName(t, statusById, stages), first.id, stageId, leaves);
   };
 
   const confirmStageLeaves = useMemo(() => {

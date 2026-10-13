@@ -328,6 +328,7 @@ class TaskHistoryOut(BaseModel):
     to_stage_id: int | None = None
     actor_id: int | None = None
     at: str
+    note: str | None = None
 
 
 class TaskOut(BaseModel):
@@ -1611,6 +1612,7 @@ def get_task_history(
             to_stage_id=getattr(h, "to_stage_id", None),
             actor_id=h.actor_id,
             at=h.at,
+            note=h.note,
         )
         for h in history
     ]

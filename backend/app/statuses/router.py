@@ -49,6 +49,64 @@ def _recascade_stage(session: Session, stage: StatusStage) -> None:
         session.add(s)
 
 
+#: History note written on every auto-migrated Task when the first Status
+#: lands under a previously-empty assigned Stage (ADR-0010 issue 02).
+MIGRATION_NOTE = "status-migrated"
+
+
+def _auto_migrate_stage_tasks(
+    session: Session, stage_id: int, new_status_id: int, actor_id: int | None
+) -> int:
+    """Move every directly-assigned Task on an empty Stage onto its first Status.
+
+    Only call when ``new_status_id`` is the first leaf under ``stage_id``.
+    Each moved row keeps exactly one assignable node (status set, stage
+    cleared) and gains a ``status-migrated`` history leg
+    (from_stage_id -> to_status_id). Returns the number of tasks moved.
+    """
+    from app.events import publish
+    from app.tasks.models import Task, TaskHistory
+
+    direct = list(session.exec(select(Task).where(Task.stage_id == stage_id)).all())
+    # Only direct assignments (status_id NULL) can exist on an empty Stage,
+    # but filter defensively so a stray row never ends up double-assigned.
+    direct = [t for t in direct if t.status_id is None]
+    for t in direct:
+        assert t.id is not None
+        t.status_id = new_status_id
+        t.stage_id = None
+        session.add(t)
+        session.add(
+            TaskHistory(
+                task_id=t.id,
+                from_status_id=None,
+                to_status_id=new_status_id,
+                from_stage_id=stage_id,
+                to_stage_id=None,
+                actor_id=actor_id,
+                note=MIGRATION_NOTE,
+            )
+        )
+        try:
+            publish(
+                "task.status_changed",
+                {
+                    "task_id": t.id,
+                    "from_status_id": None,
+                    "to_status_id": new_status_id,
+                    "from_stage_id": stage_id,
+                    "to_stage_id": None,
+                    "actor_id": actor_id,
+                    "note": MIGRATION_NOTE,
+                },
+            )
+        except Exception:
+            pass
+    if direct:
+        session.commit()
+    return len(direct)
+
+
 class StatusCreate(BaseModel):
     name: str
     color: str | None = None
@@ -692,6 +750,12 @@ def create_stage_status(
     session.add(s)
     session.commit()
     session.refresh(s)
+    assert s.id is not None
+    # ADR-0010 issue 02: first Status under a previously-empty assigned
+    # Stage migrates direct assignments onto it (exactly-one-node invariant).
+    if len(siblings) == 0:
+        _auto_migrate_stage_tasks(session, stage_id, s.id, current.id)
+        session.refresh(s)
     return _status_out(s)
 
 
@@ -731,10 +795,12 @@ def create_profile_status(
     # Q4 cascade: derive shade from parent stage base when staged.
     shade = body.shade
     color = body.color
+    first_under_stage = False
     if stage is not None:
         siblings = list(
             session.exec(select(Status).where(Status.stage_id == stage.id).order_by(Status.order)).all()  # type: ignore[arg-type]
         )
+        first_under_stage = len(siblings) == 0
         derived = _tint_hex(stage.color_base, len(siblings) % 4 if len(siblings) >= 4 else len(siblings), 4)
         shade = derived
         color = derived
@@ -757,6 +823,12 @@ def create_profile_status(
     session.add(s)
     session.commit()
     session.refresh(s)
+    assert s.id is not None
+    # ADR-0010 issue 02: first Status under a previously-empty assigned
+    # Stage migrates direct assignments onto it.
+    if first_under_stage and stage is not None and stage.id is not None:
+        _auto_migrate_stage_tasks(session, stage.id, s.id, current.id)
+        session.refresh(s)
     return _status_out(s)
 
 
@@ -801,16 +873,37 @@ def update_profile_status(
         s.active = body.active
     if "stage_id" in body.model_fields_set:
         _resolve_stage(session, profile_id, body.stage_id)
+        old_stage_id = s.stage_id
+        new_stage_id = body.stage_id
+        # ADR-0010 issue 02: moving the first Status into a previously-empty
+        # assigned Stage migrates direct assignments onto it. Count siblings
+        # excluding the moving row itself.
+        first_into_stage = False
+        if new_stage_id is not None and new_stage_id != old_stage_id:
+            others = list(
+                session.exec(
+                    select(Status).where(Status.stage_id == new_stage_id)
+                ).all()
+            )
+            others = [o for o in others if o.id != s.id]
+            first_into_stage = len(others) == 0
         s.stage_id = body.stage_id
         if body.shade is None and body.stage_id is not None and s.shade is None:
             st = session.get(StatusStage, body.stage_id)
             if st is not None:
                 s.shade = st.color_base
+    else:
+        first_into_stage = False
+        new_stage_id = None
     if body.shade is not None:
         s.shade = body.shade
     session.add(s)
     session.commit()
     session.refresh(s)
+    assert s.id is not None
+    if first_into_stage and new_stage_id is not None:
+        _auto_migrate_stage_tasks(session, new_stage_id, s.id, current.id)
+        session.refresh(s)
     # Recascade siblings when order changes so positional shades stay correct.
     if body.order is not None and s.stage_id is not None:
         st = session.get(StatusStage, s.stage_id)
