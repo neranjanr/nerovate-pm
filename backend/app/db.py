@@ -77,6 +77,7 @@ def init_db() -> None:
     _migrate_status_kind()
     _migrate_task_stage_column()
     _migrate_reminder_detach()
+    _migrate_reminder_recurrence()
 
     with Session(engine) as session:
         from app.auth.models import User
@@ -747,6 +748,46 @@ def _migrate_reminder_detach() -> None:
                     pass
         try:
             session.execute(text("UPDATE reminders SET ex_anchor_title='' WHERE ex_anchor_title IS NULL"))
+            session.commit()
+        except Exception:
+            pass
+
+
+def _migrate_reminder_recurrence() -> None:
+    """02 additive migration: reminders recurrence + snooze columns.
+
+    Adds repeat / repeat_end / repeat_after_n / repeat_until /
+    occurrence_index / snoozed_until when missing and backfills
+    one-time defaults (repeat 'none', end 'never', index 0).
+    Idempotent: safe to run on every boot and in tests.
+    """
+    from sqlalchemy import text
+
+    with Session(engine) as session:
+        try:
+            cols = [r[1] for r in session.execute(text("PRAGMA table_info(reminders)")).all()]
+        except Exception:
+            return
+        if not cols:
+            return
+        for col, ddl in [
+            ("repeat", "ALTER TABLE reminders ADD COLUMN repeat VARCHAR(16) DEFAULT 'none'"),
+            ("repeat_end", "ALTER TABLE reminders ADD COLUMN repeat_end VARCHAR(16) DEFAULT 'never'"),
+            ("repeat_after_n", "ALTER TABLE reminders ADD COLUMN repeat_after_n INTEGER"),
+            ("repeat_until", "ALTER TABLE reminders ADD COLUMN repeat_until VARCHAR(32)"),
+            ("occurrence_index", "ALTER TABLE reminders ADD COLUMN occurrence_index INTEGER DEFAULT 0"),
+            ("snoozed_until", "ALTER TABLE reminders ADD COLUMN snoozed_until VARCHAR(32)"),
+        ]:
+            if col not in cols:
+                try:
+                    session.execute(text(ddl))
+                    session.commit()
+                except Exception:
+                    pass
+        try:
+            session.execute(text("UPDATE reminders SET repeat='none' WHERE repeat IS NULL"))
+            session.execute(text("UPDATE reminders SET repeat_end='never' WHERE repeat_end IS NULL"))
+            session.execute(text("UPDATE reminders SET occurrence_index=0 WHERE occurrence_index IS NULL"))
             session.commit()
         except Exception:
             pass

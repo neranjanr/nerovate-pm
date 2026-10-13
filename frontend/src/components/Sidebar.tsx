@@ -240,6 +240,7 @@ export default function Sidebar() {
 
   const isSettings = location.pathname.startsWith("/settings");
   const isHelp = location.pathname.startsWith("/help");
+  const isReminders = location.pathname.startsWith("/reminders");
   const isCategories = location.pathname.startsWith("/categories");
   const isProjects = location.pathname === "/projects" || location.pathname.startsWith("/projects");
 
@@ -803,6 +804,24 @@ export default function Sidebar() {
       </div>
 
       <div className={`p-3 shrink-0 space-y-1 ${slate ? "bg-white border-t border-slate-200" : "bg-surface-container-low"}`}>
+        <Link
+          to="/reminders"
+          className={`flex items-center ${collapsed ? "justify-center" : "justify-between"} px-2 py-2 rounded-lg transition-all font-medium ${
+            slate
+              ? isReminders
+                ? "bg-slate-900 text-white font-semibold shadow-sm"
+                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              : isReminders
+                ? "bg-surface-container text-on-surface font-medium"
+                : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
+          }`}
+          title="My Reminders"
+        >
+          <span className="flex items-center gap-3">
+            <span>⏰</span>
+            {!collapsed && <span className="text-[13px]">My Reminders</span>}
+          </span>
+        </Link>
         <Link
           to="/settings"
           className={`flex items-center ${collapsed ? "justify-center" : "justify-between"} px-2 py-2 rounded-lg transition-all font-medium ${

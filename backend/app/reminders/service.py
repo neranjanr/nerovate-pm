@@ -128,3 +128,108 @@ def source_project_id(session: Session, reminder) -> int | None:  # type: ignore
     if reminder.project_id is not None:
         return reminder.project_id
     return getattr(reminder, "ex_anchor_project_id", None)
+
+
+REPEAT_STEPS = ("none", "daily", "weekly", "monthly", "yearly")
+REPEAT_ENDS = ("never", "after", "until")
+
+
+def split_due(due_at: str) -> tuple[str, str | None]:
+    """Split a due value into (date_part, time_part|None).
+
+    Accepts date-only (YYYY-MM-DD, time defaults to 09:00 server-local)
+    and datetime forms (YYYY-MM-DD[ T]HH:MM[:SS]).
+    """
+    v = (due_at or "").strip()
+    if "T" in v:
+        date_part, _, time_part = v.partition("T")
+        return date_part.strip(), (time_part.strip() or None)
+    if " " in v:
+        date_part, _, time_part = v.partition(" ")
+        return date_part.strip(), (time_part.strip() or None)
+    return v, None
+
+
+def normalize_due_at(due_at: str) -> str:
+    """Date-only values default to 09:00 server-local (single on-prem site)."""
+    import re
+
+    v = (due_at or "").strip()
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", v):
+        return f"{v}T09:00:00"
+    return v
+
+
+def advance_due(due_at: str, repeat: str) -> str:
+    """Next due value derived from the *due date* (never completion date)."""
+    import calendar
+    from datetime import date
+
+    date_part, time_part = split_due(due_at)
+    y, m, d = (int(x) for x in date_part.split("-"))
+    if repeat == "daily":
+        base = date(y, m, d).toordinal() + 1
+        nxt = date.fromordinal(base)
+    elif repeat == "weekly":
+        nxt = date.fromordinal(date(y, m, d).toordinal() + 7)
+    elif repeat == "monthly":
+        nm = m + 1
+        ny = y + (nm - 1) // 12
+        nm = (nm - 1) % 12 + 1
+        nxt = date(ny, nm, min(d, calendar.monthrange(ny, nm)[1]))
+    elif repeat == "yearly":
+        if m == 2 and d == 29:
+            d = 28
+        nxt = date(y + 1, m, min(d, calendar.monthrange(y + 1, m)[1]))
+    else:
+        raise ValueError(f"Unknown repeat: {repeat}")
+    out = nxt.isoformat()
+    if time_part:
+        out = f"{out}T{time_part}"
+    return out
+
+
+def chain_next(session: Session, reminder):  # type: ignore[no-untyped-def]
+    """Create the next occurrence after a Done/Dismiss, or None when ended.
+
+    End rules: never always chains; after N stops once occurrence_index+1
+    reaches repeat_after_n; until stops when the next due date passes
+    repeat_until. The new row copies anchor + detach context + cadence so
+    detached items keep recurring.
+    """
+    from app.reminders.models import Reminder
+
+    repeat = (getattr(reminder, "repeat", None) or "none").lower()
+    if repeat == "none":
+        return None
+    next_due = advance_due(reminder.due_at, repeat)
+    next_index = (getattr(reminder, "occurrence_index", 0) or 0) + 1
+    end = (getattr(reminder, "repeat_end", None) or "never").lower()
+    if end == "after":
+        total = getattr(reminder, "repeat_after_n", None) or 0
+        if next_index >= total:
+            return None
+    elif end == "until":
+        until = (getattr(reminder, "repeat_until", None) or "").strip()
+        if until and split_due(next_due)[0] > split_due(until)[0]:
+            return None
+    nxt = Reminder(
+        title=reminder.title,
+        note=reminder.note,
+        due_at=next_due,
+        status="active",
+        project_id=reminder.project_id,
+        task_id=reminder.task_id,
+        ex_anchor_title=getattr(reminder, "ex_anchor_title", "") or "",
+        ex_anchor_project_id=getattr(reminder, "ex_anchor_project_id", None),
+        detached_at=getattr(reminder, "detached_at", None),
+        created_by=reminder.created_by,
+        repeat=getattr(reminder, "repeat", "none"),
+        repeat_end=getattr(reminder, "repeat_end", "never"),
+        repeat_after_n=getattr(reminder, "repeat_after_n", None),
+        repeat_until=getattr(reminder, "repeat_until", None),
+        occurrence_index=next_index,
+        snoozed_until=None,
+    )
+    session.add(nxt)
+    return nxt

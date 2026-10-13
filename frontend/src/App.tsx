@@ -18,6 +18,7 @@ import Login from "./pages/Login";
 import Categories from "./pages/Categories";
 import CategoryDetail from "./pages/CategoryDetail";
 import Projects from "./pages/Projects";
+import Reminders from "./pages/Reminders";
 import LinkedProjects from "./components/LinkedProjects";
 const CategoryStatusView = lazy(() => import("./pages/StatusView"));
 const CategoryKanbanView = lazy(() => import("./pages/Kanban"));
@@ -294,6 +295,10 @@ export default function App() {
           <Route
             path="/projects"
             element={auth.accessToken ? <Projects /> : <Navigate to="/login" replace />}
+          />
+          <Route
+            path="/reminders"
+            element={auth.accessToken ? <Reminders /> : <Navigate to="/login" replace />}
           />
           <Route
             path="/settings"

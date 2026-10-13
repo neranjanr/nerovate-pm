@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../stores/auth";
+import TaskReminderBadge from "./TaskReminderBadge";
 import {
   buildStatusDropdownSections,
   parseStatusSelection,
@@ -475,6 +476,7 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
             <span className="px-2 py-0.5 rounded text-xs font-semibold bg-surface-container text-on-surface-variant">
               Depth {task?.depth} ({task?.depth === 0 ? "Task" : task?.depth === 1 ? "Subtask" : "Microtask"})
             </span>
+            {task?.id != null && <TaskReminderBadge taskId={task.id} />}
             <select
               value={task?.priority || "normal"}
               onChange={(e) => setTask(task ? { ...task, priority: e.target.value } : null)}

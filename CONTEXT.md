@@ -45,12 +45,12 @@ A Subtask child, two levels below the Task, e.g. 1.1.1. Leaf level, no further c
 _Avoid_: Sub-subtask, nested task
 
 **Status Stage**:
-A group label inside a Status Profile, e.g. Prior Approval, Procurement Stage, Post Approval. Never assigned to a Task directly; purely groups leaf Statuses.
-_Avoid_: Stage, Phase
+A group label inside a Status Profile, e.g. Prior Approval, Procurement Stage, Post Approval. A non-empty Stage purely groups leaf Statuses and is never assigned directly; an empty Stage (zero Statuses) is directly assignable at 100%.
+_Avoid_: Phase, Tier 1 (deprecated alias for Stage)
 
 **Status**:
-A named leaf step inside one Status Stage, defined by users, e.g. Published under Procurement Stage. A Task always sits in exactly one leaf Status.
-_Avoid_: State, Phase, Tier 2
+A named leaf step inside one Status Stage, defined by users, e.g. Published under Procurement Stage. A Task sits in exactly one leaf Status, or directly on an empty Stage.
+_Avoid_: State, Phase, Tier 2 (deprecated alias for Status)
 
 **Milestone**:
 A leaf Status flagged as a key checkpoint, e.g. Concept Approval Received. Created and edited like a normal Status with a star tag; later paired with a date in table views.
@@ -79,6 +79,14 @@ _Avoid_: Workflow, Pipeline, Status template
 **Project Link**:
 A directional relates-to / continues-as reference from one Project to another, allowed across Categories, e.g. Procurements / Buy server continues-as OPEX Items / Buy server. Plain link only, no date rollup or cross-Project blocking.
 _Avoid_: Dependency, Clone
+
+**Reminder**:
+A dated nudge anchored to one Project, Task, Subtask, or Microtask, e.g. reinitiate Buy server in 5 years. One-time or recurring; detached (not deleted) if its anchor is deleted.
+_Avoid_: Remainder, alarm, notification (trigger-specific)
+
+**Task View**:
+A task presentation for a Project: List, Board, Timeline, Table, Calendar, or Dashboard. Distinct from Mind Map View.
+_Avoid_: Page, tab
 
 **Project Template**:
 A reusable Status Profile plus field definitions, e.g. Procurement vs Repetitive monthly process.

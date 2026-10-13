@@ -39,6 +39,10 @@ class ReminderCreate(BaseModel):
     due_at: str
     project_id: int | None = None
     task_id: int | None = None
+    repeat: str = "none"
+    repeat_end: str = "never"
+    repeat_after_n: int | None = None
+    repeat_until: str | None = None
 
 
 class ReminderUpdate(BaseModel):
@@ -48,6 +52,10 @@ class ReminderUpdate(BaseModel):
     status: str | None = None
     project_id: int | None = None
     task_id: int | None = None
+    repeat: str | None = None
+    repeat_end: str | None = None
+    repeat_after_n: int | None = None
+    repeat_until: str | None = None
 
 
 class ReminderOut(BaseModel):
@@ -68,6 +76,14 @@ class ReminderOut(BaseModel):
     created_by: int | None = None
     created_at: str
     updated_at: str
+    # 02 recurrence + snooze; is_overdue derives from due date + snooze.
+    repeat: str = "none"
+    repeat_end: str = "never"
+    repeat_after_n: int | None = None
+    repeat_until: str | None = None
+    occurrence_index: int = 0
+    snoozed_until: str | None = None
+    is_overdue: bool = False
 
 
 class FireOut(BaseModel):
@@ -98,6 +114,49 @@ def _validate_status(value: str) -> str:
     if v not in REMINDER_STATUSES:
         raise HTTPException(status_code=422, detail="Invalid status (active|done|dismissed)")
     return v
+
+
+def _validate_recurrence(
+    repeat: str | None,
+    repeat_end: str | None,
+    repeat_after_n: int | None,
+    repeat_until: str | None,
+) -> tuple[str, str]:
+    """02: repeat none|daily|weekly|monthly|yearly, end never|after|until."""
+    from app.reminders.service import REPEAT_ENDS, REPEAT_STEPS
+
+    rep = (repeat or "none").strip().lower()
+    end = (repeat_end or "never").strip().lower()
+    if rep not in REPEAT_STEPS:
+        raise HTTPException(status_code=422, detail="Invalid repeat (none|daily|weekly|monthly|yearly)")
+    if end not in REPEAT_ENDS:
+        raise HTTPException(status_code=422, detail="Invalid repeat_end (never|after|until)")
+    if rep == "none":
+        return "none", "never"
+    if end == "after" and (repeat_after_n is None or repeat_after_n < 1):
+        raise HTTPException(status_code=422, detail="repeat_after_n >= 1 required for end 'after'")
+    if end == "until" and not (repeat_until or "").strip():
+        raise HTTPException(status_code=422, detail="repeat_until required for end 'until'")
+    return rep, end
+
+
+def _is_overdue(reminder: Reminder) -> bool:
+    """02: active + due date reached + not snoozed past now (server-local)."""
+    if (reminder.status or "") != "active":
+        return False
+    from app.reminders.service import split_due
+
+    try:
+        due_date = split_due(reminder.due_at)[0]
+        today = datetime.now().date().isoformat()
+        if due_date > today:
+            return False
+    except Exception:
+        return False
+    snoozed = (getattr(reminder, "snoozed_until", None) or "").strip()
+    if snoozed and snoozed > _now():
+        return False
+    return True
 
 
 def _validate_anchor(project_id: int | None, task_id: int | None) -> None:
@@ -248,6 +307,13 @@ def _out(reminder: Reminder, session: Session) -> ReminderOut:
         created_by=reminder.created_by,
         created_at=reminder.created_at,
         updated_at=reminder.updated_at,
+        repeat=getattr(reminder, "repeat", None) or "none",
+        repeat_end=getattr(reminder, "repeat_end", None) or "never",
+        repeat_after_n=getattr(reminder, "repeat_after_n", None),
+        repeat_until=getattr(reminder, "repeat_until", None),
+        occurrence_index=getattr(reminder, "occurrence_index", 0) or 0,
+        snoozed_until=getattr(reminder, "snoozed_until", None),
+        is_overdue=_is_overdue(reminder),
     )
 
 
@@ -294,15 +360,22 @@ def create_reminder(
     _validate_anchor(body.project_id, body.task_id)
     anchor_pid = _resolve_anchor_project_id(session, body.project_id, body.task_id)
     _require_write_on_project(anchor_pid, current, session)
+    rep, end = _validate_recurrence(body.repeat, body.repeat_end, body.repeat_after_n, body.repeat_until)
     assert current.id is not None
+    from app.reminders.service import normalize_due_at
+
     reminder = Reminder(
         title=title[:256],
         note=(body.note or "")[:2000],
-        due_at=due_at[:32],
+        due_at=normalize_due_at(due_at)[:32],
         status="active",
         project_id=body.project_id,
         task_id=body.task_id,
         created_by=current.id,
+        repeat=rep,
+        repeat_end=end,
+        repeat_after_n=body.repeat_after_n if end == "after" else None,
+        repeat_until=(body.repeat_until or "").strip()[:32] if end == "until" else None,
     )
     session.add(reminder)
     session.commit()
@@ -422,9 +495,34 @@ def update_reminder(
         due_at = body.due_at.strip()
         if not due_at:
             raise HTTPException(status_code=422, detail="due_at required")
-        reminder.due_at = due_at[:32]
+        from app.reminders.service import normalize_due_at
+
+        reminder.due_at = normalize_due_at(due_at)[:32]
     if body.status is not None:
         reminder.status = _validate_status(body.status)
+    # 02 recurrence edits keep the validated combination coherent.
+    fields = body.model_fields_set
+    if (
+        "repeat" in fields
+        or "repeat_end" in fields
+        or "repeat_after_n" in fields
+        or "repeat_until" in fields
+    ):
+        rep, end = _validate_recurrence(
+            body.repeat if "repeat" in fields else reminder.repeat,
+            body.repeat_end if "repeat_end" in fields else reminder.repeat_end,
+            body.repeat_after_n if "repeat_after_n" in fields else reminder.repeat_after_n,
+            body.repeat_until if "repeat_until" in fields else reminder.repeat_until,
+        )
+        reminder.repeat = rep
+        reminder.repeat_end = end
+        reminder.repeat_after_n = (
+            (body.repeat_after_n if "repeat_after_n" in fields else reminder.repeat_after_n)
+            if end == "after"
+            else None
+        )
+        until_raw = body.repeat_until if "repeat_until" in fields else reminder.repeat_until
+        reminder.repeat_until = (until_raw or "").strip()[:32] if end == "until" else None
     # Optional re-anchor keeps the exactly-one invariant.
     fields = body.model_fields_set
     if "project_id" in fields or "task_id" in fields:
@@ -447,12 +545,52 @@ def _resolve(session: Session, reminder_id: int, to: str, current: User) -> Remi
     if reminder is None:
         raise HTTPException(status_code=404, detail="Not found")
     _require_write(session, reminder, current)
+    was_active = (reminder.status or "") == "active"
     reminder.status = to
+    reminder.snoozed_until = None
+    reminder.updated_at = _now()
+    session.add(reminder)
+    # 02: Done/Dismiss on a recurring active Reminder schedules the next
+    # occurrence from the due date (no drift); ended cadences just resolve.
+    if was_active:
+        from app.reminders.service import chain_next
+
+        chain_next(session, reminder)
+    session.commit()
+    session.refresh(reminder)
+    return reminder
+
+
+class SnoozeIn(BaseModel):
+    duration: str = "1d"
+
+
+@router.post("/{reminder_id}/snooze", response_model=ReminderOut)
+def snooze_reminder(
+    reminder_id: int,
+    body: SnoozeIn,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """02: snooze an active Reminder for 1d or 1w (suppresses overdue)."""
+    from datetime import timedelta
+
+    reminder = session.get(Reminder, reminder_id)
+    if reminder is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    _require_write(session, reminder, current)
+    if (reminder.status or "") != "active":
+        raise HTTPException(status_code=422, detail="Only active reminders can be snoozed")
+    dur = (body.duration or "").strip().lower()
+    if dur not in ("1d", "1w"):
+        raise HTTPException(status_code=422, detail="Invalid duration (1d|1w)")
+    delta = timedelta(days=1 if dur == "1d" else 7)
+    reminder.snoozed_until = (datetime.now(timezone.utc) + delta).isoformat()
     reminder.updated_at = _now()
     session.add(reminder)
     session.commit()
     session.refresh(reminder)
-    return reminder
+    return _out(reminder, session)
 
 
 @router.post("/{reminder_id}/done", response_model=ReminderOut)

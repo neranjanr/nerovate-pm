@@ -32,6 +32,15 @@ class Reminder(SQLModel, table=True):
     ex_anchor_title: str = Field(default="", max_length=256)
     ex_anchor_project_id: int | None = Field(default=None, index=True)
     detached_at: str | None = Field(default=None, max_length=32)
+    # 02 recurrence: one-time by default (repeat "none"). Next occurrences
+    # derive from the due date (never the completion date) so yearly
+    # cadence cannot drift. occurrence_index counts from 0.
+    repeat: str = Field(default="none", max_length=16)
+    repeat_end: str = Field(default="never", max_length=16)
+    repeat_after_n: int | None = Field(default=None)
+    repeat_until: str | None = Field(default=None, max_length=32)
+    occurrence_index: int = Field(default=0)
+    snoozed_until: str | None = Field(default=None, max_length=32)
     created_by: int | None = Field(default=None, foreign_key="users.id")
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
