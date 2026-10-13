@@ -1,5 +1,12 @@
 import { Suspense, lazy, useEffect, useState } from "react";
-import { Link, Navigate, Outlet, Route, Routes, useParams } from "react-router-dom";
+import { Link, Navigate, Outlet, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
+import {
+  normalizeTaskView,
+  rememberTaskView,
+  resolveTaskView,
+  taskViewFromPath,
+  taskViewFromSearch,
+} from "./utils/taskViewMemory";
 import TabBar from "./components/TabBar";
 import Sidebar from "./components/Sidebar";
 import GlobalHeader from "./components/GlobalHeader";
@@ -52,6 +59,51 @@ function ThemeToggle() {
       ))}
     </div>
   );
+}
+
+/**
+ * Task View memory sync (01-task-view-memory): the URL path segment is the
+ * source of truth and every memorable view visited is recorded in the
+ * per-tab in-memory fallback. An explicit `?view=` alias is folded into the
+ * canonical `/projects/:id/<view>` path (unknown or role-gated values fall
+ * back to List). Non-memorable views (Mind Map View, settings) never overwrite
+ * memory, and the project index route is left to ProjectIndexRedirect.
+ */
+function ViewMemorySync() {
+  const auth = useAuth();
+  const { id } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const segment = taskViewFromPath(location.pathname);
+    if (segment === null || !id) return;
+    const queryView = taskViewFromSearch(location.search);
+    if (queryView !== null) {
+      const resolved = resolveTaskView({ queryView, pathSegment: segment, role: auth.role });
+      if (normalizeTaskView(segment) !== resolved || queryView !== segment) {
+        const rest = new URLSearchParams(location.search);
+        rest.delete("view");
+        const suffix = rest.toString();
+        navigate(`/projects/${id}/${resolved}${suffix ? `?${suffix}` : ""}`, { replace: true });
+        return;
+      }
+    }
+    rememberTaskView(segment, auth.role);
+  }, [auth.role, id, location.pathname, location.search, navigate]);
+  return null;
+}
+
+/** `/projects/:id` index: explicit `?view=`, memorized view, else List. */
+function ProjectIndexRedirect() {
+  const auth = useAuth();
+  const location = useLocation();
+  const view = resolveTaskView({
+    queryView: taskViewFromSearch(location.search),
+    pathSegment: null,
+    role: auth.role,
+  });
+  return <Navigate to={view} replace />;
 }
 
 function ProjectShell() {
@@ -165,6 +217,7 @@ function ProjectShell() {
         </div>
       </div>
       <TabBar role={auth.role} />
+      <ViewMemorySync />
       {id && (
         <div
           className={
@@ -251,7 +304,7 @@ export default function App() {
             element={auth.accessToken ? <Help /> : <Navigate to="/login" replace />}
           />
           <Route path="/projects/:id" element={<ProjectShell />}>
-            <Route index element={<Navigate to="list" replace />} />
+            <Route index element={<ProjectIndexRedirect />} />
             {auth.role &&
               REGISTRY.filter((e) => e.requiredRole.includes(auth.role!)).map((e) => (
                 <Route key={e.id} path={e.route} element={<e.component />} />

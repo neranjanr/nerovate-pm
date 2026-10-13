@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../stores/auth";
 import { useTheme } from "../stores/theme";
+import { projectSwitchPath } from "../utils/taskViewMemory";
 
 interface Category {
   id: number;
@@ -227,10 +228,13 @@ export default function Sidebar() {
 
   const goProject = (pid: number, highlightTaskId?: number) => {
     setPaletteOpen(false);
+    // Task View memory: project jumps keep the current view; task-highlight
+    // jumps stay on List (highlight is a List-only feature).
     navigate(
-      highlightTaskId != null
-        ? `/projects/${pid}/list?highlight=${highlightTaskId}`
-        : `/projects/${pid}/list`
+      projectSwitchPath(pid, auth.role, {
+        highlightTaskId: highlightTaskId ?? null,
+        fromPathname: location.pathname,
+      })
     );
   };
 
@@ -533,7 +537,7 @@ export default function Sidebar() {
                             return (
                               <Link
                                 key={p.id}
-                                to={`/projects/${p.id}/list`}
+                                to={projectSwitchPath(p.id, auth.role, { fromPathname: location.pathname })}
                                 aria-current={selected ? "page" : undefined}
                                 className={`flex items-center justify-between px-2 py-2 rounded-lg transition-all text-[12px] relative overflow-hidden ${
                                   slate
@@ -697,7 +701,7 @@ export default function Sidebar() {
                   return (
                     <Link
                       key={p.id}
-                      to={`/projects/${p.id}/list`}
+                      to={projectSwitchPath(p.id, auth.role, { fromPathname: location.pathname })}
                       aria-current={selected ? "page" : undefined}
                       title={p.code ? `${p.code} — ${p.name}` : p.name}
                       className={`flex items-center justify-between px-2 py-2 rounded-lg transition-all relative overflow-hidden ${
@@ -778,7 +782,7 @@ export default function Sidebar() {
               {allProjects.slice(0, 5).map((p) => (
                 <button
                   key={p.id}
-                  onClick={() => navigate(`/projects/${p.id}/list`)}
+                  onClick={() => navigate(projectSwitchPath(p.id, auth.role, { fromPathname: location.pathname }))}
                   className={`w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-bold truncate ${
                     slate
                       ? activeProjectId === p.id

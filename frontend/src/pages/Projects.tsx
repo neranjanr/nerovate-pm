@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../stores/auth";
 import { useTheme } from "../stores/theme";
+import { projectSwitchPath } from "../utils/taskViewMemory";
 
 interface Project {
   id: number;
@@ -225,7 +226,7 @@ export default function Projects() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((p) => (
-            <div key={p.id} onClick={() => navigate(`/projects/${p.id}/list`)} className="bg-surface-container-lowest border border-subtle rounded-lg p-4 cursor-pointer">
+            <div key={p.id} onClick={() => navigate(projectSwitchPath(p.id, auth.role))} className="bg-surface-container-lowest border border-subtle rounded-lg p-4 cursor-pointer">
               <h2 className="text-base font-semibold">{p.name}</h2>
               <p className="text-xs text-on-surface-variant">{p.code}</p>
             </div>
@@ -397,8 +398,8 @@ export default function Projects() {
               return (
                 <div
                   key={p.id}
-                  onClick={() => navigate(`/projects/${p.id}/list`)}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate(`/projects/${p.id}/list`); }}
+                  onClick={() => navigate(projectSwitchPath(p.id, auth.role))}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate(projectSwitchPath(p.id, auth.role)); }}
                   role="button"
                   tabIndex={0}
                   aria-label={`Open project ${p.name}`}

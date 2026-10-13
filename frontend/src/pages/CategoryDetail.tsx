@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../stores/auth";
+import { projectSwitchPath } from "../utils/taskViewMemory";
 import { PROJECT_STATUSES } from "./Categories";
 
 interface Category {
@@ -455,7 +456,7 @@ export default function CategoryDetail() {
                   <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusColor(st) }} />{st}
                 </span>
               </span>
-              <Link to={`/projects/${p.id}/list`} className="text-xs text-primary underline">Open</Link>
+              <Link to={projectSwitchPath(p.id, auth.role)} className="text-xs text-primary underline">Open</Link>
             </li>
           );
         })}
