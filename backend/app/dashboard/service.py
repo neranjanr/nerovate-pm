@@ -20,7 +20,7 @@ def summarize(session: Session, project_id: int, stage_id: int | None = None) ->
     today, soon = _day_bounds()
     tasks = tasks_service.get_project_tasks(session, project_id)
     if stage_id is not None:
-        tasks = [t for t in tasks if _stage_id_for_status(session, t.status_id) == stage_id]
+        tasks = [t for t in tasks if _stage_id_for_task(session, t) == stage_id]
 
     profile_id = _profile_id(session, project_id)
     statuses = tasks_service.list_statuses_for_profile(session, profile_id) if profile_id else []
@@ -33,7 +33,9 @@ def summarize(session: Session, project_id: int, stage_id: int | None = None) ->
     est_total = 0
     spent_total = 0
     for t in tasks:
-        by_status[str(t.status_id)] = by_status.get(str(t.status_id), 0) + 1
+        # ADR-0010: direct empty-Stage assignments bucket under stage:<id>.
+        node_key = f"stage:{t.stage_id}" if t.stage_id is not None else str(t.status_id)
+        by_status[node_key] = by_status.get(node_key, 0) + 1
         if tasks_service.task_is_overdue(session, t, today):
             overdue += 1
         if tasks_service.task_is_due_soon(session, t, today, soon):
@@ -59,12 +61,19 @@ def summarize(session: Session, project_id: int, stage_id: int | None = None) ->
     by_stage: dict[str, int] = {}
     done_by_stage: dict[str, int] = {}
     for t in tasks:
-        sid = status_to_stage.get(t.status_id)
+        # ADR-0010: direct assignments already carry their Stage; they are
+        # never done (empty Stages have no Done flag).
+        if t.stage_id is not None:
+            sid: int | None = t.stage_id
+        elif t.status_id is not None:
+            sid = status_to_stage.get(t.status_id)
+        else:
+            sid = None
         if sid is None:
             continue
         key = str(sid)
         by_stage[key] = by_stage.get(key, 0) + 1
-        if done_by_status.get(t.status_id, False):
+        if t.status_id is not None and done_by_status.get(t.status_id, False):
             done_by_stage[key] = done_by_stage.get(key, 0) + 1
     stages_out = []
     for st in sorted(stages, key=lambda s: s.order):
@@ -127,7 +136,7 @@ def workload(session: Session, project_id: int, stage_id: int | None = None) -> 
     today, _soon = _day_bounds()
     tasks = tasks_service.get_project_tasks(session, project_id)
     if stage_id is not None:
-        tasks = [t for t in tasks if _stage_id_for_status(session, t.status_id) == stage_id]
+        tasks = [t for t in tasks if _stage_id_for_task(session, t) == stage_id]
     per_user: dict[int, dict] = {}
     for t in tasks:
         assert t.id is not None
@@ -159,7 +168,7 @@ def activity(session: Session, project_id: int, limit: int = 30, stage_id: int |
     """Merged project audit stream: task.status_changed + task.comment_added."""
     tasks = tasks_service.get_project_tasks(session, project_id)
     if stage_id is not None:
-        tasks = [t for t in tasks if _stage_id_for_status(session, t.status_id) == stage_id]
+        tasks = [t for t in tasks if _stage_id_for_task(session, t) == stage_id]
     task_ids = [t.id for t in tasks if t.id is not None]
     if not task_ids:
         return []
@@ -171,6 +180,8 @@ def activity(session: Session, project_id: int, limit: int = 30, stage_id: int |
             "task_id": h.task_id,
             "from_status_id": h.from_status_id,
             "to_status_id": h.to_status_id,
+            "from_stage_id": getattr(h, "from_stage_id", None),
+            "to_stage_id": getattr(h, "to_stage_id", None),
             "actor_id": h.actor_id,
             "at": h.at,
         }
@@ -251,11 +262,18 @@ def _profile_id(session: Session, project_id: int) -> int | None:
     return getattr(project, "status_profile_id", None)
 
 
-def _stage_id_for_status(session: Session, status_id: int) -> int | None:
+def _stage_id_for_status(session: Session, status_id: int | None) -> int | None:
+    if status_id is None:
+        return None
     from app.statuses.models import Status
 
     st = session.get(Status, status_id)
     return st.stage_id if st else None
+
+
+def _stage_id_for_task(session: Session, task) -> int | None:
+    """Owning Stage: direct stage_id (ADR-0010) else leaf Status's Stage."""
+    return tasks_service.stage_id_for_task(session, task)
 
 
 def _ordered_stages(session: Session, profile_id: int) -> list:

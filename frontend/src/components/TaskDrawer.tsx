@@ -1,5 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../stores/auth";
+import {
+  buildStatusDropdownSections,
+  parseStatusSelection,
+  statusSelectionValue,
+} from "../utils/statusSignals";
 
 interface TaskDrawerProps {
   taskId: number;
@@ -26,7 +31,8 @@ interface TaskOut {
   depth: number;
   title: string;
   description_md: string;
-  status_id: number;
+  status_id: number | null;
+  stage_id?: number | null;
   priority: string;
   start_date: string;
   due_date?: string | null;
@@ -75,7 +81,9 @@ interface HistoryOut {
   id: number;
   task_id: number;
   from_status_id?: number | null;
-  to_status_id: number;
+  to_status_id: number | null;
+  from_stage_id?: number | null;
+  to_stage_id?: number | null;
   actor_id?: number | null;
   at: string;
 }
@@ -126,11 +134,41 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
 
-  // Status period form state
-  const [selectedStatusId, setSelectedStatusId] = useState<number>(0);
+  // Status period form state (ADR-0010: exactly one of the two is set)
+  const [selectedStatusId, setSelectedStatusId] = useState<number | null>(null);
+  const [selectedStageId, setSelectedStageId] = useState<number | null>(null);
   const [periodStart, setPeriodStart] = useState<string>("");
   const [periodDue, setPeriodDue] = useState<string>("");
   const [periodActual, setPeriodActual] = useState<string>("");
+
+  const statusSections = useMemo(
+    () => buildStatusDropdownSections(stages, statuses),
+    [stages, statuses]
+  );
+
+  const assignmentValue = statusSelectionValue(
+    selectedStatusId != null
+      ? { kind: "status", statusId: selectedStatusId }
+      : selectedStageId != null
+        ? { kind: "stage", stageId: selectedStageId }
+        : null
+  );
+
+  function applyAssignmentSelection(value: string) {
+    const sel = parseStatusSelection(value);
+    if (!sel) {
+      setSelectedStatusId(null);
+      setSelectedStageId(null);
+      return;
+    }
+    if (sel.kind === "stage") {
+      setSelectedStageId(sel.stageId);
+      setSelectedStatusId(null);
+    } else {
+      setSelectedStatusId(sel.statusId);
+      setSelectedStageId(null);
+    }
+  }
 
   const fetchTaskDetails = () => {
     if (!auth.accessToken) return;
@@ -148,7 +186,8 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
       .then(async ([tData, cData, aData, cfData, hData, subData, projData, memData]) => {
         if (tData) {
           setTask(tData);
-          setSelectedStatusId(tData.status_id);
+          setSelectedStatusId(tData.status_id ?? null);
+          setSelectedStageId(tData.stage_id ?? null);
           setPeriodStart(tData.start_date || "");
           setPeriodDue(tData.due_date || "");
           setPeriodActual("");
@@ -274,13 +313,19 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
       }
       // POST status + period only when something in the period box changed,
       // so date-only edits still upsert the period with a single history event.
+      // Period dates are leaf-Status only; stage moves skip the period POST.
       const currPeriod = task.status_periods?.find((p) => p.status_id === task.status_id);
-      const statusChanged = selectedStatusId !== task.status_id;
+      const statusChanged =
+        selectedStatusId !== (task.status_id ?? null) ||
+        selectedStageId !== (task.stage_id ?? null);
       const periodChanged =
         (periodStart || "") !== (currPeriod?.start_date || task.start_date || "") ||
         (periodDue || "") !== (currPeriod?.due_date || "") ||
         (periodActual || "") !== (currPeriod?.actual_end_date || "");
-      if (statusChanged || periodChanged) {
+      if (statusChanged || (periodChanged && selectedStageId == null)) {
+        if (selectedStatusId == null && selectedStageId == null) {
+          throw new Error("Select a Status or an empty Stage first");
+        }
         const stRes = await fetch(`/api/v1/tasks/${taskId}/status`, {
           method: "POST",
           headers: {
@@ -289,6 +334,7 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
           },
           body: JSON.stringify({
             status_id: selectedStatusId,
+            stage_id: selectedStageId,
             start_date: periodStart || null,
             due_date: periodDue || null,
             actual_end_date: periodActual || null,
@@ -380,6 +426,7 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
         title: newSubtaskTitle,
         start_date: newSubtaskStart || task.start_date,
         status_id: selectedStatusId,
+        stage_id: selectedStageId,
       }),
     })
       .then((r) => (r.ok ? r.json() : null))
@@ -500,39 +547,25 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
               <div>
                 <label className="text-xs text-on-surface-variant block mb-1">Current Status</label>
                 <select
-                  value={selectedStatusId}
-                  onChange={(e) => setSelectedStatusId(Number(e.target.value))}
+                  value={assignmentValue}
+                  onChange={(e) => applyAssignmentSelection(e.target.value)}
                   className="w-full bg-surface-container-lowest border border-subtle rounded px-3 py-1.5 text-xs text-on-primary"
                 >
-                  {stages.length > 0 ? (
-                    <>
-                      {stages.map((st) => {
-                        const leafs = statuses.filter((s) => s.stage_id === st.id);
-                        if (leafs.length === 0) return null;
-                        return (
-                          <optgroup key={st.id} label={st.name}>
-                            {leafs.map((s) => (
-                              <option key={s.id} value={s.id}>
-                                {s.name}
-                              </option>
-                            ))}
-                          </optgroup>
-                        );
-                      })}
-                      {statuses
-                        .filter((s) => !s.stage_id)
-                        .map((st) => (
-                          <option key={st.id} value={st.id}>
-                            {st.name}
+                  <option value="">Select status…</option>
+                  {statusSections.map((sec) =>
+                    sec.kind === "group" ? (
+                      <optgroup key={`g${sec.stageId}`} label={sec.stageName}>
+                        {sec.leaves.map((l) => (
+                          <option key={l.value} value={l.value}>
+                            {l.label}
                           </option>
                         ))}
-                    </>
-                  ) : (
-                    statuses.map((st) => (
-                      <option key={st.id} value={st.id}>
-                        {st.name}
+                      </optgroup>
+                    ) : (
+                      <option key={sec.value} value={sec.value}>
+                        {sec.label}
                       </option>
-                    ))
+                    )
                   )}
                 </select>
               </div>
@@ -908,12 +941,18 @@ export default function TaskDrawer({ taskId, projectId, onClose, onUpdated }: Ta
 
             {activeTab === "audit" && (
               <div className="space-y-2 max-h-48 overflow-y-auto text-xs font-mono">
-                {history.map((h) => (
-                  <div key={h.id} className="p-2 bg-surface rounded border border-subtle flex justify-between text-on-surface-variant">
-                    <span>Status change to #{h.to_status_id} (Actor #{h.actor_id || "system"})</span>
-                    <span className="text-outline">{new Date(h.at).toLocaleString()}</span>
-                  </div>
-                ))}
+                {history.map((h) => {
+                  const target =
+                    h.to_stage_id != null
+                      ? `Stage #${h.to_stage_id}`
+                      : `Status #${h.to_status_id}`;
+                  return (
+                    <div key={h.id} className="p-2 bg-surface rounded border border-subtle flex justify-between text-on-surface-variant">
+                      <span>Status change to {target} (Actor #{h.actor_id || "system"})</span>
+                      <span className="text-outline">{new Date(h.at).toLocaleString()}</span>
+                    </div>
+                  );
+                })}
                 {history.length === 0 && <div className="text-xs text-outline font-sans">No audit logs recorded.</div>}
               </div>
             )}

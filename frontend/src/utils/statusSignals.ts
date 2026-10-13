@@ -102,6 +102,107 @@ export interface StatusSignalInfo {
   milestone: boolean;
 }
 
+/** ADR-0010: a directly-assigned empty Stage renders as a single node. */
+export const EMPTY_STAGE_SIGNAL: StatusSignal = {
+  glyph: NORMAL_RAMP[NORMAL_RAMP.length - 1],
+  weight: 100,
+};
+
+/** Shared seam: signal for a task sitting directly on an empty Stage. */
+export function emptyStageSignal(): StatusSignal {
+  return { ...EMPTY_STAGE_SIGNAL };
+}
+
+export interface StageLike {
+  id: number;
+  name: string;
+  order?: number;
+}
+
+export interface LeafLike {
+  id: number;
+  name: string;
+  order?: number;
+  stage_id?: number | null;
+}
+
+export type AssignableSelection =
+  | { kind: "status"; statusId: number }
+  | { kind: "stage"; stageId: number };
+
+/**
+ * Status dropdown sections grouped by Stage (ADR-0010 core):
+ * - empty Stages render as selectable `stage-row` sections (`stage:<id>`);
+ * - non-empty Stages render as `group` sections (native optgroup headers)
+ *   with only their leaf Statuses selectable;
+ * - un-staged leaves (legacy) render as plain `leaf` sections.
+ */
+export type StatusDropdownSection =
+  | { kind: "stage-row"; stageId: number; stageName: string; value: string; label: string }
+  | {
+      kind: "group";
+      stageId: number;
+      stageName: string;
+      leaves: { value: string; label: string; statusId: number }[];
+    }
+  | { kind: "leaf"; value: string; label: string; statusId: number };
+
+export function statusSelectionValue(sel: AssignableSelection | null): string {
+  if (!sel) return "";
+  return sel.kind === "stage" ? `stage:${sel.stageId}` : `status:${sel.statusId}`;
+}
+
+export function parseStatusSelection(value: string): AssignableSelection | null {
+  const m = /^(status|stage):(\d+)$/.exec((value ?? "").trim());
+  if (!m) return null;
+  const id = Number(m[2]);
+  return m[1] === "stage" ? { kind: "stage", stageId: id } : { kind: "status", statusId: id };
+}
+
+export function isEmptyStage(stageId: number, statuses: LeafLike[]): boolean {
+  return !statuses.some((s) => s.stage_id === stageId);
+}
+
+export function buildStatusDropdownSections(
+  stages: StageLike[],
+  statuses: LeafLike[]
+): StatusDropdownSection[] {
+  const sections: StatusDropdownSection[] = [];
+  const orderedStages = [...stages].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  for (const st of orderedStages) {
+    const leafs = statuses
+      .filter((s) => s.stage_id === st.id)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    if (leafs.length === 0) {
+      sections.push({
+        kind: "stage-row",
+        stageId: st.id,
+        stageName: st.name,
+        value: `stage:${st.id}`,
+        label: `${st.name} ${EMPTY_STAGE_SIGNAL.glyph} ${EMPTY_STAGE_SIGNAL.weight}%`,
+      });
+    } else {
+      sections.push({
+        kind: "group",
+        stageId: st.id,
+        stageName: st.name,
+        leaves: leafs.map((s) => ({
+          value: `status:${s.id}`,
+          label: s.name,
+          statusId: s.id,
+        })),
+      });
+    }
+  }
+  const ungrouped = statuses
+    .filter((s) => s.stage_id == null)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  for (const s of ungrouped) {
+    sections.push({ kind: "leaf", value: `status:${s.id}`, label: s.name, statusId: s.id });
+  }
+  return sections;
+}
+
 /** Per-Status signals keyed by status id, derived from within-Stage ordering. */
 export function buildStatusSignalMap(statuses: SignalInput[]): Map<number, StatusSignalInfo> {
   const map = new Map<number, StatusSignalInfo>();

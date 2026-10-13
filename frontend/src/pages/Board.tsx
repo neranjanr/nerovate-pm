@@ -6,13 +6,14 @@ import { useAuth } from "../stores/auth";
 import TaskCreateModal from "../components/TaskCreateModal";
 import TaskDialog from "../components/TaskDialog";
 import { buildTimelineExportUrl, downloadExport } from "../utils/exports";
-import { deriveStatusSignal, kindLabel } from "../utils/statusSignals";
-import { boardStatusMoveBody, formatTaskCode } from "../utils/boardCard";
+import { deriveStatusSignal, emptyStageSignal, kindLabel } from "../utils/statusSignals";
+import { boardStageMoveBody, boardStatusMoveBody, formatTaskCode } from "../utils/boardCard";
 
 interface BoardTask {
   id: number;
   title: string;
-  status_id: number;
+  status_id: number | null;
+  stage_id?: number | null;
   depth: number;
   parent_id?: number | null;
   wbs?: string;
@@ -192,7 +193,8 @@ export default function Board() {
           leaves: statuses.map((s, i) => ({
             key: String(s.id),
             name: s.name,
-            statusId: s.id,
+            statusId: s.id as number | null,
+            stageId: null as number | null,
             shade: s.shade || s.color || "#6b7280",
             rows: tasks.filter((t) => t.status_id === s.id),
             done: !!s.is_done,
@@ -209,7 +211,8 @@ export default function Board() {
       const leaves = inStage.map((s, i) => ({
         key: String(s.id),
         name: s.name,
-        statusId: s.id,
+        statusId: s.id as number | null,
+        stageId: null as number | null,
         shade: s.shade || st.color_base,
         rows: tasks.filter((t) => t.status_id === s.id),
         done: !!s.is_done,
@@ -218,6 +221,23 @@ export default function Board() {
         sigLabel: kindLabel(s.kind ?? "normal", !!s.is_done),
         milestone: !!s.is_milestone,
       }));
+      if (inStage.length === 0) {
+        // ADR-0010: empty Stage renders as its own directly-assignable column.
+        const sig = emptyStageSignal();
+        leaves.push({
+          key: `stage-${st.id}`,
+          name: st.name,
+          statusId: null,
+          stageId: st.id,
+          shade: st.color_base,
+          rows: tasks.filter((t) => t.stage_id === st.id),
+          done: false,
+          kind: "normal",
+          sig,
+          sigLabel: "directly assigned",
+          milestone: false,
+        });
+      }
       return { stage: st as StageInfo | null, leaves };
     });
   }, [stages, statuses, tasks, filters.stageId]);
@@ -252,15 +272,23 @@ export default function Board() {
   const toggleStage = (stageId: number) =>
     setCollapsed((prev) => ({ ...prev, [stageId]: !prev[stageId] }));
 
-  const moveTask = (taskId: number, statusId: number) => {
-    if (!auth.accessToken || statusId < 0) return;
+  const moveTask = (
+    taskId: number,
+    target: { statusId: number } | { stageId: number }
+  ) => {
+    if (!auth.accessToken) return;
+    const body =
+      "stageId" in target
+        ? boardStageMoveBody(target.stageId)
+        : boardStatusMoveBody(target.statusId, TODAY());
+    if ("statusId" in target && target.statusId < 0) return;
     fetch(`/api/v1/tasks/${taskId}/status`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${auth.accessToken}`,
       },
-      body: JSON.stringify(boardStatusMoveBody(statusId, TODAY())),
+      body: JSON.stringify(body),
     })
       .then((r) => {
         if (!r.ok) throw new Error(`Status change failed: ${r.status}`);
@@ -503,7 +531,11 @@ export default function Board() {
                       key={col.key}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={() => {
-                        if (dragId != null && col.statusId >= 0) moveTask(dragId, col.statusId);
+                        if (dragId != null) {
+                          if (col.stageId != null) moveTask(dragId, { stageId: col.stageId });
+                          else if ((col.statusId ?? -1) >= 0)
+                            moveTask(dragId, { statusId: col.statusId as number });
+                        }
                         setDragId(null);
                       }}
                       className="w-72 shrink-0 bg-surface-container-low border border-subtle rounded-lg flex flex-col max-h-[65vh]"

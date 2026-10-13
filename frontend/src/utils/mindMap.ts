@@ -24,7 +24,9 @@ export interface MindTaskInput {
   parent_id?: number | null;
   depth: number; // 0 Task, 1 Subtask, 2 Microtask
   title: string;
-  status_id: number;
+  // ADR-0010: null when directly assigned onto an empty Stage (see stage_id).
+  status_id: number | null;
+  stage_id?: number | null;
   assignee_ids?: number[];
   due_date?: string | null;
   is_blocked?: boolean;
@@ -40,6 +42,8 @@ export interface MindNode {
   code?: string;
   color: string;
   statusId?: number | null;
+  /** ADR-0010: direct empty-Stage assignment (statusId null). */
+  stageId?: number | null;
   /** 0 = root … 4 = deepest (category root) / 3 (project root) */
   level: number;
   childCount: number;
@@ -212,6 +216,7 @@ export function buildMindMapForest(args: {
         name: t.title,
         color: normalizeHex(t.status_id ? undefined : undefined) && "#64748b",
         statusId: t.status_id,
+        stageId: t.stage_id ?? null,
         level: attachLevel(t),
         childCount: childCountOf(t.id),
         hasChildren: kids.length > 0,
@@ -251,6 +256,7 @@ export function buildMindMapForest(args: {
         name: t.title,
         color: "#64748b",
         statusId: t.status_id,
+        stageId: t.stage_id ?? null,
         level: 1 + Math.max(0, Math.min(2, t.depth)),
         childCount: childCountOf(t.id),
         hasChildren: kids.length > 0,

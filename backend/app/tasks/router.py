@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
-from sqlmodel import Session, select
+from sqlmodel import Session, or_, select
 
 from app.access import can_access_view
 from app.auth.models import User
@@ -27,7 +27,7 @@ from app.tasks.models import (
     TaskCommentMention,
     TaskAttachment,
 )
-from app.statuses.models import Status, StatusProfile, CustomFieldDef, CustomFieldValue
+from app.statuses.models import Status, StatusProfile, StatusStage, CustomFieldDef, CustomFieldValue
 
 router = APIRouter(prefix="/api/v1/tasks", tags=["tasks"])
 
@@ -38,6 +38,9 @@ class TaskCreate(BaseModel):
     title: str
     description_md: str = ""
     status_id: int | None = None
+    # ADR-0010: direct assignment onto an empty Stage (zero Statuses).
+    # Exactly one of status_id / stage_id may be set; neither means default.
+    stage_id: int | None = None
     priority: str = "normal"
     start_date: str | None = None
     due_date: str | None = None
@@ -61,6 +64,8 @@ class TaskUpdate(BaseModel):
     title: str | None = None
     description_md: str | None = None
     status_id: int | None = None
+    # ADR-0010: set to move onto an empty Stage; null means "don't touch".
+    stage_id: int | None = None
     priority: str | None = None
     start_date: str | None = None
     due_date: str | None = None
@@ -72,29 +77,44 @@ class TaskUpdate(BaseModel):
     blocked_by_ids: list[int] | None = None
 
 
-def _default_status_for_project(session: Session, project_id: int) -> Status | None:
-    """U4 default: first leaf Status of first Stage (ordered).
-
-    Resolves Profile via parent Category (live reference, SPEC-v0.3 4.3);
-    falls back to legacy projects.status_profile_id for pre-U2 data.
-    """
+def _profile_id_for_project(session: Session, project_id: int) -> int | None:
+    """Profile resolved via parent Category (live reference, SPEC-v0.3 4.3);
+    falls back to legacy projects.status_profile_id for pre-U2 data."""
     from app.categories.models import Category
     from app.projects.models import Project
-    from app.statuses.models import StatusStage
 
     project = session.get(Project, project_id)
     if project is None:
         return None
-    profile_id: int | None = None
     cat_id = getattr(project, "category_id", None)
     if cat_id is not None:
         cat = session.get(Category, cat_id)
         if cat is not None and cat.status_profile_id is not None:
-            profile_id = cat.status_profile_id
+            return cat.status_profile_id
+    return getattr(project, "status_profile_id", None)
+
+
+def _default_status_for_project(session: Session, project_id: int) -> Status | None:
+    """U4 default: first leaf Status of first Stage (ordered).
+
+    Kept for leaf-only callers; stage-aware callers use
+    _default_assignment_for_project below.
+    """
+    status, _stage = _default_assignment_for_project(session, project_id)
+    return status
+
+
+def _default_assignment_for_project(
+    session: Session, project_id: int
+) -> tuple[Status | None, StatusStage | None]:
+    """U4 default + ADR-0010: first leaf of first non-empty Stage (ordered);
+    when no leaf exists anywhere, the first empty Stage (directly assignable).
+
+    Returns (status, stage) with exactly one side set (or both None).
+    """
+    profile_id = _profile_id_for_project(session, project_id)
     if profile_id is None:
-        profile_id = getattr(project, "status_profile_id", None)
-    if profile_id is None:
-        return None
+        return None, None
     stages = list(
         session.exec(
             select(StatusStage)
@@ -102,6 +122,7 @@ def _default_status_for_project(session: Session, project_id: int) -> Status | N
             .order_by(StatusStage.order)  # type: ignore[arg-type]
         ).all()
     )
+    first_empty: StatusStage | None = None
     for first_stage in stages:
         assert first_stage.id is not None
         first_leaf_candidates = list(
@@ -112,7 +133,11 @@ def _default_status_for_project(session: Session, project_id: int) -> Status | N
             ).all()
         )
         if first_leaf_candidates:
-            return first_leaf_candidates[0]
+            return first_leaf_candidates[0], None
+        if first_empty is None:
+            first_empty = first_stage
+    if first_empty is not None:
+        return None, first_empty
     rows = list(
         session.exec(
             select(Status)
@@ -120,7 +145,7 @@ def _default_status_for_project(session: Session, project_id: int) -> Status | N
             .order_by(Status.order)  # type: ignore[arg-type]
         ).all()
     )
-    return rows[0] if rows else None
+    return (rows[0], None) if rows else (None, None)
 
 
 VALID_PRIORITIES = ("urgent", "high", "normal", "low")
@@ -133,20 +158,7 @@ def _profile_status_ids(session: Session, project_id: int) -> set[int] | None:
     first, legacy projects.status_profile_id as fallback. Returns None when
     no Profile resolves (pre-U2 data without any profile).
     """
-    from app.categories.models import Category
-    from app.projects.models import Project
-
-    project = session.get(Project, project_id)
-    if project is None:
-        return None
-    profile_id: int | None = None
-    cat_id = getattr(project, "category_id", None)
-    if cat_id is not None:
-        cat = session.get(Category, cat_id)
-        if cat is not None and cat.status_profile_id is not None:
-            profile_id = cat.status_profile_id
-    if profile_id is None:
-        profile_id = getattr(project, "status_profile_id", None)
+    profile_id = _profile_id_for_project(session, project_id)
     if profile_id is None:
         return None
     rows = session.exec(select(Status).where(Status.profile_id == profile_id)).all()
@@ -161,6 +173,82 @@ def _ensure_status_in_profile(session: Session, project_id: int, status_id: int)
     allowed = _profile_status_ids(session, project_id)
     if allowed is not None and status_id not in allowed:
         raise HTTPException(status_code=400, detail="status_id not in Category profile")
+
+
+def _stage_leaf_count(session: Session, stage_id: int) -> int:
+    """Number of leaf Statuses currently defined under a Stage."""
+    from sqlalchemy import func
+
+    return int(
+        session.exec(
+            select(func.count()).select_from(Status).where(Status.stage_id == stage_id)
+        ).one()
+    )
+
+
+def _ensure_stage_assignable(session: Session, project_id: int, stage_id: int) -> StatusStage:
+    """ADR-0010: a Stage is directly assignable only when it holds zero
+    leaf Statuses. Rejects unknown Stages and non-empty Stages (400), and
+    Stages outside the Project's Category Profile (400).
+
+    Skips the profile check when no Profile resolves (legacy data).
+    """
+    stage = session.get(StatusStage, stage_id)
+    if stage is None:
+        raise HTTPException(status_code=400, detail="Invalid stage_id")
+    profile_id = _profile_id_for_project(session, project_id)
+    if profile_id is not None and stage.profile_id != profile_id:
+        raise HTTPException(status_code=400, detail="stage_id not in Category profile")
+    count = _stage_leaf_count(session, stage_id)
+    if count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Stage '{stage.name}' has {count} statuses; assign a leaf Status instead",
+        )
+    return stage
+
+
+def _record_assignment(
+    session: Session,
+    task: Task,
+    *,
+    status_id: int | None,
+    stage_id: int | None,
+    actor_id: int | None,
+) -> None:
+    """Move a task onto exactly one assignable node and write history.
+
+    Leaf moves keep the existing (from_status -> to_status) shape; Stage
+    legs are recorded on from_stage_id / to_stage_id with the Status side
+    NULL. Callers validate assignability first.
+    """
+    assert task.id is not None
+    old_status_id = task.status_id
+    old_stage_id = task.stage_id
+    task.status_id = status_id
+    task.stage_id = stage_id
+    session.add(task)
+    session.add(
+        TaskHistory(
+            task_id=task.id,
+            from_status_id=old_status_id,
+            to_status_id=status_id,
+            from_stage_id=old_stage_id,
+            to_stage_id=stage_id,
+            actor_id=actor_id,
+        )
+    )
+    publish(
+        "task.status_changed",
+        {
+            "task_id": task.id,
+            "from_status_id": old_status_id,
+            "to_status_id": status_id,
+            "from_stage_id": old_stage_id,
+            "to_stage_id": stage_id,
+            "actor_id": actor_id,
+        },
+    )
 
 
 def _validate_blocked_by(
@@ -210,7 +298,10 @@ def _mention_ids_for_comment(comment_id: int, session: Session) -> list[int]:
 
 
 class TaskStatusChange(BaseModel):
-    status_id: int
+    # ADR-0010: exactly one of status_id / stage_id is required. stage_id
+    # moves the task directly onto an empty Stage (zero Statuses).
+    status_id: int | None = None
+    stage_id: int | None = None
     start_date: str | None = None
     due_date: str | None = None
     actual_end_date: str | None = None
@@ -232,7 +323,9 @@ class TaskHistoryOut(BaseModel):
     id: int
     task_id: int
     from_status_id: int | None = None
-    to_status_id: int
+    to_status_id: int | None = None
+    from_stage_id: int | None = None
+    to_stage_id: int | None = None
     actor_id: int | None = None
     at: str
 
@@ -244,7 +337,11 @@ class TaskOut(BaseModel):
     depth: int
     title: str
     description_md: str
-    status_id: int
+    # ADR-0010: exactly one assignable node is set. Leaf assignment uses
+    # status_id; direct assignment onto an empty Stage uses stage_id with
+    # status_id None.
+    status_id: int | None = None
+    stage_id: int | None = None
     priority: str
     start_date: str
     due_date: str | None = None
@@ -273,6 +370,7 @@ def _task_out(t: Task, session: Session, wbs_map: dict[int, str] | None = None) 
             wbs = ""
     else:
         wbs = wbs_map.get(t.id, "")
+    stage_id = getattr(t, "stage_id", None)
     assignees = [a.user_id for a in session.exec(select(TaskAssignee).where(TaskAssignee.task_id == t.id)).all() if a.user_id is not None]
     watchers = [w.user_id for w in session.exec(select(TaskWatcher).where(TaskWatcher.task_id == t.id)).all() if w.user_id is not None]
     tag_ids = [tt.tag_id for tt in session.exec(select(TaskTag).where(TaskTag.task_id == t.id)).all()]
@@ -287,8 +385,12 @@ def _task_out(t: Task, session: Session, wbs_map: dict[int, str] | None = None) 
     if blocked_by:
         bb_tasks = session.exec(select(Task).where(Task.id.in_(blocked_by))).all()  # type: ignore[attr-defined, union-attr]
         for bb in bb_tasks:
-            st = session.get(Status, bb.status_id)
+            st = session.get(Status, bb.status_id) if bb.status_id is not None else None
             if st and not st.is_done:
+                is_blocked = True
+                break
+            if bb.status_id is None:
+                # Dependency sits directly on an empty Stage: never done.
                 is_blocked = True
                 break
 
@@ -316,6 +418,7 @@ def _task_out(t: Task, session: Session, wbs_map: dict[int, str] | None = None) 
         title=t.title,
         description_md=t.description_md,
         status_id=t.status_id,
+        stage_id=stage_id,
         priority=t.priority,
         start_date=t.start_date,
         due_date=t.due_date,
@@ -381,6 +484,19 @@ def _stage_status_ids(session: Session, stage_id: int) -> list[int]:
     return [s.id for s in rows if s.id is not None]
 
 
+def _apply_stage_filter(query, stage_id: int, stage_leaf_ids: list[int]):
+    """Narrow a Task query to one Stage: leaf assignments plus ADR-0010
+    direct assignments (empty Stages match only the latter)."""
+    if stage_leaf_ids:
+        return query.where(
+            or_(
+                Task.status_id.in_(stage_leaf_ids),  # type: ignore[attr-defined, union-attr]
+                Task.stage_id == stage_id,
+            )
+        )
+    return query.where(Task.stage_id == stage_id)
+
+
 def _filtered_task_outs(
     session: Session,
     *,
@@ -405,9 +521,10 @@ def _filtered_task_outs(
     """
     from app.tasks import service as tasks_service
 
-    stage_ids: list[int] | None = None
+    stage_leaf_ids: list[int] | None = None
     if stage_id is not None:
-        stage_ids = _stage_status_ids(session, stage_id)
+        # 404 on unknown Stage (U5); empty Stages match direct assignments.
+        stage_leaf_ids = _stage_status_ids(session, stage_id)
 
     query = select(Task)
     if project_id is not None:
@@ -451,10 +568,9 @@ def _filtered_task_outs(
                 return []
             query = query.where(Task.project_id.in_(pids))  # type: ignore[attr-defined, union-attr]
 
-    if stage_ids is not None:
-        if not stage_ids:
-            return []
-        query = query.where(Task.status_id.in_(stage_ids))  # type: ignore[attr-defined, union-attr]
+    if stage_leaf_ids is not None:
+        assert stage_id is not None
+        query = _apply_stage_filter(query, stage_id, stage_leaf_ids)
     if status_id is not None:
         query = query.where(Task.status_id == status_id)
     if depth is not None:
@@ -572,18 +688,22 @@ def get_task_defaults(
 ):
     """U4 hint endpoint: what title-only POST would default to."""
     require_project_access(project_id, current, session)
-    default_status = _default_status_for_project(session, project_id)
+    default_status, default_stage = _default_assignment_for_project(session, project_id)
     stage_name: str | None = None
-    if default_status is not None and default_status.stage_id is not None:
-        from app.statuses.models import StatusStage as _Stage
-
-        st = session.get(_Stage, default_status.stage_id)
-        stage_name = st.name if st else None
+    stage_id_out: int | None = None
+    if default_status is not None:
+        stage_id_out = default_status.stage_id
+        if default_status.stage_id is not None:
+            st = session.get(StatusStage, default_status.stage_id)
+            stage_name = st.name if st else None
+    elif default_stage is not None:
+        stage_id_out = default_stage.id
+        stage_name = default_stage.name
     return TaskDefaultsOut(
         project_id=project_id,
         status_id=default_status.id if default_status else None,
         status_name=default_status.name if default_status else None,
-        stage_id=default_status.stage_id if default_status else None,
+        stage_id=stage_id_out,
         stage_name=stage_name,
         start_date=date.today().isoformat(),
     )
@@ -607,17 +727,32 @@ def create_task(
     if body.priority not in VALID_PRIORITIES:
         raise HTTPException(status_code=400, detail="Invalid priority (urgent|high|normal|low)")
 
-    # U4 defaults: status_id = first leaf of first Stage, start_date = today.
+    # U4 defaults: first leaf of first non-empty Stage (ADR-0010: else the
+    # first empty Stage); start_date = today. status_id and stage_id are
+    # mutually exclusive; a non-empty Stage is rejected (400).
+    if body.status_id is not None and body.stage_id is not None:
+        raise HTTPException(status_code=400, detail="Set exactly one of status_id, stage_id")
     status_id = body.status_id
-    if status_id is None:
-        default_status = _default_status_for_project(session, body.project_id)
-        if default_status is None or default_status.id is None:
-            raise HTTPException(status_code=422, detail="No statuses available for default")
-        status_id = default_status.id
-    status_obj = session.get(Status, status_id)
-    if not status_obj:
-        raise HTTPException(status_code=400, detail="Invalid status_id")
-    _ensure_status_in_profile(session, body.project_id, status_id)
+    stage_id = body.stage_id
+    if stage_id is not None:
+        stage = _ensure_stage_assignable(session, body.project_id, stage_id)
+        assert stage.id is not None
+        stage_id = stage.id
+        status_id = None
+    else:
+        if status_id is None:
+            default_status, default_stage = _default_assignment_for_project(session, body.project_id)
+            if default_status is not None and default_status.id is not None:
+                status_id = default_status.id
+            elif default_stage is not None and default_stage.id is not None:
+                stage_id = default_stage.id
+            else:
+                raise HTTPException(status_code=422, detail="No statuses available for default")
+        if status_id is not None:
+            status_obj = session.get(Status, status_id)
+            if not status_obj:
+                raise HTTPException(status_code=400, detail="Invalid status_id")
+            _ensure_status_in_profile(session, body.project_id, status_id)
 
     start_date = body.start_date or date.today().isoformat()
 
@@ -644,6 +779,7 @@ def create_task(
         title=title,
         description_md=body.description_md,
         status_id=status_id,
+        stage_id=stage_id,
         priority=body.priority,
         start_date=start_date,
         due_date=body.due_date,
@@ -677,16 +813,27 @@ def create_task(
     for bvid in body.blocked_by_ids:
         session.add(TaskBlockedBy(task_id=task.id, blocked_by_task_id=bvid))
 
-    # Initial Status Period & History
-    period = TaskStatusPeriod(
-        task_id=task.id,
-        status_id=task.status_id,
-        start_date=task.start_date,
-        due_date=task.due_date,
-        actor_id=current.id,
+    # Initial Status Period (leaf assignments only: periods are per-Status)
+    # & History (stage legs recorded for ADR-0010 assignments).
+    if task.status_id is not None:
+        period = TaskStatusPeriod(
+            task_id=task.id,
+            status_id=task.status_id,
+            start_date=task.start_date,
+            due_date=task.due_date,
+            actor_id=current.id,
+        )
+        session.add(period)
+    session.add(
+        TaskHistory(
+            task_id=task.id,
+            from_status_id=None,
+            to_status_id=task.status_id,
+            from_stage_id=None,
+            to_stage_id=task.stage_id,
+            actor_id=current.id,
+        )
     )
-    session.add(period)
-    session.add(TaskHistory(task_id=task.id, from_status_id=None, to_status_id=task.status_id, actor_id=current.id))
     session.commit()
     session.refresh(task)
     return _task_out(task, session)
@@ -703,7 +850,9 @@ class TaskTimelineItem(BaseModel):
     title: str
     depth: int
     parent_id: int | None = None
-    status_id: int
+    # ADR-0010: None when directly assigned onto an empty Stage (see stage_id).
+    status_id: int | None = None
+    stage_id: int | None = None
     status_name: str
     start_date: str
     due_date: str | None = None
@@ -732,10 +881,8 @@ def get_blocked_map(
     require_project_access(project_id, current, session)
     query = select(Task).where(Task.project_id == project_id)
     if stage_id is not None:
-        stage_ids = _stage_status_ids(session, stage_id)
-        if not stage_ids:
-            return []
-        query = query.where(Task.status_id.in_(stage_ids))  # type: ignore[attr-defined, union-attr]
+        stage_leaf_ids = _stage_status_ids(session, stage_id)
+        query = _apply_stage_filter(query, stage_id, stage_leaf_ids)
     tasks = session.exec(query).all()
     result = []
     for t in tasks:
@@ -777,10 +924,8 @@ def _timeline_items(
             raise HTTPException(status_code=400, detail="Invalid depth (0|1|2)")
         query = query.where(Task.depth == depth)
     if stage_id is not None:
-        stage_ids = _stage_status_ids(session, stage_id)
-        if not stage_ids:
-            return []
-        query = query.where(Task.status_id.in_(stage_ids))  # type: ignore[attr-defined, union-attr]
+        stage_leaf_ids = _stage_status_ids(session, stage_id)
+        query = _apply_stage_filter(query, stage_id, stage_leaf_ids)
     tasks = session.exec(query).all()
     # V1: order by sibling position so Timeline WBS pane matches List.
     from app.tasks import service as _tl_svc
@@ -809,8 +954,14 @@ def _timeline_items(
     for t in tasks:
         assert t.id is not None
         tout = _task_out(t, session, wbs_map=wbs_map)
-        st = session.get(Status, t.status_id)
-        st_name = st.name if st else ""
+        if t.status_id is not None:
+            st = session.get(Status, t.status_id)
+            st_name = st.name if st else ""
+        elif t.stage_id is not None:
+            sgt = session.get(StatusStage, t.stage_id)
+            st_name = sgt.name if sgt else ""
+        else:
+            st_name = ""
         assignees_out = [
             TimelineAssignee(
                 id=uid,
@@ -826,6 +977,7 @@ def _timeline_items(
                 depth=t.depth,
                 parent_id=t.parent_id,
                 status_id=t.status_id,
+                stage_id=t.stage_id,
                 status_name=st_name,
                 start_date=t.start_date,
                 due_date=t.due_date,
@@ -927,7 +1079,8 @@ class CalendarEventOut(BaseModel):
     title: str
     date: str
     kind: str  # task_due | period_due
-    status_id: int
+    status_id: int | None = None
+    stage_id: int | None = None
     status_name: str = ""
     depth: int = 0
     assignee_ids: list[int] = []
@@ -948,7 +1101,8 @@ class TableRowOut(BaseModel):
     parent_id: int | None = None
     depth: int
     title: str
-    status_id: int
+    status_id: int | None = None
+    stage_id: int | None = None
     status_name: str = ""
     start_date: str
     due_date: str | None = None
@@ -1022,8 +1176,14 @@ def get_task_calendar(
     )
     events: list[CalendarEventOut] = []
     for tout in tasks:
-        st = session.get(Status, tout.status_id)
-        st_name = st.name if st else ""
+        if tout.status_id is not None:
+            st = session.get(Status, tout.status_id)
+            st_name = st.name if st else ""
+        elif tout.stage_id is not None:
+            sgt = session.get(StatusStage, tout.stage_id)
+            st_name = sgt.name if sgt else ""
+        else:
+            st_name = ""
         if tout.due_date:
             events.append(
                 CalendarEventOut(
@@ -1032,6 +1192,7 @@ def get_task_calendar(
                     date=tout.due_date,
                     kind="task_due",
                     status_id=tout.status_id,
+                    stage_id=tout.stage_id,
                     status_name=st_name,
                     depth=tout.depth,
                     assignee_ids=tout.assignee_ids,
@@ -1110,7 +1271,10 @@ def get_task_table(
     def_id_to_key = {d.id: d.key for d in defs if d.id is not None}
     rows: list[TableRowOut] = []
     for tout in tasks:
-        st = session.get(Status, tout.status_id)
+        if tout.status_id is not None:
+            st = session.get(Status, tout.status_id)
+        else:
+            st = None
         custom: dict[str, str] = {}
         for def_id, key in def_id_to_key.items():
             custom[key] = val_map.get((tout.id, def_id), "")
@@ -1122,6 +1286,7 @@ def get_task_table(
                 depth=tout.depth,
                 title=tout.title,
                 status_id=tout.status_id,
+                stage_id=tout.stage_id,
                 status_name=st.name if st else "",
                 start_date=tout.start_date,
                 due_date=tout.due_date,
@@ -1163,7 +1328,6 @@ def update_task(
     if current.role == "guest":
         raise HTTPException(status_code=403, detail="Guest cannot update tasks")
 
-    old_status_id = task.status_id
     if body.title is not None:
         if not (body.title or "").strip():
             raise HTTPException(status_code=422, detail="Title required")
@@ -1184,18 +1348,29 @@ def update_task(
     if body.time_spent_mins is not None:
         task.time_spent_mins = body.time_spent_mins
 
-    if body.status_id is not None and body.status_id != task.status_id:
+    if body.stage_id is not None and body.status_id is not None:
+        raise HTTPException(status_code=400, detail="Set exactly one of status_id, stage_id")
+    if body.stage_id is not None and (task.stage_id != body.stage_id or task.status_id is not None):
+        _ensure_stage_assignable(session, task.project_id, body.stage_id)
+        assert current.id is not None
+        _record_assignment(
+            session, task, status_id=None, stage_id=body.stage_id, actor_id=current.id
+        )
+        # No Status Period for direct Stage assignments (periods are per-Status).
+
+    if body.status_id is not None and (body.status_id != task.status_id or task.stage_id is not None):
         status_obj = session.get(Status, body.status_id)
         if not status_obj:
             raise HTTPException(status_code=400, detail="Invalid status_id")
         _ensure_status_in_profile(session, task.project_id, body.status_id)
-        task.status_id = body.status_id
         assert current.id is not None
-        assert task.id is not None
-        session.add(TaskHistory(task_id=task.id, from_status_id=old_status_id, to_status_id=task.status_id, actor_id=current.id))
-        publish("task.status_changed", {"task_id": task.id, "from_status_id": old_status_id, "to_status_id": task.status_id, "actor_id": current.id})
-        
+        _record_assignment(
+            session, task, status_id=body.status_id, stage_id=None, actor_id=current.id
+        )
+
         # Upsert period
+        assert task.id is not None
+        assert task.status_id is not None
         period = session.exec(select(TaskStatusPeriod).where(TaskStatusPeriod.task_id == task.id, TaskStatusPeriod.status_id == task.status_id)).first()
         if not period:
             period = TaskStatusPeriod(task_id=task.id, status_id=task.status_id, start_date=task.start_date, actor_id=current.id)
@@ -1256,45 +1431,52 @@ def change_task_status(
     if current.role == "guest":
         raise HTTPException(status_code=403, detail="Guest cannot change task status")
 
-    status_obj = session.get(Status, body.status_id)
-    if not status_obj:
-        raise HTTPException(status_code=400, detail="Invalid status_id")
-    _ensure_status_in_profile(session, task.project_id, body.status_id)
-
-    old_status_id = task.status_id
-    task.status_id = body.status_id
-    task.updated_at = datetime.now(timezone.utc).isoformat()
-    session.add(task)
-
+    if (body.status_id is None) == (body.stage_id is None):
+        raise HTTPException(status_code=400, detail="Set exactly one of status_id, stage_id")
     assert current.id is not None
     assert task.id is not None
-    # Record history
-    session.add(TaskHistory(task_id=task.id, from_status_id=old_status_id, to_status_id=body.status_id, actor_id=current.id))
-    publish("task.status_changed", {"task_id": task.id, "from_status_id": old_status_id, "to_status_id": body.status_id, "actor_id": current.id})
 
-    # Upsert Status Period for new status
-    period = session.exec(select(TaskStatusPeriod).where(TaskStatusPeriod.task_id == task.id, TaskStatusPeriod.status_id == body.status_id)).first()
-    if period:
-        if body.start_date is not None:
-            period.start_date = body.start_date
-        if body.due_date is not None:
-            period.due_date = body.due_date
-        if body.actual_end_date is not None:
-            period.actual_end_date = body.actual_end_date
-        period.actor_id = current.id
-        period.updated_at = datetime.now(timezone.utc).isoformat()
-        session.add(period)
-    else:
-        period = TaskStatusPeriod(
-            task_id=task.id,
-            status_id=body.status_id,
-            start_date=body.start_date or task.start_date,
-            due_date=body.due_date,
-            actual_end_date=body.actual_end_date,
-            actor_id=current.id,
+    if body.stage_id is not None:
+        _ensure_stage_assignable(session, task.project_id, body.stage_id)
+        _record_assignment(
+            session, task, status_id=None, stage_id=body.stage_id, actor_id=current.id
         )
-        session.add(period)
+        # No Status Period for direct Stage assignments (periods are per-Status).
+    else:
+        assert body.status_id is not None
+        status_obj = session.get(Status, body.status_id)
+        if not status_obj:
+            raise HTTPException(status_code=400, detail="Invalid status_id")
+        _ensure_status_in_profile(session, task.project_id, body.status_id)
+        _record_assignment(
+            session, task, status_id=body.status_id, stage_id=None, actor_id=current.id
+        )
 
+        # Upsert Status Period for new status
+        period = session.exec(select(TaskStatusPeriod).where(TaskStatusPeriod.task_id == task.id, TaskStatusPeriod.status_id == body.status_id)).first()
+        if period:
+            if body.start_date is not None:
+                period.start_date = body.start_date
+            if body.due_date is not None:
+                period.due_date = body.due_date
+            if body.actual_end_date is not None:
+                period.actual_end_date = body.actual_end_date
+            period.actor_id = current.id
+            period.updated_at = datetime.now(timezone.utc).isoformat()
+            session.add(period)
+        else:
+            period = TaskStatusPeriod(
+                task_id=task.id,
+                status_id=body.status_id,
+                start_date=body.start_date or task.start_date,
+                due_date=body.due_date,
+                actual_end_date=body.actual_end_date,
+                actor_id=current.id,
+            )
+            session.add(period)
+
+    task.updated_at = datetime.now(timezone.utc).isoformat()
+    session.add(task)
     session.commit()
     session.refresh(task)
     return _task_out(task, session)
@@ -1425,6 +1607,8 @@ def get_task_history(
             task_id=h.task_id,
             from_status_id=h.from_status_id,
             to_status_id=h.to_status_id,
+            from_stage_id=getattr(h, "from_stage_id", None),
+            to_stage_id=getattr(h, "to_stage_id", None),
             actor_id=h.actor_id,
             at=h.at,
         )

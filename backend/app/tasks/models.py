@@ -51,7 +51,11 @@ class Task(SQLModel, table=True):
     position: int | None = Field(default=None, index=True)
     title: str = Field(max_length=256)
     description_md: str = Field(default="", max_length=10000)
-    status_id: int = Field(foreign_key="statuses.id", index=True)
+    # ADR-0010: exactly one assignable node is set. Leaf assignment uses
+    # status_id; direct assignment onto an empty Stage (zero Statuses) uses
+    # stage_id with status_id NULL. Non-empty Stages are never assignable.
+    status_id: int | None = Field(default=None, foreign_key="statuses.id", index=True)
+    stage_id: int | None = Field(default=None, foreign_key="status_stages.id", index=True)
     priority: str = Field(default="normal", max_length=32)  # urgent|high|normal|low
     start_date: str = Field(max_length=32)  # whole process start
     due_date: str | None = Field(default=None, max_length=32)
@@ -67,7 +71,11 @@ class TaskHistory(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     task_id: int = Field(foreign_key="tasks.id", index=True)
     from_status_id: int | None = Field(default=None, foreign_key="statuses.id")
-    to_status_id: int = Field(foreign_key="statuses.id")
+    to_status_id: int | None = Field(default=None, foreign_key="statuses.id")
+    # ADR-0010: stage legs of a move. from_stage_id is set when leaving a
+    # directly-assigned empty Stage; to_stage_id when entering one.
+    from_stage_id: int | None = Field(default=None, foreign_key="status_stages.id")
+    to_stage_id: int | None = Field(default=None, foreign_key="status_stages.id")
     actor_id: int | None = Field(default=None, foreign_key="users.id")
     at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     # V1 (Phase 4): lightweight reorder audit, e.g. "reordered 1.2 -> 1.4 by X".

@@ -20,7 +20,9 @@ export interface TreeTask {
   title: string;
   depth: number;
   parent_id?: number | null;
-  status_id: number;
+  // ADR-0010: null when directly assigned onto an empty Stage (see stage_id).
+  status_id: number | null;
+  stage_id?: number | null;
   status_name: string;
   start_date: string;
   due_date?: string | null;

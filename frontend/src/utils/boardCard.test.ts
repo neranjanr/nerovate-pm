@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatTaskCode, boardStatusMoveBody } from "./boardCard";
+import { formatTaskCode, boardStageMoveBody, boardStatusMoveBody } from "./boardCard";
 
 describe("slice 4 board card seam", () => {
   it("prefers WBS code, falls back to #id", () => {
@@ -13,5 +13,9 @@ describe("slice 4 board card seam", () => {
       status_id: 3,
       start_date: "2026-03-05",
     });
+  });
+
+  it("moves onto an empty Stage with a stage-only body", () => {
+    expect(boardStageMoveBody(9)).toEqual({ stage_id: 9 });
   });
 });

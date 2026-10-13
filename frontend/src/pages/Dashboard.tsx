@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../stores/auth";
 import { buildDashboardExportUrl, downloadExport } from "../utils/exports";
-import { buildStatusSignalMap } from "../utils/statusSignals";
+import { buildStatusSignalMap, emptyStageSignal } from "../utils/statusSignals";
 
 interface StatusInfo {
   id: number;
@@ -25,11 +25,22 @@ interface WorkloadRow {
   total: number;
 }
 
+interface SummaryStage {
+  id: number;
+  name: string;
+  order: number;
+  color_base: string;
+  count: number;
+  done_count: number;
+  pct_done: number;
+}
+
 interface Summary {
   project_id: number;
   total: number;
   by_status: Record<string, number>;
   statuses: StatusInfo[];
+  stages?: SummaryStage[];
   overdue: number;
   due_soon: number;
   blocked: number;
@@ -167,13 +178,32 @@ export default function Dashboard() {
   const pipeline = useMemo(() => {
     if (!summary) return [];
     const signalById = buildStatusSignalMap(summary.statuses);
-    return [...summary.statuses]
+    const leafRows = [...summary.statuses]
       .sort((a, b) => a.order - b.order)
       .map((s) => ({
         ...s,
         count: summary.by_status[String(s.id)] || 0,
         signal: signalById.get(s.id) ?? { glyph: "", weight: 0, label: "", milestone: false },
       }));
+    // ADR-0010: stages with direct assignments render as their own segment.
+    const direct = emptyStageSignal();
+    const stageRows = (summary.stages ?? [])
+      .map((st) => ({ st, count: summary.by_status[`stage:${st.id}`] ?? 0 }))
+      .filter((x) => x.count > 0)
+      .sort((a, b) => a.st.order - b.st.order)
+      .map(({ st, count }) => ({
+        id: -st.id,
+        name: `${st.name} ●`,
+        color: st.color_base,
+        order: 1000000 + st.order,
+        is_done: false,
+        stage_id: st.id,
+        kind: "normal",
+        is_milestone: false,
+        count,
+        signal: { glyph: direct.glyph, weight: direct.weight, label: "directly assigned", milestone: false },
+      }));
+    return [...leafRows, ...stageRows];
   }, [summary]);
 
   const exportServer = async (format: "json" | "csv") => {

@@ -214,7 +214,8 @@ export default function Timeline() {
     if (blockedOnly) rows = rows.filter((t) => t.is_blocked);
     if (stageFilter) {
       const stageIds = new Set(statuses.filter((s) => s.stage_id === Number(stageFilter)).map((s) => s.id));
-      rows = rows.filter((t) => stageIds.has(t.status_id));
+      // ADR-0010: direct empty-Stage assignments carry stage_id, not status_id.
+      rows = rows.filter((t) => t.stage_id === Number(stageFilter) || (t.status_id != null && stageIds.has(t.status_id)));
     }
     return rows;
   }, [tasks, treeDefault, collapsedIds, blockedOnly, stageFilter, statuses]);
@@ -224,8 +225,11 @@ export default function Timeline() {
     if (stages.length === 0) return [];
     return stages.map((st) => {
       const leafIds = new Set(statuses.filter((s) => s.stage_id === st.id).map((s) => s.id));
-      const tasksInStage = tasks.filter((t) => leafIds.has(t.status_id));
-      const done = tasksInStage.filter((t) => statusById.get(t.status_id)?.is_done).length;
+      // ADR-0010: direct assignments count toward their Stage at full weight.
+      const tasksInStage = tasks.filter(
+        (t) => t.stage_id === st.id || (t.status_id != null && leafIds.has(t.status_id))
+      );
+      const done = tasksInStage.filter((t) => t.status_id != null && statusById.get(t.status_id)?.is_done).length;
       // Periods inside this Stage across all tasks (stacked-bar source).
       const periodsInStage: StatusPeriod[] = [];
       for (const t of tasks) {
@@ -253,7 +257,11 @@ export default function Timeline() {
       // Stage average percent from per-Status positional weights (exception
       // tasks keep their positional percent; flags stay visible, never dropped).
       const avgWeight = stageAverage(
-        tasksInStage.map((t) => weightByStatus.get(t.status_id) ?? 0)
+        tasksInStage.map((t) =>
+          t.stage_id != null && t.status_id == null
+            ? 100
+            : (t.status_id != null ? weightByStatus.get(t.status_id) : undefined) ?? 0
+        )
       );
       return {
         stage: st,

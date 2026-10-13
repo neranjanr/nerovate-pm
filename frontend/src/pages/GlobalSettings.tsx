@@ -1065,6 +1065,28 @@ export default function GlobalSettings() {
                               <span className="text-[10px] px-1.5 py-0.5 rounded border border-subtle">
                                 {kids.length} Tier-2 · {kids.filter((k) => k.is_milestone).length} ★
                               </span>
+                              {kids.length === 0 && (
+                                <span
+                                  title="Empty Stage: directly assignable at ● 100% (ADR-0010)"
+                                  className="text-[10px] px-1.5 py-0.5 rounded border border-emerald-300 bg-emerald-50 text-emerald-900"
+                                >
+                                  Directly assignable ● 100%
+                                </span>
+                              )}
+                              {canManage && kids.length === 0 && (
+                                <button
+                                  title="Prefill the quick-add box below with this Stage name — nothing is created until you press Add"
+                                  onClick={() => {
+                                    setQuickName((m) => ({ ...m, [st.id]: st.name }));
+                                    setNotice(
+                                      `Quick-add prefilled with "${st.name}" — press "+ Add Status (Tier 2)" to create it, or edit first. Nothing auto-creates on assignment.`
+                                    );
+                                  }}
+                                  className="px-2 py-0.5 rounded bg-primary-container text-on-primary text-[11px]"
+                                >
+                                  + Create matching Status
+                                </button>
+                              )}
                               {canManage && (
                                 <button
                                   onClick={() => {

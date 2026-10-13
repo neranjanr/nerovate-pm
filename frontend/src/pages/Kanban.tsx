@@ -3,13 +3,15 @@ import { useLocation, useParams } from "react-router-dom";
 import TaskFilters, { EMPTY_FILTERS, type TaskFilterState } from "../components/TaskFilters";
 import TaskDialog from "../components/TaskDialog";
 import { useAuth } from "../stores/auth";
-import { deriveStatusSignal, kindLabel } from "../utils/statusSignals";
+import { deriveStatusSignal, emptyStageSignal, kindLabel } from "../utils/statusSignals";
 
 interface KanbanTask {
   id: number;
   project_id: number;
   title: string;
-  status_id: number;
+  // ADR-0010: exactly one assignable node; stage_id set <=> status_id null.
+  status_id: number | null;
+  stage_id?: number | null;
   depth: number;
   parent_id?: number | null;
   wbs?: string;
@@ -61,7 +63,8 @@ interface PopupState {
 interface ConfirmState {
   taskId: number;
   taskTitle: string;
-  fromStatusId: number;
+  fromStatusId: number | null;
+  fromStageId?: number | null;
   fromName: string;
   toStatusId: number;
   toName: string;
@@ -72,9 +75,11 @@ interface ConfirmState {
 interface ToastState {
   taskId: number;
   taskTitle: string;
-  fromStatusId: number;
+  fromStatusId: number | null;
+  fromStageId?: number | null;
   fromName: string;
-  toStatusId: number;
+  toStatusId: number | null;
+  toStageId?: number | null;
   toName: string;
 }
 
@@ -123,14 +128,37 @@ function stageLabel(stageId: number | null | undefined, stages: StageInfo[]): st
 }
 
 function fullName(
-  statusId: number,
+  statusId: number | null | undefined,
   statusById: Map<number, StatusInfo>,
   stages: StageInfo[]
 ): string {
+  if (statusId == null) return "Unassigned";
   const s = statusById.get(statusId);
   if (!s) return `Status ${statusId}`;
   const st = stageLabel(s.stage_id, stages);
   return st ? `${st} > ${s.name}` : s.name;
+}
+
+/** ADR-0010 display name of a task's assignable node (leaf or empty Stage). */
+function taskNodeName(
+  t: { status_id: number | null; stage_id?: number | null },
+  statusById: Map<number, StatusInfo>,
+  stages: StageInfo[]
+): string {
+  if (t.status_id != null) return fullName(t.status_id, statusById, stages);
+  if (t.stage_id != null)
+    return stages.find((s) => s.id === t.stage_id)?.name ?? `Stage ${t.stage_id}`;
+  return "Unassigned";
+}
+
+/** Owning Stage id of a task (direct or via leaf Status). */
+function taskStageId(
+  t: { status_id: number | null; stage_id?: number | null },
+  statusById: Map<number, StatusInfo>
+): number | null {
+  if (t.stage_id != null) return t.stage_id;
+  if (t.status_id != null) return statusById.get(t.status_id)?.stage_id ?? null;
+  return null;
 }
 
 /**
@@ -169,7 +197,8 @@ export default function Kanban() {
   const [edit, setEdit] = useState<{ id: number; projectId: number } | null>(null);
   const [create, setCreate] = useState<{
     projectId: string | number;
-    statusId: number;
+    statusId: number | null;
+    stageId?: number | null;
     initialParentId?: number | null;
     initialLevel?: 0 | 1 | 2;
   } | null>(null);
@@ -523,9 +552,11 @@ export default function Kanban() {
       const leaves = statuses
         .filter((s) => s.stage_id === st.id)
         .map((s) => ({ status: s, rows: visibleTasks.filter((t) => t.status_id === s.id) }));
-      const flat = leaves.flatMap((l) => l.rows);
+      // ADR-0010: tasks directly on an empty Stage belong to its column.
+      const directRows = visibleTasks.filter((t) => t.stage_id === st.id);
+      const flat = [...leaves.flatMap((l) => l.rows), ...directRows];
       const done = leaves.filter((l) => l.status.is_done).reduce((n, l) => n + l.rows.length, 0);
-      return { stage: st, leaves, flat, done };
+      return { stage: st, leaves, directRows, flat, done };
     });
   }, [stages, statuses, visibleTasks, filters.stageId]);
 
@@ -567,7 +598,11 @@ export default function Kanban() {
     if (!popup) return [];
     const rows =
       popup.kind === "stage"
-        ? visibleTasks.filter((t) => statusById.get(t.status_id)?.stage_id === popup.stageId)
+        ? visibleTasks.filter(
+            (t) =>
+              t.stage_id === popup.stageId ||
+              (t.status_id != null && statusById.get(t.status_id)?.stage_id === popup.stageId)
+          )
         : visibleTasks.filter((t) => t.status_id === popup.statusId);
     return [...rows].sort((a, b) => {
       const pa = projectById.get(a.project_id)?.code ?? "";
@@ -630,20 +665,41 @@ export default function Kanban() {
 
   // ---- Move / confirm / undo (kan2 §§10-11, §10.2 rules) ----
 
-  const doMove = (taskId: number, fromStatusId: number, fromName: string, taskTitle: string, targetId: number) => {
+  const doMove = (
+    taskId: number,
+    fromStatusId: number | null,
+    fromStageId: number | null,
+    fromName: string,
+    taskTitle: string,
+    target: { statusId: number } | { stageId: number }
+  ) => {
     if (!auth.accessToken) return;
+    const body =
+      "stageId" in target ? { stage_id: target.stageId } : { status_id: target.statusId };
     fetch(`/api/v1/tasks/${taskId}/status`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.accessToken}` },
-      body: JSON.stringify({ status_id: targetId }),
+      body: JSON.stringify(body),
     })
       .then((r) => {
         if (!r.ok) throw new Error(`Status change failed: ${r.status}`);
         return r.json();
       })
       .then(() => {
-        const toName = fullName(targetId, statusById, stages);
-        showToast({ taskId, taskTitle, fromStatusId, fromName, toStatusId: targetId, toName });
+        const toName =
+          "stageId" in target
+            ? (stages.find((s) => s.id === target.stageId)?.name ?? `Stage ${target.stageId}`)
+            : fullName(target.statusId, statusById, stages);
+        showToast({
+          taskId,
+          taskTitle,
+          fromStatusId,
+          fromStageId,
+          fromName,
+          toStatusId: "statusId" in target ? target.statusId : null,
+          toStageId: "stageId" in target ? target.stageId : null,
+          toName,
+        });
         setConfirm(null);
         setDragId(null);
         setRefreshKey((k) => k + 1);
@@ -652,11 +708,15 @@ export default function Kanban() {
   };
 
   /** kan2 §10.2 — does this move need confirmation under the current rule? */
-  const needsConfirm = (fromStatusId: number, destStatusId: number): boolean => {
+  const needsConfirm = (
+    t: KanbanTask,
+    destStatusId: number,
+    destStageId?: number | null
+  ): boolean => {
     if (confirmMode === "always") return true;
     if (confirmMode === "never") return false;
     if (confirmMode === "stage-change") {
-      return statusById.get(fromStatusId)?.stage_id !== statusById.get(destStatusId)?.stage_id;
+      return taskStageId(t, statusById) !== (destStageId ?? statusById.get(destStatusId)?.stage_id ?? null);
     }
     // "done-only": confirm when entering Done / Milestone / exception-kind Statuses.
     const d = statusById.get(destStatusId);
@@ -670,18 +730,19 @@ export default function Kanban() {
       closeBucket();
       return;
     }
-    const fromName = fullName(t.status_id, statusById, stages);
+    const fromName = taskNodeName(t, statusById, stages);
     const toName = fullName(destStatusId, statusById, stages);
     const stageOf = (sid: number) => statusById.get(sid)?.stage_id ?? destStageId ?? null;
-    if (!needsConfirm(t.status_id, destStatusId)) {
+    if (!needsConfirm(t, destStatusId, destStageId)) {
       closeBucket();
-      doMove(taskId, t.status_id, fromName, t.title, destStatusId);
+      doMove(taskId, t.status_id, t.stage_id ?? null, fromName, t.title, { statusId: destStatusId });
       return;
     }
     setConfirm({
       taskId,
       taskTitle: t.title,
       fromStatusId: t.status_id,
+      fromStageId: t.stage_id ?? null,
       fromName,
       toStatusId: destStatusId,
       toName,
@@ -693,9 +754,30 @@ export default function Kanban() {
     closeBucket();
   };
 
+  /**
+   * ADR-0010: dropping onto an empty Stage assigns it directly (no picker,
+   * no confirm dialog — the confirm modal only addresses leaf Statuses, so
+   * stage targets stay on the toast+undo path until 02 adds a Stage picker).
+   */
+  const requestStageMove = (taskId: number, stageId: number) => {
+    const t = visibleTasks.find((x) => x.id === taskId) ?? tasks.find((x) => x.id === taskId);
+    if (!t) return;
+    if (t.stage_id === stageId && t.status_id == null) {
+      closeBucket();
+      return;
+    }
+    const fromName = taskNodeName(t, statusById, stages);
+    closeBucket();
+    doMove(taskId, t.status_id, t.stage_id ?? null, fromName, t.title, { stageId });
+  };
+
   const requestStageDrop = (taskId: number, stageId: number, leafId?: number) => {
     const leaves = statuses.filter((s) => s.stage_id === stageId).sort((a, b) => a.order - b.order);
-    if (leaves.length === 0) return;
+    // ADR-0010: empty Stages are directly assignable — no Status picker.
+    if (leaves.length === 0) {
+      requestStageMove(taskId, stageId);
+      return;
+    }
     if (leafId != null) {
       requestMove(taskId, leafId, stageId, leaves.length > 1 ? leaves : undefined);
       return;
@@ -721,7 +803,14 @@ export default function Kanban() {
     // Editable destination (§10.1): Stage select + leaf select win.
     const targetId = confirmLeaf ? Number(confirmLeaf) : confirm.toStatusId;
     if (!targetId) return;
-    doMove(confirm.taskId, confirm.fromStatusId, confirm.fromName, confirm.taskTitle, targetId);
+    doMove(
+      confirm.taskId,
+      confirm.fromStatusId,
+      confirm.fromStageId ?? null,
+      confirm.fromName,
+      confirm.taskTitle,
+      { statusId: targetId }
+    );
   };
 
   const deleteTask = (taskId: number) => {
@@ -741,10 +830,15 @@ export default function Kanban() {
 
   const undoMove = () => {
     if (!auth.accessToken || !toast) return;
+    // ADR-0010: the source may have been an empty Stage rather than a Status.
+    const body =
+      toast.fromStageId != null
+        ? { stage_id: toast.fromStageId }
+        : { status_id: toast.fromStatusId };
     fetch(`/api/v1/tasks/${toast.taskId}/status`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.accessToken}` },
-      body: JSON.stringify({ status_id: toast.fromStatusId }),
+      body: JSON.stringify(body),
     })
       .then((r) => {
         if (!r.ok) throw new Error(`Undo failed: ${r.status}`);
@@ -767,13 +861,14 @@ export default function Kanban() {
     return first ? first.id : null;
   };
 
-  const openCreate = (statusId: number) => {
+  // ADR-0010: statusId null + stageId set presets a direct Stage assignment.
+  const openCreate = (statusId: number | null, stageId?: number | null) => {
     const pid = resolveCreateProject();
     if (pid == null || pid === "") {
       setError("No project available for task creation in this view.");
       return;
     }
-    setCreate({ projectId: pid, statusId });
+    setCreate({ projectId: pid, statusId, stageId: stageId ?? null });
   };
 
   const openCtx = (t: KanbanTask, x: number, y: number) => {
@@ -785,11 +880,25 @@ export default function Kanban() {
     showAll[key] ? rows : rows.slice(0, COL_CARD_LIMIT);
 
   const renderCard = (t: KanbanTask) => {
-    const st = statusById.get(t.status_id);
-    const sig = signalByStatus.get(t.status_id);
+    // ADR-0010: tasks directly on an empty Stage show the Stage + full signal.
+    const st = t.status_id != null ? statusById.get(t.status_id) : undefined;
+    const directStage =
+      t.status_id == null && t.stage_id != null
+        ? stages.find((s) => s.id === t.stage_id)
+        : undefined;
+    const leafSig = t.status_id != null ? signalByStatus.get(t.status_id) : undefined;
+    const sig = leafSig ?? (directStage ? { ...emptyStageSignal(), label: "directly assigned", milestone: false } : undefined);
+    const nodeName =
+      t.status_id != null
+        ? (st?.name ?? `Status ${t.status_id}`)
+        : (directStage?.name ?? "Unassigned");
     const proj = projectById.get(t.project_id);
     const projColor = proj?.color || "#6b7280";
     const kind = st?.kind ?? "normal";
+    // grill Q8: Status shade dot (Status.shade || Status.color || Stage.color_base).
+    const stageColorForCard =
+      directStage?.color_base || stages.find((s) => s.id === st?.stage_id)?.color_base || "#6b7280";
+    const statusShade = st?.shade || st?.color || stageColorForCard;
     const isSource = dragId === t.id;
     const dragProps = {
       draggable: canDrag,
@@ -823,7 +932,7 @@ export default function Kanban() {
           {...dragProps}
           className={`${frame} px-2 py-1 text-xs flex items-center gap-1.5`}
           style={{ borderLeft: `4px solid ${projColor}` }}
-          title={`${t.wbs || `#${t.id}`} · ${st?.name ?? t.status_id} — right-click for actions`}
+          title={`${t.wbs || `#${t.id}`} · ${nodeName} — right-click for actions`}
         >
           <span className={`font-mono ${signalClass(kind, !!st?.is_done)}`} title={sig?.label}>
             {sig?.glyph}
@@ -848,7 +957,7 @@ export default function Kanban() {
           {...dragProps}
           className={`${frame} px-2 py-1.5 text-xs flex items-center gap-2`}
           style={{ borderLeft: `4px solid ${projColor}` }}
-          title={`${t.wbs || `#${t.id}`} · ${st?.name ?? t.status_id} — right-click for actions`}
+          title={`${t.wbs || `#${t.id}`} · ${nodeName} — right-click for actions`}
         >
           <button
             onClick={() => setEdit({ id: t.id, projectId: t.project_id })}
@@ -876,10 +985,17 @@ export default function Kanban() {
         title={canDrag ? "Drag to another column to change Status · right-click for actions" : "Guests cannot move tasks"}
       >
         <div className="flex items-center justify-between gap-2">
-          <span className="font-mono text-[11px] text-slate-500">
-            {t.wbs || `#${t.id}`} · {st?.name ?? t.status_id}
+          <span className="font-mono text-[11px] text-slate-500 flex items-center gap-1.5 min-w-0">
+            <span
+              className="w-2.5 h-2.5 rounded-full shrink-0"
+              style={{ backgroundColor: statusShade }}
+              title={`Status shade for ${nodeName}`}
+            />
+            <span className="truncate">
+              {t.wbs || `#${t.id}`} · {nodeName}
+            </span>
           </span>
-          <span className={`font-mono text-[11px] ${signalClass(kind, !!st?.is_done)}`} title={sig?.label}>
+          <span className={`font-mono text-[11px] shrink-0 ${signalClass(kind, !!st?.is_done)}`} title={sig?.label}>
             {sig?.glyph} {sig?.weight}%{sig?.milestone ? " ★" : ""}
           </span>
         </div>
@@ -1265,7 +1381,9 @@ export default function Kanban() {
                       const first = statuses
                         .filter((s) => s.stage_id === g.stage.id)
                         .sort((a, b) => a.order - b.order)[0];
+                      // ADR-0010: no leaves — preset the empty Stage itself.
                       if (first) openCreate(first.id);
+                      else openCreate(null, g.stage.id);
                     }}
                     className="mt-auto w-7 h-7 rounded-full border border-slate-200 text-slate-500 hover:bg-slate-100 text-sm leading-none"
                     title={`Add Task in ${g.stage.name}`}
@@ -1379,7 +1497,9 @@ export default function Kanban() {
                     <button
                       onClick={() => {
                         const first = [...g.leaves].sort((a, b) => a.status.order - b.status.order)[0];
+                        // ADR-0010: no leaves — preset the empty Stage itself.
                         if (first) openCreate(first.status.id);
+                        else openCreate(null, g.stage.id);
                       }}
                       className="mt-2 w-full py-2 rounded-lg border border-dashed border-slate-300 text-xs text-slate-500 hover:bg-slate-50 hover:text-slate-800 font-medium"
                       title={`Add Task in ${g.stage.name} (inherits Stage)`}
@@ -1387,6 +1507,48 @@ export default function Kanban() {
                       + Add Task
                     </button>
                   )}
+                </div>
+              ) : g.leaves.length === 0 ? (
+                // ADR-0010: empty Stage expands to its own directly-assignable column.
+                <div className="p-2.5">
+                  <div className="flex gap-3">
+                    <section
+                      onDragOver={(e) => {
+                        if (dragId != null) e.preventDefault();
+                      }}
+                      onDrop={() => {
+                        if (dragId != null) requestStageMove(dragId, g.stage.id);
+                        setDragId(null);
+                      }}
+                      className="w-72 shrink-0 rounded-lg border bg-slate-50/60 flex flex-col max-h-[58vh] border-slate-200"
+                    >
+                      <header className="px-2.5 py-2 border-b border-slate-200 text-[13px] font-semibold flex justify-between items-center gap-2 rounded-t-lg bg-slate-50">
+                        <span className="flex items-center gap-1.5 truncate">
+                          <span className="w-2.5 h-2.5 rounded shrink-0" style={{ backgroundColor: stageColor }} />
+                          <span className="truncate">{g.stage.name}</span>
+                          <span className={`font-mono text-[11px] font-normal shrink-0 ${signalClass("normal", false)}`}>
+                            ● 100%
+                          </span>
+                        </span>
+                        <span className="text-slate-500 font-mono text-xs">{g.directRows.length}</span>
+                      </header>
+                      <div className="p-2 space-y-2 overflow-y-auto" style={{ contentVisibility: "auto" }}>
+                        {limitRows(g.directRows, `stage:${g.stage.id}`).map(renderCard)}
+                        {g.directRows.length === 0 && (
+                          <div className="py-8 text-center text-slate-400 text-xs">No tasks — drop here to move.</div>
+                        )}
+                      </div>
+                      {canCreate && (
+                        <button
+                          onClick={() => openCreate(null, g.stage.id)}
+                          className="m-2 mt-0 py-1.5 rounded-lg border border-dashed border-slate-300 text-[11px] text-slate-500 hover:bg-white font-medium"
+                          title={`Add Task directly on ${g.stage.name}`}
+                        >
+                          + Add Task
+                        </button>
+                      )}
+                    </section>
+                  </div>
                 </div>
               ) : (
                 <div className="p-2.5">
@@ -1808,7 +1970,8 @@ export default function Kanban() {
                   setCtxMenu(null);
                   setCreate({
                     projectId: c.projectId,
-                    statusId: t?.status_id ?? statuses[0]?.id ?? 0,
+                    statusId: t?.status_id ?? null,
+                    stageId: t?.stage_id ?? null,
                     initialParentId: c.taskId,
                     initialLevel: (c.depth + 1) as 0 | 1 | 2,
                   });
@@ -1856,6 +2019,19 @@ export default function Kanban() {
                 const m = moveTo;
                 setMoveTo(null);
                 requestMove(m.taskId, all[0].id, all[0].stage_id);
+              } else {
+                // ADR-0010: fall back to an empty-Stage hit for direct assignment.
+                const hit = stages.find(
+                  (st) =>
+                    q &&
+                    st.name.toLowerCase().includes(q) &&
+                    !statuses.some((s) => s.stage_id === st.id)
+                );
+                if (hit) {
+                  const m = moveTo;
+                  setMoveTo(null);
+                  requestStageMove(m.taskId, hit.id);
+                }
               }
             }
           }}
@@ -1884,8 +2060,35 @@ export default function Kanban() {
                     !q || s.name.toLowerCase().includes(q) || st.name.toLowerCase().includes(q)
                   )
                   .sort((a, b) => a.order - b.order);
-                if (q && leaves.length === 0) return null;
-                if (!q && leaves.length === 0) return null;
+                const stageMatches = !q || st.name.toLowerCase().includes(q);
+                // ADR-0010: empty Stages render as selectable rows (no picker).
+                if (leaves.length === 0 && !stageMatches) return null;
+                if (leaves.length === 0) {
+                  const current = tasks.find((x) => x.id === moveTo.taskId);
+                  const invalid = (current?.stage_id ?? null) === st.id && current?.status_id == null;
+                  const directCount = visibleTasks.filter((t) => t.stage_id === st.id).length;
+                  return (
+                    <div key={st.id} className="mb-1">
+                      <button
+                        disabled={invalid}
+                        onClick={() => {
+                          const m = moveTo;
+                          setMoveTo(null);
+                          requestStageMove(m.taskId, st.id);
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 text-sm ${
+                          invalid ? "opacity-40 cursor-not-allowed" : "hover:bg-slate-50"
+                        }`}
+                        title={invalid ? `${st.name} (current stage)` : `Move directly onto ${st.name} ● 100%`}
+                      >
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: st.color_base || "#6b7280" }} />
+                        <span className="flex-1 truncate font-medium">{st.name}</span>
+                        <span className="font-mono text-[11px]">● 100%</span>
+                        <span className="font-mono text-[11px] text-slate-400">({directCount})</span>
+                      </button>
+                    </div>
+                  );
+                }
                 return (
                   <div key={st.id} className="mb-1">
                     <div className="px-2 pt-2 text-[11px] font-bold uppercase tracking-wide text-slate-500 flex items-center gap-1.5">
@@ -1962,6 +2165,7 @@ export default function Kanban() {
           projectId={create.projectId}
           mode="create"
           initialStatusId={create.statusId}
+          initialStageId={create.stageId ?? null}
           initialParentId={create.initialParentId ?? null}
           initialLevel={create.initialLevel}
           onClose={() => setCreate(null)}

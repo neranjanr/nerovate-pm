@@ -89,6 +89,16 @@ def kind_label(kind: str = NORMAL, is_done: bool = False) -> str:
     return KIND_LABELS[normalize_kind(kind)]
 
 
+def empty_stage_signal() -> tuple[str, int]:
+    """Shared seam for ADR-0010: a directly-assigned empty Stage renders as a
+    single node at 100% with the full glyph.
+
+    Equivalent to derive_status_signal(0, 1) spelled explicitly so callers
+    never hardcode the glyph/percent pair.
+    """
+    return NORMAL_RAMP[-1], 100
+
+
 def stage_average(weights: list[int]) -> int:
     """Mean positional weight across a Stage's tasks, rounded; 0 when empty."""
     if not weights:

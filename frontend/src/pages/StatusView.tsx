@@ -11,13 +11,21 @@ interface StatusInfo {
   is_done?: boolean;
 }
 
+interface StageInfo {
+  id: number;
+  name: string;
+  order?: number;
+}
+
 interface StatusTask {
   id: number;
   project_id: number;
   parent_id?: number | null;
   depth: number;
   title: string;
-  status_id: number;
+  // ADR-0010: null when directly assigned onto an empty Stage (see stage_id).
+  status_id: number | null;
+  stage_id?: number | null;
   wbs?: string;
   due_date?: string | null;
   assignee_ids: number[];
@@ -48,6 +56,7 @@ export default function StatusView() {
 
   const [tasks, setTasks] = useState<StatusTask[]>([]);
   const [statuses, setStatuses] = useState<StatusInfo[]>([]);
+  const [stages, setStages] = useState<StageInfo[]>([]);
   const [projects, setProjects] = useState<ProjectRef[]>([]);
   const [scopeName, setScopeName] = useState("");
   const [collapsedIds, setCollapsedIds] = useState<Set<number>>(new Set());
@@ -94,8 +103,14 @@ export default function StatusView() {
             (a: StatusInfo, b: StatusInfo) => (a.order ?? 0) - (b.order ?? 0)
           );
           setStatuses(list);
+          setStages(
+            (sp?.stages ?? [])
+              .slice()
+              .sort((a: StageInfo, b: StageInfo) => (a.order ?? 0) - (b.order ?? 0))
+          );
         } else {
           setStatuses([]);
+          setStages([]);
         }
 
         const qs = isCategoryMode
@@ -145,28 +160,51 @@ export default function StatusView() {
     [projects]
   );
 
-  // Top-level Tasks (depth 0) grouped by their own Status, Profile order first.
+  const stageById = useMemo(() => new Map(stages.map((s) => [s.id, s])), [stages]);
+
+  // Top-level Tasks (depth 0) grouped by assignable node: leaf Status first
+  // (Profile order), then direct empty-Stage buckets (ADR-0010).
   const groups = useMemo(() => {
     const tops = tasks.filter((t) => t.depth === 0);
     const order = new Map(statuses.map((s, i) => [s.id, i]));
     const buckets = new Map<number, StatusTask[]>();
-    for (const t of tops) buckets.set(t.status_id, [...(buckets.get(t.status_id) ?? []), t]);
+    const stageBuckets = new Map<number, StatusTask[]>();
+    for (const t of tops) {
+      if (t.status_id != null) {
+        buckets.set(t.status_id, [...(buckets.get(t.status_id) ?? []), t]);
+      } else if (t.stage_id != null) {
+        stageBuckets.set(t.stage_id, [...(stageBuckets.get(t.stage_id) ?? []), t]);
+      }
+    }
     const known = statuses.map((s) => s.id).filter((sid) => buckets.has(sid));
     const unknown = [...buckets.keys()]
       .filter((sid) => !order.has(sid))
       .sort((a, b) => a - b);
-    return [...known, ...unknown].map((sid) => ({
-      statusId: sid,
+    const leafGroups = [...known, ...unknown].map((sid) => ({
+      key: `status:${sid}`,
       statusName: statusById.get(sid)?.name ?? `Status ${sid}`,
       rows: buckets.get(sid) ?? [],
     }));
-  }, [tasks, statuses, statusById]);
+    const stageGroups = [...stageBuckets.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([sid, rows]) => ({
+        key: `stage:${sid}`,
+        statusName: `${stageById.get(sid)?.name ?? `Stage ${sid}`} ● 100%`,
+        rows,
+      }));
+    return [...leafGroups, ...stageGroups];
+  }, [tasks, statuses, statusById, stageById]);
 
   // Right rail: live counts over ALL fetched rows (any depth) by Status.
   const health = useMemo(() => {
     const counts = new Map<number, number>();
-    for (const t of tasks) counts.set(t.status_id, (counts.get(t.status_id) ?? 0) + 1);
-    return { counts, total: tasks.length };
+    const stageCounts = new Map<number, number>();
+    for (const t of tasks) {
+      if (t.status_id != null) counts.set(t.status_id, (counts.get(t.status_id) ?? 0) + 1);
+      else if (t.stage_id != null)
+        stageCounts.set(t.stage_id, (stageCounts.get(t.stage_id) ?? 0) + 1);
+    }
+    return { counts, stageCounts, total: tasks.length };
   }, [tasks]);
 
   const projectDist = useMemo(() => {
@@ -256,9 +294,11 @@ export default function StatusView() {
                   </span>
                 </div>
                 <div className="col-span-2 hidden md:block">
-                  <span className="px-2 py-0.5 rounded bg-surface-container border border-subtle text-on-surface-variant text-[11px]">
-                    {statusById.get(k.status_id)?.name ?? k.status_id}
-                  </span>
+                    <span className="px-2 py-0.5 rounded bg-surface-container border border-subtle text-on-surface-variant text-[11px]">
+                      {k.status_id != null
+                        ? (statusById.get(k.status_id)?.name ?? `Status ${k.status_id}`)
+                        : (stageById.get(k.stage_id ?? -1)?.name ?? `Stage ${k.stage_id}`)}
+                    </span>
                 </div>
                 {isCategoryMode && (
                   <div className="col-span-2 hidden lg:block font-mono text-[11px] text-on-surface-variant truncate">
@@ -319,7 +359,7 @@ export default function StatusView() {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
         <div className="xl:col-span-9 space-y-4">
           {groups.map((g) => (
-            <section key={g.statusId} className="bg-surface-container-low border border-subtle rounded overflow-hidden">
+            <section key={g.key} className="bg-surface-container-low border border-subtle rounded overflow-hidden">
               <header className="px-4 py-2 border-b border-subtle text-sm font-semibold flex justify-between items-center">
                 <span>{g.statusName}</span>
                 <span className="text-on-surface-variant font-mono text-xs">
@@ -427,7 +467,15 @@ export default function StatusView() {
                   <span className="font-mono font-semibold">{health.counts.get(s.id) ?? 0}</span>
                 </li>
               ))}
-              {statuses.length === 0 && (
+              {[...health.stageCounts.entries()].map(([sid, count]) => (
+                <li key={`stage-${sid}`} className="flex items-center justify-between gap-2">
+                  <span className="truncate">
+                    {stageById.get(sid)?.name ?? `Stage ${sid}`} ●
+                  </span>
+                  <span className="font-mono font-semibold">{count}</span>
+                </li>
+              ))}
+              {statuses.length === 0 && health.stageCounts.size === 0 && (
                 <li className="text-on-surface-variant">No Status Profile linked.</li>
               )}
             </ul>

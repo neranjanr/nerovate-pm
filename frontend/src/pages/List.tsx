@@ -5,7 +5,11 @@ import { useAuth } from "../stores/auth";
 import TaskCreateModal from "../components/TaskCreateModal";
 import TaskDialog from "../components/TaskDialog";
 import TaskDrawer from "../components/TaskDrawer";
-import { buildStatusSignalMap } from "../utils/statusSignals";
+import {
+  buildStatusDropdownSections,
+  buildStatusSignalMap,
+  emptyStageSignal,
+} from "../utils/statusSignals";
 import {
   buildChildrenMap,
   getSubtreeTasks,
@@ -46,8 +50,8 @@ const AVATAR_BG = [
   "bg-primary-fixed-dim text-primary",
 ];
 
-function statusDot(statusId: number): string {
-  return STATUS_DOTS[Math.abs(statusId) % STATUS_DOTS.length];
+function statusDot(statusId: number | null): string {
+  return STATUS_DOTS[Math.abs(statusId ?? 0) % STATUS_DOTS.length];
 }
 
 function avatarBg(id: number): string {
@@ -97,6 +101,7 @@ export default function List() {
   const { id } = useParams();
   const [timelineTasks, setTimelineTasks] = useState<TreeTask[]>([]);
   const [statuses, setStatuses] = useState<StatusInfo[]>([]);
+  const [stages, setStages] = useState<{ id: number; name: string; order: number }[]>([]);
   const [treeDefault, setTreeDefault] = useState<"tasks-only" | "tasks-subtasks" | "all">("all");
   const [collapsedIds, setCollapsedIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
@@ -122,7 +127,14 @@ export default function List() {
   const [bulkWorking, setBulkWorking] = useState(false);
   const [bulkNotice, setBulkNotice] = useState("");
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
-  const [statusMenu, setStatusMenu] = useState<{ x: number; y: number; taskId: number; pendingStatusId: number } | null>(null);
+  // ADR-0010: pending assignment is exactly one of leaf Status / empty Stage.
+  const [statusMenu, setStatusMenu] = useState<{
+    x: number;
+    y: number;
+    taskId: number;
+    pendingStatusId: number | null;
+    pendingStageId?: number | null;
+  } | null>(null);
   const [statusSaving, setStatusSaving] = useState(false);
   const canCreate = auth.role !== "guest";
   const canReorder = auth.role !== "guest";
@@ -137,7 +149,12 @@ export default function List() {
             headers: { Authorization: `Bearer ${auth.accessToken}` },
           })
             .then((r) => (r.ok ? r.json() : null))
-            .then((sp) => setStatuses(sp?.statuses ?? []));
+            .then((sp) => {
+              setStatuses(sp?.statuses ?? []);
+              setStages(
+                (sp?.stages ?? []).slice().sort((a: { order: number }, b: { order: number }) => a.order - b.order)
+              );
+            });
         }
       })
       .catch(() => undefined);
@@ -509,7 +526,11 @@ export default function List() {
   const handleStatusMenuSave = async () => {
     if (!statusMenu || !auth.accessToken) return;
     const task = taskById.get(statusMenu.taskId);
-    if (!task || statusMenu.pendingStatusId === task.status_id) {
+    const unchanged =
+      !!task &&
+      (statusMenu.pendingStatusId ?? null) === (task.status_id ?? null) &&
+      (statusMenu.pendingStageId ?? null) === (task.stage_id ?? null);
+    if (!task || unchanged) {
       setStatusMenu(null);
       return;
     }
@@ -521,7 +542,10 @@ export default function List() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${auth.accessToken}`,
         },
-        body: JSON.stringify({ status_id: statusMenu.pendingStatusId }),
+        body: JSON.stringify({
+          status_id: statusMenu.pendingStatusId,
+          stage_id: statusMenu.pendingStageId ?? null,
+        }),
       });
       if (!r.ok) {
         const err = await r.json().catch(() => ({}));
@@ -901,7 +925,13 @@ export default function List() {
                         e.preventDefault();
                         e.stopPropagation();
                         setContextMenu(null);
-                        setStatusMenu({ x: e.clientX, y: e.clientY, taskId: t.task_id, pendingStatusId: t.status_id });
+                        setStatusMenu({
+                          x: e.clientX,
+                          y: e.clientY,
+                          taskId: t.task_id,
+                          pendingStatusId: t.status_id ?? null,
+                          pendingStageId: t.stage_id ?? null,
+                        });
                       }}
                       className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container border border-subtle hover:bg-surface-container-high transition-colors text-[11px] font-medium text-on-surface max-w-full"
                       title={`Status: ${t.status_name || "Status"} — click to edit, right-click to change status`}
@@ -909,7 +939,13 @@ export default function List() {
                       <span className={`w-2 h-2 rounded-full shrink-0 ${statusDot(t.status_id)}`} />
                       <span className="truncate">{t.status_name || "Status"}</span>
                       {(() => {
-                        const sig = statusSignals.get(t.status_id);
+                        // ADR-0010: direct empty-Stage assignments show ● 100%.
+                        const sig =
+                          t.status_id != null
+                            ? statusSignals.get(t.status_id)
+                            : t.stage_id != null
+                              ? { ...emptyStageSignal(), label: "directly assigned", milestone: false }
+                              : undefined;
                         if (!sig) return null;
                         return (
                           <span
@@ -1130,27 +1166,85 @@ export default function List() {
                 {st.wbs || `#${st.task_id}`} · {st.title} (now: {st.status_name})
               </div>
               <div className="max-h-56 overflow-y-auto py-1">
-                {statuses.length === 0 && (
+                {statuses.length === 0 && stages.length === 0 && (
                   <div className="px-3 py-2 text-on-surface-variant">No statuses in this project's profile.</div>
                 )}
-                {statuses.map((s) => (
-                  <button
-                    key={s.id}
-                    role="menuitemradio"
-                    aria-checked={statusMenu.pendingStatusId === s.id}
-                    onClick={() => setStatusMenu((m) => (m ? { ...m, pendingStatusId: s.id } : m))}
-                    className={`w-full flex items-center justify-between px-3 py-1.5 hover:bg-surface-container text-left ${
-                      statusMenu.pendingStatusId === s.id ? "bg-primary-fixed/30 font-semibold" : ""
-                    }`}
-                  >
-                    <span className="flex items-center gap-2 min-w-0">
-                      <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${statusDot(s.id)}`} />
-                      <span className="truncate">{s.name}</span>
-                      {s.is_done && <span className="text-[10px] text-tertiary">· done</span>}
-                    </span>
-                    {statusMenu.pendingStatusId === s.id && <span className="text-primary">✓</span>}
-                  </button>
-                ))}
+                {buildStatusDropdownSections(stages, statuses).map((sec) =>
+                  sec.kind === "group" ? (
+                    <div key={`g${sec.stageId}`}>
+                      <div className="px-3 pt-2 text-[10px] font-semibold uppercase tracking-wide text-on-surface-variant">
+                        {sec.stageName}
+                      </div>
+                      {sec.leaves.map((l) => {
+                        const s = statuses.find((x) => x.id === l.statusId);
+                        const active =
+                          statusMenu.pendingStatusId === l.statusId && (statusMenu.pendingStageId ?? null) == null;
+                        return (
+                          <button
+                            key={l.value}
+                            role="menuitemradio"
+                            aria-checked={active}
+                            onClick={() =>
+                              setStatusMenu((m) =>
+                                m ? { ...m, pendingStatusId: l.statusId, pendingStageId: null } : m
+                              )
+                            }
+                            className={`w-full flex items-center justify-between px-3 py-1.5 hover:bg-surface-container text-left ${
+                              active ? "bg-primary-fixed/30 font-semibold" : ""
+                            }`}
+                          >
+                            <span className="flex items-center gap-2 min-w-0">
+                              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${statusDot(l.statusId)}`} />
+                              <span className="truncate">{l.label}</span>
+                              {s?.is_done && <span className="text-[10px] text-tertiary">· done</span>}
+                            </span>
+                            {active && <span className="text-primary">✓</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : sec.kind === "stage-row" ? (
+                    <button
+                      key={sec.value}
+                      role="menuitemradio"
+                      aria-checked={statusMenu.pendingStageId === sec.stageId}
+                      onClick={() =>
+                        setStatusMenu((m) =>
+                          m ? { ...m, pendingStatusId: null, pendingStageId: sec.stageId } : m
+                        )
+                      }
+                      className={`w-full flex items-center justify-between px-3 py-1.5 hover:bg-surface-container text-left ${
+                        statusMenu.pendingStageId === sec.stageId ? "bg-primary-fixed/30 font-semibold" : ""
+                      }`}
+                    >
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${statusDot(null)}`} />
+                        <span className="truncate">{sec.label}</span>
+                      </span>
+                      {statusMenu.pendingStageId === sec.stageId && <span className="text-primary">✓</span>}
+                    </button>
+                  ) : (
+                    <button
+                      key={sec.value}
+                      role="menuitemradio"
+                      aria-checked={statusMenu.pendingStatusId === sec.statusId}
+                      onClick={() =>
+                        setStatusMenu((m) =>
+                          m ? { ...m, pendingStatusId: sec.statusId, pendingStageId: null } : m
+                        )
+                      }
+                      className={`w-full flex items-center justify-between px-3 py-1.5 hover:bg-surface-container text-left ${
+                        statusMenu.pendingStatusId === sec.statusId ? "bg-primary-fixed/30 font-semibold" : ""
+                      }`}
+                    >
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${statusDot(sec.statusId)}`} />
+                        <span className="truncate">{sec.label}</span>
+                      </span>
+                      {statusMenu.pendingStatusId === sec.statusId && <span className="text-primary">✓</span>}
+                    </button>
+                  )
+                )}
               </div>
               <div className="flex justify-end gap-2 px-3 py-2 border-t border-subtle">
                 <button
@@ -1162,7 +1256,11 @@ export default function List() {
                 </button>
                 <button
                   onClick={() => void handleStatusMenuSave()}
-                  disabled={statusSaving || statusMenu.pendingStatusId === st.status_id}
+                  disabled={
+                    statusSaving ||
+                    ((statusMenu.pendingStatusId ?? null) === (st.status_id ?? null) &&
+                      (statusMenu.pendingStageId ?? null) === (st.stage_id ?? null))
+                  }
                   className="px-3 py-1.5 rounded bg-primary-container hover:bg-primary text-on-primary font-medium disabled:opacity-50"
                 >
                   {statusSaving ? "Saving…" : "Save"}

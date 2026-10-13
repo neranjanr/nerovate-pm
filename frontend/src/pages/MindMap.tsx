@@ -3,7 +3,13 @@ import { useLocation, useParams } from "react-router-dom";
 import { useAuth } from "../stores/auth";
 import TaskDrawer from "../components/TaskDrawer";
 import TaskDialog from "../components/TaskDialog";
-import { buildStatusSignalMap } from "../utils/statusSignals";
+import {
+  buildStatusDropdownSections,
+  buildStatusSignalMap,
+  emptyStageSignal,
+  parseStatusSelection,
+  statusSelectionValue,
+} from "../utils/statusSignals";
 import {
   ancestorKeys,
   buildMindMapForest,
@@ -24,7 +30,9 @@ interface ApiTask {
   parent_id?: number | null;
   depth: number;
   title: string;
-  status_id: number;
+  // ADR-0010: null when directly assigned onto an empty Stage (see stage_id).
+  status_id: number | null;
+  stage_id?: number | null;
   assignee_ids?: number[];
   due_date?: string | null;
   is_blocked?: boolean;
@@ -245,6 +253,7 @@ export default function MindMap() {
           depth: t.depth,
           title: t.title,
           status_id: t.status_id,
+          stage_id: t.stage_id ?? null,
           assignee_ids: t.assignee_ids ?? [],
           due_date: t.due_date ?? null,
           is_blocked: !!t.is_blocked,
@@ -315,7 +324,9 @@ export default function MindMap() {
   function nodeBaseColor(n: MindNode): string {
     if (n.type === "category" || n.type === "project") return normalizeHex(n.color);
     const st = n.statusId != null ? statusById.get(n.statusId) : undefined;
-    const stage = st?.stage_id != null ? stageById.get(st.stage_id) : undefined;
+    // ADR-0010: direct assignments tint from their own Stage base color.
+    const directStage = n.statusId == null && n.stageId != null ? stageById.get(n.stageId) : undefined;
+    const stage = st?.stage_id != null ? stageById.get(st.stage_id) : directStage;
     return normalizeHex(stage?.color_base ?? st?.shade ?? st?.color ?? "#64748b");
   }
 
@@ -520,20 +531,26 @@ export default function MindMap() {
       if (seen.has(cur.id)) continue;
       seen.add(cur.id);
       total++;
-      if (statusById.get(cur.status_id)?.is_done) done++;
+      if (cur.status_id != null && statusById.get(cur.status_id)?.is_done) done++;
       for (const t of tasks) if (t.parent_id === cur.id) stack.push(t);
     }
     return { total, done };
   };
 
-  const handleChangeStatus = async (taskId: number, statusId: number) => {
+  // ADR-0010: the inspector select addresses leaves and empty Stages.
+  const handleChangeStatus = async (
+    taskId: number,
+    target: { statusId: number } | { stageId: number }
+  ) => {
     if (!auth.accessToken) return;
     setStatusSaving(true);
     try {
       const r = await fetch(`/api/v1/tasks/${taskId}/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.accessToken}` },
-        body: JSON.stringify({ status_id: statusId }),
+        body: JSON.stringify(
+          "stageId" in target ? { stage_id: target.stageId } : { status_id: target.statusId }
+        ),
       });
       if (!r.ok) throw new Error("Status change failed");
       setRefreshKey((k) => k + 1);
@@ -542,6 +559,29 @@ export default function MindMap() {
     } finally {
       setStatusSaving(false);
     }
+  };
+
+  /** Synthetic StatusInfo/Signal for nodes directly on an empty Stage. */
+  const directStatusFor = (n: {
+    statusId?: number | null;
+    stageId?: number | null;
+  }): StatusInfo | undefined => {
+    if (n.statusId != null || n.stageId == null) return undefined;
+    const st = stageById.get(n.stageId);
+    if (!st) return undefined;
+    return {
+      id: -st.id,
+      name: `${st.name} ● 100%`,
+      order: 0,
+      stage_id: st.id,
+      shade: st.color_base,
+      color: st.color_base,
+    };
+  };
+  const directSignalFor = (n: { statusId?: number | null; stageId?: number | null }) => {
+    if (n.statusId != null || n.stageId == null || !stageById.get(n.stageId)) return undefined;
+    const sig = emptyStageSignal();
+    return { glyph: sig.glyph, weight: sig.weight, label: "directly assigned", milestone: false };
   };
 
   const handleDelete = async (taskId: number) => {
@@ -756,8 +796,8 @@ export default function MindMap() {
                   branchCap={branchCaps.get(p.key)}
                   selected={selectedKey === p.key}
                   highlighted={searchMatches[matchIdx] === p.key && query.trim().length > 0}
-                  status={p.statusId != null ? statusById.get(p.statusId) : undefined}
-                  signal={p.statusId != null ? signals.get(p.statusId) : undefined}
+                  status={p.statusId != null ? statusById.get(p.statusId) : directStatusFor(p)}
+                  signal={p.statusId != null ? signals.get(p.statusId) : directSignalFor(p)}
                   dimmed={p.dimmed}
                   onSelect={() => { setSelectedKey(p.key); setInspectorOpen(true); }}
                   onToggle={() => toggleCollapse(p.key)}
@@ -807,8 +847,21 @@ export default function MindMap() {
                 ancestors={selectedAncestors.map((k) => forest.byKey.get(k)).filter((n): n is MindNode => !!n)}
                 task={selectedTask}
                 statuses={statuses}
-                signal={selectedNode?.statusId != null ? signals.get(selectedNode.statusId) : undefined}
-                statusName={selectedNode?.statusId != null ? statusById.get(selectedNode.statusId)?.name : undefined}
+                stages={stages}
+                signal={
+                  selectedNode?.statusId != null
+                    ? signals.get(selectedNode.statusId)
+                    : selectedNode
+                      ? directSignalFor(selectedNode)
+                      : undefined
+                }
+                statusName={
+                  selectedNode?.statusId != null
+                    ? statusById.get(selectedNode.statusId)?.name
+                    : selectedNode && selectedNode.stageId != null
+                      ? (stageById.get(selectedNode.stageId)?.name ?? `Stage ${selectedNode.stageId}`)
+                      : undefined
+                }
                 progress={selectedTask ? descendantProgress(selectedTask.id) : null}
                 canEdit={canEdit}
                 saving={statusSaving}
@@ -826,7 +879,15 @@ export default function MindMap() {
                   setCreate({ projectId: selectedTask.project_id, parentId: selectedTask.id, kind });
                 }}
                 onSelectAncestor={(k) => { expandAncestors(k); setSelectedKey(k); focusNode(k); }}
-                onChangeStatus={(sid) => selectedTask && handleChangeStatus(selectedTask.id, sid)}
+                onChangeStatus={(value) => {
+                  if (!selectedTask) return;
+                  const sel = parseStatusSelection(value);
+                  if (!sel) return;
+                  void handleChangeStatus(
+                    selectedTask.id,
+                    sel.kind === "stage" ? { stageId: sel.stageId } : { statusId: sel.statusId }
+                  );
+                }}
               />
             </aside>
           )}
@@ -1034,6 +1095,7 @@ function Inspector(props: {
   ancestors: MindNode[];
   task?: ApiTask | null;
   statuses: StatusInfo[];
+  stages: StageInfo[];
   signal?: { glyph: string; weight: number; label: string; milestone: boolean };
   statusName?: string;
   progress?: { total: number; done: number } | null;
@@ -1045,9 +1107,17 @@ function Inspector(props: {
   onDrawer: () => void;
   onAddChild: (kind: "Subtask" | "Microtask") => void;
   onSelectAncestor: (key: string) => void;
-  onChangeStatus: (sid: number) => void;
+  onChangeStatus: (value: string) => void;
 }) {
   const { node, ancestors, task, statuses, signal, statusName, progress, canEdit, saving } = props;
+  const sections = buildStatusDropdownSections(props.stages, statuses);
+  const currentValue = statusSelectionValue(
+    task?.status_id != null
+      ? { kind: "status", statusId: task.status_id }
+      : task?.stage_id != null
+        ? { kind: "stage", stageId: task.stage_id }
+        : null
+  );
   if (!node) {
     return (
       <div className="p-4 text-xs text-on-surface-variant">
@@ -1114,14 +1184,31 @@ function Inspector(props: {
                 <span className="text-on-surface-variant">Status:</span>
                 <select
                   aria-label="change status"
-                  value={String(task.status_id)}
+                  value={currentValue}
                   disabled={saving}
-                  onChange={(e) => props.onChangeStatus(Number(e.target.value))}
+                  onChange={(e) => props.onChangeStatus(e.target.value)}
                   className="flex-1 px-2 py-1.5 rounded bg-surface-container-lowest border border-subtle"
                 >
-                  {statuses.map((s) => (
-                    <option key={s.id} value={String(s.id)}>{s.name}{s.is_done ? " (done)" : ""}</option>
-                  ))}
+                  <option value="">Select status…</option>
+                  {sections.map((sec) =>
+                    sec.kind === "group" ? (
+                      <optgroup key={`g${sec.stageId}`} label={sec.stageName}>
+                        {sec.leaves.map((l) => {
+                          const s = statuses.find((x) => x.id === l.statusId);
+                          return (
+                            <option key={l.value} value={l.value}>
+                              {l.label}
+                              {s?.is_done ? " (done)" : ""}
+                            </option>
+                          );
+                        })}
+                      </optgroup>
+                    ) : (
+                      <option key={sec.value} value={sec.value}>
+                        {sec.label}
+                      </option>
+                    )
+                  )}
                 </select>
               </label>
             )}

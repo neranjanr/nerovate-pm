@@ -74,6 +74,7 @@ def init_db() -> None:
     _migrate_task_history_note()
     _migrate_status_stages()
     _migrate_status_kind()
+    _migrate_task_stage_column()
 
     with Session(engine) as session:
         from app.auth.models import User
@@ -543,6 +544,175 @@ def _migrate_task_history_note() -> None:
                 session.commit()
             except Exception:
                 pass
+
+
+def _rebuild_table_from_model(table_name: str) -> None:
+    """Data-preserving rebuild of one table from its current SQLModel DDL.
+
+    Used when a migration must relax NOT NULL (SQLite cannot ALTER COLUMN):
+    renames the old table aside, recreates it from
+    ``SQLModel.metadata.tables[table_name]``, copies shared columns, drops
+    the legacy copy, and replays saved index DDL. No-op when the table is
+    missing (fresh boot creates it via create_all first).
+    """
+    from sqlalchemy import text
+
+    with Session(engine) as session:
+        try:
+            legacy_cols = [r[1] for r in session.execute(text(f'PRAGMA table_info("{table_name}")')).all()]
+        except Exception:
+            return
+        if not legacy_cols:
+            return
+        try:
+            idx_sqls = [
+                r[0]
+                for r in session.execute(
+                    text("SELECT sql FROM sqlite_master WHERE type='index' AND tbl_name=:t AND sql IS NOT NULL").bindparams(
+                        t=table_name
+                    )
+                ).all()
+            ]
+        except Exception:
+            idx_sqls = []
+        legacy = f"{table_name}_legacy_0010"
+        try:
+            session.execute(text(f'DROP TABLE IF EXISTS "{legacy}"'))
+            session.commit()
+            session.execute(text(f'ALTER TABLE "{table_name}" RENAME TO "{legacy}"'))
+            session.commit()
+        except Exception:
+            try:
+                session.rollback()
+            except Exception:
+                pass
+            return
+        try:
+            # RENAME carries index names along, which would collide with the
+            # recreated table's indexes: drop the legacy copies first.
+            legacy_indexes = [
+                r[0]
+                for r in session.execute(
+                    text("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name=:t").bindparams(
+                        t=legacy
+                    )
+                ).all()
+            ]
+            for iname in legacy_indexes:
+                try:
+                    session.execute(text(f'DROP INDEX IF EXISTS "{iname}"'))
+                    session.commit()
+                except Exception:
+                    try:
+                        session.rollback()
+                    except Exception:
+                        pass
+            # create_all (not single-table DDL): FK targets such as projects
+            # or statuses must resolve at compile time, and sibling tables
+            # already exist on real legacy files.
+            SQLModel.metadata.create_all(engine)
+        except Exception:
+            try:
+                session.execute(text(f'ALTER TABLE "{legacy}" RENAME TO "{table_name}"'))
+                session.commit()
+            except Exception:
+                pass
+            return
+        try:
+            new_cols = [c.name for c in SQLModel.metadata.tables[table_name].columns]
+            common = [c for c in new_cols if c in legacy_cols]
+            cols = ", ".join(f'"{c}"' for c in common)
+            session.execute(text(f'INSERT INTO "{table_name}" ({cols}) SELECT {cols} FROM "{legacy}"'))
+            session.commit()
+        except Exception:
+            try:
+                session.rollback()
+            except Exception:
+                pass
+            return
+        try:
+            session.execute(text(f'DROP TABLE "{legacy}"'))
+            session.commit()
+        except Exception:
+            pass
+        for ddl in idx_sqls:
+            try:
+                session.execute(text(ddl))
+                session.commit()
+            except Exception:
+                try:
+                    session.rollback()
+                except Exception:
+                    pass
+
+
+def _migrate_task_stage_column() -> None:
+    """ADR-0010 additive migration: direct assignment onto empty Stages.
+
+    - Adds tasks.stage_id when missing (older sqlite files).
+    - Adds task_history.from_stage_id / to_stage_id when missing.
+    - Relaxes tasks.status_id and task_history.to_status_id from NOT NULL to
+      nullable via data-preserving rebuild (stage-assigned rows store NULL
+      on the leaf side). Fresh DBs already match the model: no-op there.
+    Idempotent: safe to run on every boot and in tests.
+    """
+    from sqlalchemy import text
+
+    from app.tasks import models as _task_models  # noqa: F401
+
+    with Session(engine) as session:
+        try:
+            task_cols = {r[1]: r for r in session.execute(text("PRAGMA table_info(tasks)")).all()}
+        except Exception:
+            return
+        if not task_cols:
+            return
+        needs_tasks_rebuild = bool(task_cols.get("status_id") and task_cols["status_id"][3] == 1)
+        if "stage_id" not in task_cols and not needs_tasks_rebuild:
+            try:
+                session.execute(text("ALTER TABLE tasks ADD COLUMN stage_id INTEGER"))
+                session.commit()
+            except Exception:
+                pass
+        try:
+            hist_cols = {r[1]: r for r in session.execute(text("PRAGMA table_info(task_history)")).all()}
+        except Exception:
+            hist_cols = {}
+        needs_hist_rebuild = bool(hist_cols.get("to_status_id") and hist_cols["to_status_id"][3] == 1)
+        for col in ("from_stage_id", "to_stage_id"):
+            if hist_cols and col not in hist_cols and not needs_hist_rebuild:
+                try:
+                    session.execute(text(f"ALTER TABLE task_history ADD COLUMN {col} INTEGER"))
+                    session.commit()
+                except Exception:
+                    pass
+    if needs_tasks_rebuild:
+        _rebuild_table_from_model("tasks")
+    if needs_hist_rebuild:
+        _rebuild_table_from_model("task_history")
+    # Belt-and-braces: plain ADD COLUMN for any file that skipped rebuild.
+    with Session(engine) as session:
+        try:
+            task_col_names = [r[1] for r in session.execute(text("PRAGMA table_info(tasks)")).all()]
+        except Exception:
+            task_col_names = []
+        if task_col_names and "stage_id" not in task_col_names:
+            try:
+                session.execute(text("ALTER TABLE tasks ADD COLUMN stage_id INTEGER"))
+                session.commit()
+            except Exception:
+                pass
+        try:
+            hist_col_names = [r[1] for r in session.execute(text("PRAGMA table_info(task_history)")).all()]
+        except Exception:
+            hist_col_names = []
+        for col in ("from_stage_id", "to_stage_id"):
+            if hist_col_names and col not in hist_col_names:
+                try:
+                    session.execute(text(f"ALTER TABLE task_history ADD COLUMN {col} INTEGER"))
+                    session.commit()
+                except Exception:
+                    pass
 
 
 def _tint_hex(base: str, idx: int, total: int) -> str:

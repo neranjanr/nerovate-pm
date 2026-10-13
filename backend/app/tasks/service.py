@@ -82,11 +82,29 @@ def wbs_for_task(session: Session, task: Task) -> str:
     return m.get(task.id, "")
 
 
-def is_done_status(session: Session, status_id: int) -> bool:
+def is_done_status(session: Session, status_id: int | None) -> bool:
+    """Done = leaf Status flagged is_done. None (directly-assigned empty
+    Stage, ADR-0010) is never done."""
+    if status_id is None:
+        return False
     from app.statuses.models import Status
 
     st = session.get(Status, status_id)
     return bool(st and st.is_done)
+
+
+def stage_id_for_task(session: Session, task: Task) -> int | None:
+    """Owning Stage of a task: direct stage_id for ADR-0010 empty-Stage
+    assignments, else the stage of its leaf Status."""
+    direct = getattr(task, "stage_id", None)
+    if direct is not None:
+        return direct
+    if task.status_id is None:
+        return None
+    from app.statuses.models import Status
+
+    st = session.get(Status, task.status_id)
+    return st.stage_id if st else None
 
 
 def task_blocker_ids(session: Session, task_id: int) -> list[int]:

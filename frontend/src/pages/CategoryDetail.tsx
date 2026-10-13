@@ -352,9 +352,17 @@ export default function CategoryDetail() {
               <div className="space-y-2">
                 {stages.map((st) => (
                   <div key={st.id} className="rounded border border-subtle bg-surface-container-lowest px-3 py-2">
-                    <div className="flex items-center gap-2 text-sm">
+                    <div className="flex items-center gap-2 text-sm flex-wrap">
                       <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: st.color_base }} />
                       <strong>{st.name}</strong>
+                      {profileStatuses.filter((s) => s.stage_id === st.id).length === 0 && (
+                        <span
+                          title="Empty Stage: directly assignable at ● 100%"
+                          className="text-[10px] px-1.5 py-0.5 rounded border border-emerald-300 bg-emerald-50 text-emerald-900"
+                        >
+                          Directly assignable ● 100%
+                        </span>
+                      )}
                     </div>
                     <ul className="mt-2 space-y-1">
                       {profileStatuses

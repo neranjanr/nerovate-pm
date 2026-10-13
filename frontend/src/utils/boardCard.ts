@@ -11,3 +11,9 @@ export function boardStatusMoveBody(
 ): { status_id: number; start_date: string } {
   return { status_id: statusId, start_date: today };
 }
+
+/** ADR-0010: dropping onto an empty-Stage column assigns the Stage directly
+ * (no Status Period dates — periods are leaf-only). */
+export function boardStageMoveBody(stageId: number): { stage_id: number } {
+  return { stage_id: stageId };
+}

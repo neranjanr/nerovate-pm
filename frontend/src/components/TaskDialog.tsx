@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../stores/auth";
+import {
+  buildStatusDropdownSections,
+  parseStatusSelection,
+  statusSelectionValue,
+} from "../utils/statusSignals";
 
 export type TaskLevel = 0 | 1 | 2;
 export type TaskDialogMode = "create" | "edit";
@@ -14,6 +19,8 @@ interface TaskDialogProps {
   initialLevel?: TaskLevel;
   /** Create mode: pre-selected leaf Status (context-aware Add Task from Kanban). */
   initialStatusId?: number | null;
+  /** Create mode: pre-selected empty Stage for direct assignment (ADR-0010). */
+  initialStageId?: number | null;
   /** Compat: "Task" | "Subtask" | "Microtask" label used by old callers. */
   initialKind?: "Task" | "Subtask" | "Microtask";
   parentTitle?: string | null;
@@ -64,7 +71,8 @@ interface TaskOut {
   depth: number;
   title: string;
   description_md: string;
-  status_id: number;
+  status_id: number | null;
+  stage_id?: number | null;
   priority: string;
   start_date: string;
   due_date?: string | null;
@@ -119,6 +127,7 @@ export default function TaskDialog({
   initialParentId = null,
   initialLevel,
   initialStatusId = null,
+  initialStageId = null,
   initialKind,
   parentTitle = null,
   onClose,
@@ -135,7 +144,10 @@ export default function TaskDialog({
   const [description, setDescription] = useState("");
   const [statuses, setStatuses] = useState<ProfileStatus[]>([]);
   const [stages, setStages] = useState<StageInfo[]>([]);
+  // ADR-0010: exactly one assignable node. Leaf Status <-> statusId;
+  // direct empty-Stage assignment <-> stageId (statusId null).
   const [statusId, setStatusId] = useState<number | null>(null);
+  const [stageId, setStageId] = useState<number | null>(null);
   const [defaultStatusName, setDefaultStatusName] = useState<string | null>(null);
   const [priority, setPriority] = useState<string>("normal");
   const [members, setMembers] = useState<MemberInfo[]>([]);
@@ -205,19 +217,20 @@ export default function TaskDialog({
             const sortedStatuses: ProfileStatus[] = (sp.statuses ?? [])
               .slice()
               .sort((a: ProfileStatus, b: ProfileStatus) => a.order - b.order);
+            const sortedStages: StageInfo[] = (sp.stages ?? [])
+              .slice()
+              .sort((a: StageInfo, b: StageInfo) => a.order - b.order);
             setStatuses(sortedStatuses);
-            setStages(
-              (sp.stages ?? []).slice().sort((a: StageInfo, b: StageInfo) => a.order - b.order)
-            );
-            if (statusId == null && sortedStatuses.length > 0 && !isEdit) {
-              // Context-aware preset (e.g. Kanban "+ Add Task") wins over first-leaf default.
+            setStages(sortedStages);
+            if (statusId == null && stageId == null && !isEdit) {
+              // Context-aware presets (e.g. Kanban "+ Add Task") win.
               if (initialStatusId != null && sortedStatuses.some((s) => s.id === initialStatusId)) {
                 setStatusId(initialStatusId);
-              } else {
+              } else if (initialStageId != null && sortedStages.some((st) => st.id === initialStageId)) {
+                setStageId(initialStageId);
+              } else if (sortedStatuses.length > 0) {
                 setStatusId(sortedStatuses[0].id);
               }
-            } else if (!isEdit && initialStatusId != null && sortedStatuses.some((s) => s.id === initialStatusId)) {
-              setStatusId(initialStatusId);
             }
           }
         }
@@ -226,11 +239,20 @@ export default function TaskDialog({
         );
         if (cancelled) return;
         if (defaults) {
-          setDefaultStatusName(defaults.status_name ?? null);
-          if (!isEdit) {
-            if (statusId == null && typeof defaults.status_id === "number") {
-              setStatusId(defaults.status_id);
+          setDefaultStatusName(defaults.status_name ?? defaults.stage_name ?? null);
+          // Explicit presets win over the server default (context-aware Add Task).
+          const hasPreset = initialStatusId != null || initialStageId != null;
+          if (!isEdit && !hasPreset) {
+            if (statusId == null && stageId == null) {
+              if (typeof defaults.status_id === "number") {
+                setStatusId(defaults.status_id);
+              } else if (typeof defaults.stage_id === "number") {
+                // ADR-0010: profile with no leaves defaults to its first empty Stage.
+                setStageId(defaults.stage_id);
+              }
             }
+            setTaskStart(defaults.start_date ?? today);
+          } else if (!isEdit) {
             setTaskStart(defaults.start_date ?? today);
           }
         } else if (!isEdit && !taskStart) {
@@ -267,7 +289,8 @@ export default function TaskDialog({
         setLevel(t.depth as TaskLevel);
         setTitle(t.title);
         setDescription(t.description_md || "");
-        setStatusId(t.status_id);
+        setStatusId(t.status_id ?? null);
+        setStageId(t.stage_id ?? null);
         setPriority(t.priority || "normal");
         setAssigneeId(t.assignee_ids?.[0] ?? null);
         setWatcherIds(t.watcher_ids ?? []);
@@ -371,9 +394,52 @@ export default function TaskDialog({
     return m;
   }, [statuses]);
 
+  const stageNameById = useMemo(() => {
+    const m = new Map<number, string>();
+    for (const st of stages) m.set(st.id, st.name);
+    return m;
+  }, [stages]);
+
+  // ADR-0010 grouped dropdown: empty Stages selectable, non-empty grouped.
+  const statusSections = useMemo(
+    () => buildStatusDropdownSections(stages, statuses),
+    [stages, statuses]
+  );
+
+  const assignmentValue = statusSelectionValue(
+    statusId != null
+      ? { kind: "status", statusId }
+      : stageId != null
+        ? { kind: "stage", stageId }
+        : null
+  );
+
+  function applyAssignmentSelection(value: string) {
+    const sel = parseStatusSelection(value);
+    if (!sel) {
+      setStatusId(null);
+      setStageId(null);
+      return;
+    }
+    if (sel.kind === "stage") {
+      setStageId(sel.stageId);
+      setStatusId(null);
+    } else {
+      setStatusId(sel.statusId);
+      setStageId(null);
+    }
+  }
+
+  const assignmentName =
+    statusId != null
+      ? (statusNameById.get(statusId) ?? `Status #${statusId}`)
+      : stageId != null
+        ? (stageNameById.get(stageId) ?? `Stage #${stageId}`)
+        : "";
+
   function validate(): string {
     if (!title.trim()) return "Title required";
-    if (statusId == null) return "Status required";
+    if (statusId == null && stageId == null) return "Status required";
     if (!PRIORITIES.includes(priority as (typeof PRIORITIES)[number])) return "Invalid priority";
     if (level > 0 && parentId == null) {
       return level === 1 ? "Parent Task required for Subtask" : "Parent Subtask required for Microtask";
@@ -403,6 +469,7 @@ export default function TaskDialog({
           title: title.trim(),
           description_md: description,
           status_id: statusId,
+          stage_id: stageId,
           priority,
           start_date: taskStart || today,
           due_date: taskDue || null,
@@ -426,9 +493,10 @@ export default function TaskDialog({
           });
           if (!cr.ok) warnings.push("Task saved but initial comment failed");
         }
+        // Period dates are leaf-Status only; direct Stage assignments skip this.
         const periodTouched =
           (periodStart || "") !== (taskStart || "") || periodDue !== "" || periodActual !== "";
-        if (periodTouched && statusId != null) {
+        if (periodTouched && statusId != null && stageId == null) {
           const sr = await fetch(`/api/v1/tasks/${created.id}/status`, {
             method: "POST",
             headers,
@@ -466,18 +534,29 @@ export default function TaskDialog({
         throw new Error(err.detail || `Save failed: ${put.status}`);
       }
       const updated: TaskOut = await put.json();
-      const statusChanged = statusId != null && statusId !== updated.status_id;
+      // PUT covers core fields only; assignment moves go through POST /status
+      // below (single history event + period upsert), as before.
+      const updatedNode =
+        updated.status_id != null
+          ? `status:${updated.status_id}`
+          : updated.stage_id != null
+            ? `stage:${updated.stage_id}`
+            : "";
+      const statusChanged = assignmentValue !== "" && assignmentValue !== updatedNode;
       const currPeriod = updated.status_periods?.find((p) => p.status_id === updated.status_id);
       const periodChanged =
         (periodStart || "") !== (currPeriod?.start_date || updated.start_date || "") ||
         (periodDue || "") !== (currPeriod?.due_date || "") ||
         (periodActual || "") !== (currPeriod?.actual_end_date || "");
-      if ((statusChanged && statusId != null) || periodChanged) {
+      // Period dates are leaf-Status only; stage moves skip the period POST.
+      const needsStatusPost = statusChanged || (periodChanged && stageId == null);
+      if (needsStatusPost && assignmentValue !== "") {
         const sr = await fetch(`/api/v1/tasks/${taskId}/status`, {
           method: "POST",
           headers,
           body: JSON.stringify({
-            status_id: statusId ?? updated.status_id,
+            status_id: statusId,
+            stage_id: stageId,
             start_date: periodStart || null,
             due_date: periodDue || null,
             actual_end_date: periodActual || null,
@@ -548,7 +627,11 @@ export default function TaskDialog({
     setComments((prev) => prev.filter((x) => x.id !== id));
   }
 
-  const canSave = !saving && title.trim().length > 0 && (level === 0 || parentId != null) && statusId != null;
+  const canSave =
+    !saving &&
+    title.trim().length > 0 &&
+    (level === 0 || parentId != null) &&
+    (statusId != null || stageId != null);
 
   // Current user id for own-comment gating (GET /auth/me returns {id,...}).
   useEffect(() => {
@@ -839,40 +922,25 @@ export default function TaskDialog({
               <label className="block text-xs text-on-surface-variant">
                 Status (from Category profile, grouped by Stage)
                 <select
-                  value={statusId ?? ""}
-                  onChange={(e) => setStatusId(e.target.value ? Number(e.target.value) : null)}
+                  value={assignmentValue}
+                  onChange={(e) => applyAssignmentSelection(e.target.value)}
                   className="mt-1 w-full text-sm bg-surface-container border border-subtle rounded-lg px-2.5 py-1.5 text-on-surface"
                 >
                   <option value="">Select status…{defaultStatusName ? ` (default ${defaultStatusName})` : ""}</option>
-                  {stages.length > 0 ? (
-                    <>
-                      {stages.map((st) => {
-                        const leafs = statuses.filter((s) => s.stage_id === st.id);
-                        if (leafs.length === 0) return null;
-                        return (
-                          <optgroup key={st.id} label={st.name}>
-                            {leafs.map((s) => (
-                              <option key={s.id} value={s.id}>
-                                {s.name}
-                              </option>
-                            ))}
-                          </optgroup>
-                        );
-                      })}
-                      {statuses
-                        .filter((s) => !s.stage_id)
-                        .map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.name}
+                  {statusSections.map((sec) =>
+                    sec.kind === "group" ? (
+                      <optgroup key={`g${sec.stageId}`} label={sec.stageName}>
+                        {sec.leaves.map((l) => (
+                          <option key={l.value} value={l.value}>
+                            {l.label}
                           </option>
                         ))}
-                    </>
-                  ) : (
-                    statuses.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
+                      </optgroup>
+                    ) : (
+                      <option key={sec.value} value={sec.value}>
+                        {sec.label}
                       </option>
-                    ))
+                    )
                   )}
                 </select>
               </label>
@@ -947,8 +1015,13 @@ export default function TaskDialog({
               </div>
               <div className="rounded-xl bg-surface-container/60 border border-subtle p-3 space-y-2">
                 <span className="text-[11px] font-semibold text-on-surface uppercase tracking-wider">
-                  Current Status period{statusId != null ? `: ${statusNameById.get(statusId) ?? statusId}` : ""}
+                  Current Status period{assignmentName ? `: ${assignmentName}` : ""}
                 </span>
+                {stageId != null && (
+                  <p className="text-[11px] text-on-surface-variant">
+                    Direct Stage assignment — Status period dates apply to leaf Statuses only.
+                  </p>
+                )}
                 <div className="grid grid-cols-1 gap-2">
                   <label className="block text-xs text-on-surface-variant">
                     Period Start
