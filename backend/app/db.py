@@ -62,6 +62,7 @@ def init_db() -> None:
     from app.auth import models as _auth_models  # noqa: F401
     from app.categories import models as _cat_models  # noqa: F401
     from app.projects import models as _proj_models  # noqa: F401
+    from app.reminders import models as _reminder_models  # noqa: F401
     from app.statuses import models as _status_models  # noqa: F401
     from app.tasks import models as _task_models  # noqa: F401
 

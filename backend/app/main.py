@@ -6,6 +6,7 @@ from app.auth.router import router as auth_router
 from app.categories.router import router as categories_router
 from app.dashboard.router import router as dashboard_router
 from app.projects.router import router as projects_router
+from app.reminders.router import router as reminders_router
 from app.statuses.router import router as status_router
 from app.statuses.router import stages_router as status_stages_router
 from app.statuses.router import statuses_router as statuses_top_router
@@ -27,6 +28,7 @@ def create_app() -> FastAPI:
     app.include_router(users_router)
     app.include_router(categories_router)
     app.include_router(projects_router)
+    app.include_router(reminders_router)
     app.include_router(dashboard_router)
     app.include_router(status_router)
     app.include_router(status_stages_router)
