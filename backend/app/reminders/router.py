@@ -60,9 +60,33 @@ class ReminderOut(BaseModel):
     task_id: int | None = None
     anchor_project_id: int | None = None
     anchor_title: str | None = None
+    # 03 detach: standalone keeps ex-anchor context.
+    ex_anchor_title: str = ""
+    ex_anchor_project_id: int | None = None
+    is_detached: bool = False
+    detached_at: str | None = None
     created_by: int | None = None
     created_at: str
     updated_at: str
+
+
+class FireOut(BaseModel):
+    reminder: ReminderOut
+    notify_user_ids: list[int] = []
+    follow_up: dict = {}
+
+
+class FollowUpCreate(BaseModel):
+    name: str
+    code: str | None = None
+    category_id: int | None = None
+    description: str = ""
+
+
+class FollowUpOut(BaseModel):
+    reminder: ReminderOut
+    project: dict
+    link: dict | None = None
 
 
 def _now() -> str:
@@ -111,11 +135,35 @@ def _require_write_on_project(project_id: int, current: User, session: Session) 
 
 
 def _can_see(session: Session, reminder: Reminder, user: User) -> bool:
-    """Read gate: project union membership, else anchor roles."""
+    """Read gate: project union membership, else anchor roles.
+
+    03 detach: standalone (both FKs null) stays visible to the creator,
+    admins, and members of the ex-anchor Project while it still exists,
+    so detached nudges keep surfacing in My Reminders.
+    """
     assert reminder.id is not None
     assert user.id is not None
     if user.role == "admin":
         return True
+    if reminder.project_id is None and reminder.task_id is None:
+        if reminder.created_by == user.id:
+            return True
+        ex_pid = getattr(reminder, "ex_anchor_project_id", None)
+        if ex_pid is not None:
+            try:
+                require_project_access(ex_pid, user, session)
+                return True
+            except HTTPException:
+                pass
+            try:
+                from app.projects.models import Project
+
+                proj = session.get(Project, ex_pid)
+                if proj is not None and proj.owner_id == user.id:
+                    return True
+            except Exception:
+                pass
+        return False
     anchor_pid: int | None = None
     if reminder.task_id is not None:
         from app.tasks.models import Task
@@ -162,6 +210,9 @@ def _require_visible(session: Session, reminder: Reminder, user: User) -> None:
 
 def _out(reminder: Reminder, session: Session) -> ReminderOut:
     assert reminder.id is not None
+    from app.reminders.service import is_detached as _is_detached
+
+    detached = _is_detached(reminder)
     anchor_pid: int | None = None
     anchor_title: str | None = None
     if reminder.task_id is not None:
@@ -177,6 +228,9 @@ def _out(reminder: Reminder, session: Session) -> ReminderOut:
         anchor_pid = reminder.project_id
         proj = session.get(Project, reminder.project_id)
         anchor_title = proj.name if proj is not None else None
+    if detached:
+        anchor_pid = anchor_pid or getattr(reminder, "ex_anchor_project_id", None)
+        anchor_title = anchor_title or (reminder.ex_anchor_title or None)
     return ReminderOut(
         id=reminder.id,
         title=reminder.title,
@@ -187,10 +241,35 @@ def _out(reminder: Reminder, session: Session) -> ReminderOut:
         task_id=reminder.task_id,
         anchor_project_id=anchor_pid,
         anchor_title=anchor_title,
+        ex_anchor_title=reminder.ex_anchor_title or "",
+        ex_anchor_project_id=getattr(reminder, "ex_anchor_project_id", None),
+        is_detached=detached,
+        detached_at=getattr(reminder, "detached_at", None),
         created_by=reminder.created_by,
         created_at=reminder.created_at,
         updated_at=reminder.updated_at,
     )
+
+
+def _require_write(session: Session, reminder: Reminder, user: User) -> int | None:
+    """Task edit gate, extended to detached: creator/admin or ex-anchor write."""
+    assert user.id is not None
+    if reminder.task_id is None and reminder.project_id is None:
+        # Detached standalone: creator + admin always; ex-anchor project
+        # writers (non-guest) when that project still exists.
+        if user.role == "admin" or reminder.created_by == user.id:
+            return getattr(reminder, "ex_anchor_project_id", None)
+        ex_pid = getattr(reminder, "ex_anchor_project_id", None)
+        if ex_pid is not None:
+            try:
+                _require_write_on_project(ex_pid, user, session)
+                return ex_pid
+            except HTTPException:
+                pass
+        raise HTTPException(status_code=404, detail="Not found")
+    pid = _resolve_anchor_project_id(session, reminder.project_id, reminder.task_id)
+    _require_write_on_project(pid, user, session)
+    return pid
 
 
 def _visible_reminders(session: Session, user: User) -> list[Reminder]:
@@ -331,8 +410,7 @@ def update_reminder(
     reminder = session.get(Reminder, reminder_id)
     if reminder is None:
         raise HTTPException(status_code=404, detail="Not found")
-    anchor_pid = _resolve_anchor_project_id(session, reminder.project_id, reminder.task_id)
-    _require_write_on_project(anchor_pid, current, session)
+    _require_write(session, reminder, current)
     if body.title is not None:
         title = body.title.strip()
         if not title:
@@ -368,8 +446,7 @@ def _resolve(session: Session, reminder_id: int, to: str, current: User) -> Remi
     reminder = session.get(Reminder, reminder_id)
     if reminder is None:
         raise HTTPException(status_code=404, detail="Not found")
-    anchor_pid = _resolve_anchor_project_id(session, reminder.project_id, reminder.task_id)
-    _require_write_on_project(anchor_pid, current, session)
+    _require_write(session, reminder, current)
     reminder.status = to
     reminder.updated_at = _now()
     session.add(reminder)
@@ -405,8 +482,190 @@ def delete_reminder(
     reminder = session.get(Reminder, reminder_id)
     if reminder is None:
         raise HTTPException(status_code=404, detail="Not found")
-    anchor_pid = _resolve_anchor_project_id(session, reminder.project_id, reminder.task_id)
-    _require_write_on_project(anchor_pid, current, session)
+    _require_write(session, reminder, current)
     session.delete(reminder)
     session.commit()
     return {"id": reminder_id, "deleted": True}
+
+
+@router.post("/{reminder_id}/fire", response_model=FireOut)
+def fire_reminder(
+    reminder_id: int,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Firing notifies Assignee + Watchers + Project Owners (03).
+
+    Read-gated (visible users may fire); never auto-creates follow-up work.
+    The follow_up payload is the one-click offer: source project + kind.
+    """
+    from app.events import publish
+    from app.reminders.service import notify_user_ids, source_project_id
+
+    reminder = session.get(Reminder, reminder_id)
+    if reminder is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    _require_visible(session, reminder, current)
+    notify = notify_user_ids(session, reminder)
+    src = source_project_id(session, reminder)
+    suggested = f"{reminder.title} (follow-up)"
+    publish(
+        "reminder.fired",
+        {"reminder_id": reminder_id, "notify_user_ids": notify, "source_project_id": src},
+    )
+    return FireOut(
+        reminder=_out(reminder, session),
+        notify_user_ids=notify,
+        follow_up={
+            "source_project_id": src,
+            "kind": "continues-as",
+            "suggested_name": suggested,
+        },
+    )
+
+
+@router.post("/{reminder_id}/follow-up-project", response_model=FollowUpOut, status_code=201)
+def create_follow_up_project(
+    reminder_id: int,
+    body: FollowUpCreate,
+    current: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """One-click follow-up: new Project pre-linked continues-as (03).
+
+    The Reminder stays on the original anchor; only an explicit call here
+    creates work. Forward link is plain (ADR-0006): no rollup, no blocking.
+    """
+    import re
+
+    from app.categories.models import Category, CategoryMember
+    from app.events import publish
+    from app.projects.models import Project, ProjectLink, ProjectMember
+    from app.reminders.service import source_project_id
+
+    CODE_RE = re.compile(r"^[A-Z0-9-]{2,12}$")
+
+    reminder = session.get(Reminder, reminder_id)
+    if reminder is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    _require_visible(session, reminder, current)
+    _require_write(session, reminder, current)
+    assert current.id is not None
+
+    src_pid = source_project_id(session, reminder)
+    src_proj = session.get(Project, src_pid) if src_pid is not None else None
+
+    name = (body.name or "").strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="Name required")
+
+    category_id = body.category_id
+    if category_id is None:
+        if src_proj is not None and getattr(src_proj, "category_id", None) is not None:
+            category_id = src_proj.category_id
+        else:
+            raise HTTPException(status_code=422, detail="category_id required")
+    assert category_id is not None
+    category = session.get(Category, category_id)
+    if category is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    if current.role not in ("admin", "manager"):
+        if session.get(CategoryMember, (category_id, current.id)) is None:
+            raise HTTPException(status_code=404, detail="Not found")
+
+    code = (body.code or "").strip().upper()
+    if not code:
+        base = "".join(c for c in name.upper() if c.isalnum())[:6] or "PRJ"
+        code = f"{base}-{abs(hash(name + str(reminder_id))) % 900 + 100}"
+        if not CODE_RE.match(code):
+            code = f"PRJ-{abs(hash(name)) % 9000 + 1000}"
+    if not CODE_RE.match(code):
+        raise HTTPException(status_code=400, detail="Invalid code (A-Z0-9-, 2-12 chars)")
+    if session.exec(
+        select(Project).where(Project.category_id == category_id, Project.code == code)
+    ).first():
+        raise HTTPException(status_code=422, detail="Code exists in this Category")
+    if session.exec(
+        select(Project).where(Project.category_id == category_id, Project.name == name)
+    ).first():
+        raise HTTPException(status_code=422, detail="Name exists in this Category")
+
+    new_proj = Project(
+        category_id=category_id,
+        name=name,
+        code=code,
+        description=(body.description or "")[:2000],
+        color=getattr(src_proj, "color", None) or "#6b7280",
+        owner_id=current.id,
+        project_status="Active",
+    )
+    session.add(new_proj)
+    try:
+        session.commit()
+    except Exception as exc:
+        session.rollback()
+        msg = str(exc).lower()
+        if "unique" in msg:
+            raise HTTPException(status_code=422, detail="Code or name exists in this Category")
+        raise
+    session.refresh(new_proj)
+    assert new_proj.id is not None
+    if session.get(ProjectMember, (new_proj.id, current.id)) is None:
+        session.add(ProjectMember(project_id=new_proj.id, user_id=current.id, role=current.role))
+    if session.get(CategoryMember, (category_id, current.id)) is None:
+        try:
+            session.add(CategoryMember(category_id=category_id, user_id=current.id, role=current.role))
+        except Exception:
+            pass
+    session.commit()
+
+    link_out: dict | None = None
+    if src_proj is not None and src_proj.id is not None:
+        existing = session.exec(
+            select(ProjectLink).where(
+                ProjectLink.from_project_id == src_proj.id,
+                ProjectLink.to_project_id == new_proj.id,
+                ProjectLink.kind == "continues-as",
+            )
+        ).first()
+        if existing is None:
+            link = ProjectLink(
+                from_project_id=src_proj.id,
+                to_project_id=new_proj.id,
+                kind="continues-as",
+                note=f"follow-up of reminder {reminder_id}",
+                created_by=current.id,
+            )
+            session.add(link)
+            session.commit()
+            session.refresh(link)
+        else:
+            link = existing
+        assert link.id is not None
+        link_out = {
+            "id": link.id,
+            "from_project_id": link.from_project_id,
+            "to_project_id": link.to_project_id,
+            "kind": link.kind,
+            "note": link.note,
+        }
+    publish(
+        "reminder.follow_up_created",
+        {
+            "reminder_id": reminder_id,
+            "from_project_id": src_pid,
+            "to_project_id": new_proj.id,
+        },
+    )
+    session.refresh(reminder)
+    return FollowUpOut(
+        reminder=_out(reminder, session),
+        project={
+            "id": new_proj.id,
+            "name": new_proj.name,
+            "code": new_proj.code,
+            "category_id": new_proj.category_id,
+            "description": new_proj.description,
+        },
+        link=link_out,
+    )

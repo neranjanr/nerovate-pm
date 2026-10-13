@@ -1529,6 +1529,22 @@ def delete_task(
         old_wbs_map = {}
     deleted_wbs = old_wbs_map.get(task.id, "")
 
+    # 03 detach: anchored Reminders go standalone (never cascade-deleted,
+    # never block delete). Titles captured before rows vanish.
+    try:
+        from app.reminders.service import detach_for_tasks as _detach_tasks
+
+        _titles = {t.id: t.title for t in [session.get(Task, tid) for tid in subtree_ids] if t is not None and t.id is not None}
+        _detach_tasks(session, subtree_ids, _titles, project_id)
+        session.commit()
+    except Exception:
+        try:
+            session.rollback()
+        except Exception:
+            pass
+        # Detach must never block delete: fall through to row deletion.
+        pass
+
     # Delete related rows for all subtree ids.
     for tid in subtree_ids:
         for a in session.exec(select(TaskAssignee).where(TaskAssignee.task_id == tid)).all():

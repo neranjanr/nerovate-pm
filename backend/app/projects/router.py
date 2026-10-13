@@ -714,3 +714,103 @@ def update_project_tree_default(
     session.commit()
     session.refresh(project)
     return {"tree_default": project.tree_default}
+
+
+@router.delete("/{project_id}")
+def delete_project(
+    project_id: int,
+    current: User = Depends(require_writer),
+    session: Session = Depends(get_session),
+):
+    """Delete a Project; anchored Reminders detach to standalone (03).
+
+    Delete is never blocked by Reminders and never cascade-deletes them:
+    project-anchored + task-anchored nudges keep their ex-anchor title and
+    stay actionable. Tasks cascade like the task delete seam (related rows
+    removed); Project links/members for the project are removed.
+    """
+    project = require_project_access(project_id, current, session)
+    if current.role not in ("admin", "manager"):
+        raise HTTPException(status_code=403, detail="Manager or admin only")
+    assert project.id is not None
+    pid = project.id
+    pname = project.name
+
+    from app.tasks.models import (
+        Task,
+        TaskAssignee,
+        TaskAttachment,
+        TaskBlockedBy,
+        TaskComment,
+        TaskCommentMention,
+        TaskHistory,
+        TaskStatusPeriod,
+        TaskTag,
+        TaskWatcher,
+    )
+
+    task_rows = session.exec(select(Task).where(Task.project_id == pid)).all()
+    task_titles = {t.id: t.title for t in task_rows if t.id is not None}
+    task_ids = [t.id for t in task_rows if t.id is not None]
+
+    from app.reminders.service import detach_for_project as _detach_proj
+
+    try:
+        detached = _detach_proj(session, pid, pname, task_titles)
+        session.commit()
+    except Exception:
+        # Detach must never block delete: fall through to row deletion
+        # (Reminders are never cascade-deleted below).
+        try:
+            session.rollback()
+        except Exception:
+            pass
+        detached = []
+
+    import os as _os
+
+    from app.statuses.models import CustomFieldValue
+
+    for tid in task_ids:
+        for a in session.exec(select(TaskAssignee).where(TaskAssignee.task_id == tid)).all():
+            session.delete(a)
+        for w in session.exec(select(TaskWatcher).where(TaskWatcher.task_id == tid)).all():
+            session.delete(w)
+        for tt in session.exec(select(TaskTag).where(TaskTag.task_id == tid)).all():
+            session.delete(tt)
+        for b in session.exec(select(TaskBlockedBy).where(TaskBlockedBy.task_id == tid)).all():
+            session.delete(b)
+        for p in session.exec(select(TaskStatusPeriod).where(TaskStatusPeriod.task_id == tid)).all():
+            session.delete(p)
+        for hrow in session.exec(select(TaskHistory).where(TaskHistory.task_id == tid)).all():
+            session.delete(hrow)
+        for v in session.exec(select(CustomFieldValue).where(CustomFieldValue.task_id == tid)).all():
+            session.delete(v)
+        for c in session.exec(select(TaskComment).where(TaskComment.task_id == tid)).all():
+            assert c.id is not None
+            for m in session.exec(
+                select(TaskCommentMention).where(TaskCommentMention.comment_id == c.id)
+            ).all():
+                session.delete(m)
+            session.delete(c)
+        for att in session.exec(select(TaskAttachment).where(TaskAttachment.task_id == tid)).all():
+            fpath = att.path
+            session.delete(att)
+            try:
+                if fpath and _os.path.isfile(fpath):
+                    _os.remove(fpath)
+            except OSError:
+                pass
+    for t in task_rows:
+        session.delete(t)
+    for link in session.exec(
+        select(ProjectLink).where(
+            (ProjectLink.from_project_id == pid) | (ProjectLink.to_project_id == pid)
+        )
+    ).all():
+        session.delete(link)
+    for pm in session.exec(select(ProjectMember).where(ProjectMember.project_id == pid)).all():
+        session.delete(pm)
+    session.delete(project)
+    session.commit()
+    return {"deleted_project_id": pid, "detached_reminder_ids": detached}

@@ -240,6 +240,20 @@ def delete_category(
         prows = session.exec(select(Project).where(Project.category_id == category.id)).all()  # type: ignore[attr-defined]
         for p in prows:
             assert p.id is not None
+            # 03 detach: category cascade must not destroy future nudges.
+            try:
+                from app.reminders.service import detach_for_project as _detach_proj
+                from app.tasks.models import Task as _Task
+
+                _trows = session.exec(select(_Task).where(_Task.project_id == p.id)).all()
+                _titles = {t.id: t.title for t in _trows if t.id is not None}
+                _detach_proj(session, p.id, p.name, _titles)
+                session.commit()
+            except Exception:
+                try:
+                    session.rollback()
+                except Exception:
+                    pass
             for pm in session.exec(select(ProjectMember).where(ProjectMember.project_id == p.id)).all():
                 session.delete(pm)
             session.delete(p)

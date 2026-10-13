@@ -76,6 +76,7 @@ def init_db() -> None:
     _migrate_status_stages()
     _migrate_status_kind()
     _migrate_task_stage_column()
+    _migrate_reminder_detach()
 
     with Session(engine) as session:
         from app.auth.models import User
@@ -714,6 +715,41 @@ def _migrate_task_stage_column() -> None:
                     session.commit()
                 except Exception:
                     pass
+
+
+def _migrate_reminder_detach() -> None:
+    """03 additive migration: reminders detach-to-standalone columns.
+
+    - Adds reminders.ex_anchor_title / ex_anchor_project_id / detached_at
+      when missing (older sqlite files, including the 01 one-time shape).
+    - Backfills ex_anchor_title to '' and leaves detached_at NULL.
+    Idempotent: safe to run on every boot and in tests.
+    """
+    from sqlalchemy import text
+
+    with Session(engine) as session:
+        try:
+            cols = [r[1] for r in session.execute(text("PRAGMA table_info(reminders)")).all()]
+        except Exception:
+            return
+        if not cols:
+            return
+        for col, ddl in [
+            ("ex_anchor_title", "ALTER TABLE reminders ADD COLUMN ex_anchor_title VARCHAR(256) DEFAULT ''"),
+            ("ex_anchor_project_id", "ALTER TABLE reminders ADD COLUMN ex_anchor_project_id INTEGER"),
+            ("detached_at", "ALTER TABLE reminders ADD COLUMN detached_at VARCHAR(32)"),
+        ]:
+            if col not in cols:
+                try:
+                    session.execute(text(ddl))
+                    session.commit()
+                except Exception:
+                    pass
+        try:
+            session.execute(text("UPDATE reminders SET ex_anchor_title='' WHERE ex_anchor_title IS NULL"))
+            session.commit()
+        except Exception:
+            pass
 
 
 def _tint_hex(base: str, idx: int, total: int) -> str:
